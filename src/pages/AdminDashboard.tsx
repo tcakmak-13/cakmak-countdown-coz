@@ -1,34 +1,46 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, Users, Calendar, User as UserIcon } from 'lucide-react';
-import { getStoredUser, setStoredUser, getStudents } from '@/lib/mockData';
-import { User, Student } from '@/lib/types';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatBubble from '@/components/ChatBubble';
 
+interface StudentProfile {
+  id: string;
+  full_name: string;
+  area: string | null;
+  grade: string | null;
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const { profile, role, loading, signOut, profileId } = useAuth();
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<'list' | 'schedule' | 'profile'>('list');
 
   useEffect(() => {
-    const u = getStoredUser();
-    if (!u || u.role !== 'admin') { navigate('/login'); return; }
-    setUser(u);
-    setStudents(getStudents());
-  }, [navigate]);
+    if (!loading && (!profile || role !== 'admin')) { navigate('/login'); return; }
+    if (role === 'admin') {
+      supabase.from('profiles').select('id, full_name, area, grade').then(({ data }) => {
+        if (data) {
+          // Exclude admin's own profile from the student list
+          setStudents(data.filter(s => s.id !== profileId));
+        }
+      });
+    }
+  }, [loading, role, profile, navigate, profileId]);
 
-  if (!user) return null;
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
+  if (!profile || role !== 'admin') return null;
 
-  const handleLogout = () => { setStoredUser(null); navigate('/'); };
+  const handleLogout = async () => { await signOut(); navigate('/'); };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -48,7 +60,6 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6 flex gap-6 flex-col lg:flex-row">
-        {/* Student list sidebar */}
         <aside className="w-full lg:w-72 shrink-0">
           <div className="glass-card rounded-2xl p-4">
             <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
@@ -64,29 +75,30 @@ export default function AdminDashboard() {
                   }`}
                 >
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {s.fullName.charAt(0)}
+                    {s.full_name.charAt(0)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.fullName}</p>
-                    <p className="text-xs text-muted-foreground">{s.area} — {s.grade}</p>
+                    <p className="text-sm font-medium truncate">{s.full_name}</p>
+                    <p className="text-xs text-muted-foreground">{s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
                   </div>
                 </button>
               ))}
+              {students.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">Henüz öğrenci yok.</p>
+              )}
             </div>
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="flex-1 min-w-0">
           {!selectedStudent ? (
             <div className="glass-card rounded-2xl p-10 text-center">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h2 className="font-display text-xl font-semibold mb-2">Hoş geldiniz, Koç Çakmak</h2>
+              <h2 className="font-display text-xl font-semibold mb-2">Hoş geldiniz, {profile.full_name}</h2>
               <p className="text-muted-foreground">Sol taraftan bir öğrenci seçerek programını görüntüleyin.</p>
             </div>
           ) : (
             <>
-              {/* Tabs */}
               <div className="flex gap-1 mb-4">
                 <button
                   onClick={() => setTab('schedule')}
@@ -108,7 +120,7 @@ export default function AdminDashboard() {
 
               <div className="glass-card rounded-2xl p-6">
                 <h2 className="font-display text-lg font-semibold mb-4">
-                  {selectedStudent.fullName} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
+                  {selectedStudent.full_name} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
                 </h2>
                 {tab === 'schedule' ? (
                   <StudyPlanner studentId={selectedStudent.id} />
@@ -121,7 +133,7 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      <ChatBubble currentUser={user} />
+      {profileId && <ChatBubble currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />}
     </div>
   );
 }

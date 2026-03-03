@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react';
-import { StudyTask } from '@/lib/types';
-import { getTasks, saveTasks } from '@/lib/mockData';
-import { Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+interface Task {
+  id: string;
+  student_id: string;
+  day_of_week: number;
+  subject: string;
+  topic: string;
+  estimated_minutes: number;
+  description: string | null;
+  completed: boolean;
+  created_at: string;
+}
 
 interface Props {
   studentId: string;
@@ -16,76 +28,76 @@ interface Props {
 }
 
 export default function StudyPlanner({ studentId, readOnly = false }: Props) {
-  const [tasks, setTasks] = useState<StudyTask[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<StudyTask | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
 
-  useEffect(() => {
-    setTasks(getTasks().filter(t => t.studentId === studentId));
-  }, [studentId]);
+  const fetchTasks = async () => {
+    const { data } = await supabase
+      .from('study_tasks')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at');
+    if (data) setTasks(data);
+  };
 
-  const dayTasks = tasks.filter(t => t.dayOfWeek === selectedDay);
+  useEffect(() => { fetchTasks(); }, [studentId]);
 
-  const handleSave = () => {
-    const allTasks = getTasks();
+  const dayTasks = tasks.filter(t => t.day_of_week === selectedDay);
+
+  const handleSave = async () => {
     if (editingTask) {
-      const updated = allTasks.map(t =>
-        t.id === editingTask.id ? { ...t, ...form } : t
-      );
-      saveTasks(updated);
-      setTasks(updated.filter(t => t.studentId === studentId));
+      await supabase.from('study_tasks').update({
+        subject: form.subject,
+        topic: form.topic,
+        estimated_minutes: form.estimatedMinutes,
+        description: form.description,
+      }).eq('id', editingTask.id);
     } else {
-      const newTask: StudyTask = {
-        id: `task-${Date.now()}`,
-        studentId,
-        dayOfWeek: selectedDay,
-        ...form,
-        completed: false,
-        createdAt: new Date().toISOString(),
-      };
-      const updated = [...allTasks, newTask];
-      saveTasks(updated);
-      setTasks(updated.filter(t => t.studentId === studentId));
+      await supabase.from('study_tasks').insert({
+        student_id: studentId,
+        day_of_week: selectedDay,
+        subject: form.subject,
+        topic: form.topic,
+        estimated_minutes: form.estimatedMinutes,
+        description: form.description,
+      });
     }
     setForm({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
     setEditingTask(null);
     setDialogOpen(false);
+    fetchTasks();
+    toast.success(editingTask ? 'Görev güncellendi!' : 'Görev eklendi!');
   };
 
-  const handleDelete = (taskId: string) => {
-    const allTasks = getTasks().filter(t => t.id !== taskId);
-    saveTasks(allTasks);
-    setTasks(allTasks.filter(t => t.studentId === studentId));
+  const handleDelete = async (taskId: string) => {
+    await supabase.from('study_tasks').delete().eq('id', taskId);
+    fetchTasks();
+    toast.success('Görev silindi.');
   };
 
-  const toggleComplete = (taskId: string) => {
-    const allTasks = getTasks().map(t =>
-      t.id === taskId ? { ...t, completed: !t.completed } : t
-    );
-    saveTasks(allTasks);
-    setTasks(allTasks.filter(t => t.studentId === studentId));
+  const toggleComplete = async (taskId: string, current: boolean) => {
+    await supabase.from('study_tasks').update({ completed: !current }).eq('id', taskId);
+    fetchTasks();
   };
 
-  const openEdit = (task: StudyTask) => {
+  const openEdit = (task: Task) => {
     setEditingTask(task);
-    setForm({ subject: task.subject, topic: task.topic, estimatedMinutes: task.estimatedMinutes, description: task.description });
+    setForm({ subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
     setDialogOpen(true);
   };
 
   return (
     <div>
-      {/* Day tabs */}
       <div className="flex gap-1 overflow-x-auto pb-2 mb-4 scrollbar-hide">
         {DAYS.map((day, i) => (
           <button
             key={day}
             onClick={() => setSelectedDay(i)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedDay === i
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
+              selectedDay === i ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           >
             {day}
@@ -93,38 +105,27 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         ))}
       </div>
 
-      {/* Tasks */}
       <div className="space-y-3">
         {dayTasks.length === 0 && (
-          <p className="text-sm text-muted-foreground py-8 text-center">
-            Bu gün için görev yok.
-          </p>
+          <p className="text-sm text-muted-foreground py-8 text-center">Bu gün için görev yok.</p>
         )}
         {dayTasks.map(task => (
           <div
             key={task.id}
-            className={`glass-card rounded-xl p-4 flex items-start gap-3 transition-opacity ${
-              task.completed ? 'opacity-60' : ''
-            }`}
+            className={`glass-card rounded-xl p-4 flex items-start gap-3 transition-opacity ${task.completed ? 'opacity-60' : ''}`}
           >
             <Checkbox
               checked={task.completed}
-              onCheckedChange={() => toggleComplete(task.id)}
+              onCheckedChange={() => toggleComplete(task.id, task.completed)}
               className="mt-1 border-primary data-[state=checked]:bg-primary"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`font-semibold ${task.completed ? 'line-through' : ''}`}>
-                  {task.subject}
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  {task.topic}
-                </span>
-                <span className="text-xs text-muted-foreground">{task.estimatedMinutes} dk</span>
+                <span className={`font-semibold ${task.completed ? 'line-through' : ''}`}>{task.subject}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{task.topic}</span>
+                <span className="text-xs text-muted-foreground">{task.estimated_minutes} dk</span>
               </div>
-              {task.description && (
-                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-              )}
+              {task.description && <p className="text-sm text-muted-foreground mt-1">{task.description}</p>}
             </div>
             {!readOnly && (
               <div className="flex gap-1 shrink-0">
@@ -140,7 +141,6 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         ))}
       </div>
 
-      {/* Add button */}
       {!readOnly && (
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ subject: '', topic: '', estimatedMinutes: 30, description: '' }); } }}>
           <DialogTrigger asChild>
