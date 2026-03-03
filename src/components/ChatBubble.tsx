@@ -1,73 +1,117 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Paperclip, Image } from 'lucide-react';
+import { MessageCircle, X, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChatMessage, User } from '@/lib/types';
-import { getMessages, saveMessages, getStudents, getStoredUser } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 
 interface Props {
-  currentUser: User;
+  currentProfileId: string;
+  currentName: string;
+  currentRole: 'admin' | 'student' | null;
 }
 
-export default function ChatBubble({ currentUser }: Props) {
+interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  type: string;
+  created_at: string;
+  read: boolean;
+}
+
+interface StudentItem {
+  id: string;
+  full_name: string;
+  area: string | null;
+  grade: string | null;
+}
+
+export default function ChatBubble({ currentProfileId, currentName, currentRole }: Props) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(
-    currentUser.role === 'student' ? 'admin-1' : null
-  );
+  const [students, setStudents] = useState<StudentItem[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const students = getStudents();
-
+  // Find admin profile for student chat
   useEffect(() => {
-    setMessages(getMessages());
+    if (currentRole === 'student') {
+      supabase.from('user_roles').select('user_id').eq('role', 'admin').limit(1)
+        .then(({ data }) => {
+          if (data?.[0]) {
+            supabase.from('profiles').select('id').eq('user_id', data[0].user_id).single()
+              .then(({ data: p }) => { if (p) setAdminProfileId(p.id); });
+          }
+        });
+    }
+  }, [currentRole]);
+
+  // Load students for admin
+  useEffect(() => {
+    if (currentRole === 'admin') {
+      supabase.from('profiles').select('id, full_name, area, grade')
+        .then(({ data }) => {
+          if (data) setStudents(data.filter(s => s.id !== currentProfileId));
+        });
+    }
+  }, [currentRole, currentProfileId]);
+
+  // Load messages
+  useEffect(() => {
+    if (!open) return;
+    const fetchMessages = async () => {
+      const { data } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .order('created_at');
+      if (data) setMessages(data);
+    };
+    fetchMessages();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel('chat-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => {
+        fetchMessages();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [open]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedStudent]);
 
+  const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
+
   const filteredMessages = messages.filter(m => {
-    if (currentUser.role === 'student') {
-      return (m.senderId === currentUser.id && m.receiverId === 'admin-1') ||
-             (m.senderId === 'admin-1' && m.receiverId === currentUser.id);
-    }
-    if (selectedStudent) {
-      return (m.senderId === selectedStudent && m.receiverId === 'admin-1') ||
-             (m.senderId === 'admin-1' && m.receiverId === selectedStudent);
-    }
-    return false;
+    if (!chatPartnerId) return false;
+    return (m.sender_id === currentProfileId && m.receiver_id === chatPartnerId) ||
+           (m.sender_id === chatPartnerId && m.receiver_id === currentProfileId);
   });
 
-  const unreadCount = messages.filter(m => !m.read && m.receiverId === currentUser.id).length;
+  const unreadCount = messages.filter(m => !m.read && m.receiver_id === currentProfileId).length;
 
   const getUnreadForStudent = (studentId: string) =>
-    messages.filter(m => m.senderId === studentId && m.receiverId === 'admin-1' && !m.read).length;
+    messages.filter(m => m.sender_id === studentId && m.receiver_id === currentProfileId && !m.read).length;
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const receiverId = currentUser.role === 'student' ? 'admin-1' : selectedStudent;
-    if (!receiverId) return;
-
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: currentUser.id,
-      receiverId,
+  const handleSend = async () => {
+    if (!input.trim() || !chatPartnerId) return;
+    await supabase.from('chat_messages').insert({
+      sender_id: currentProfileId,
+      receiver_id: chatPartnerId,
       content: input.trim(),
       type: 'text',
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
-    const updated = [...messages, newMsg];
-    setMessages(updated);
-    saveMessages(updated);
+    });
     setInput('');
   };
 
   return (
     <>
-      {/* Floating button */}
       <button
         onClick={() => setOpen(!open)}
         className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange hover:scale-105 transition-transform"
@@ -86,7 +130,6 @@ export default function ChatBubble({ currentUser }: Props) {
         )}
       </button>
 
-      {/* Chat window */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -95,21 +138,19 @@ export default function ChatBubble({ currentUser }: Props) {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] h-[500px] max-h-[70vh] glass-card rounded-2xl flex flex-col overflow-hidden shadow-orange"
           >
-            {/* Header */}
             <div className="p-4 border-b border-border bg-card">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-xs font-bold text-primary-foreground">
-                  {currentUser.role === 'admin' ? 'KÇ' : currentUser.name.charAt(0)}
+                  {currentName.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-display font-semibold text-sm">{currentUser.name}</p>
-                  <p className="text-xs text-muted-foreground">{currentUser.role === 'admin' ? 'Koç' : 'Öğrenci'}</p>
+                  <p className="font-display font-semibold text-sm">{currentName}</p>
+                  <p className="text-xs text-muted-foreground">{currentRole === 'admin' ? 'Koç' : 'Öğrenci'}</p>
                 </div>
               </div>
             </div>
 
-            {/* Admin: student list OR chat */}
-            {currentUser.role === 'admin' && !selectedStudent ? (
+            {currentRole === 'admin' && !selectedStudent ? (
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider px-1 mb-2">Öğrenciler</p>
                 {students.map(s => (
@@ -119,11 +160,11 @@ export default function ChatBubble({ currentUser }: Props) {
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
                   >
                     <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                      {s.fullName.charAt(0)}
+                      {s.full_name.charAt(0)}
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{s.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{s.area} — {s.grade}</p>
+                      <p className="text-sm font-medium">{s.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
                     </div>
                     {getUnreadForStudent(s.id) > 0 && (
                       <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-bold">
@@ -135,8 +176,7 @@ export default function ChatBubble({ currentUser }: Props) {
               </div>
             ) : (
               <>
-                {/* Back button for admin */}
-                {currentUser.role === 'admin' && (
+                {currentRole === 'admin' && (
                   <button
                     onClick={() => setSelectedStudent(null)}
                     className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground border-b border-border"
@@ -144,25 +184,22 @@ export default function ChatBubble({ currentUser }: Props) {
                     ← Öğrenci Listesi
                   </button>
                 )}
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   {filteredMessages.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">Henüz mesaj yok</p>
                   )}
                   {filteredMessages.map(msg => {
-                    const isMine = msg.senderId === currentUser.id;
+                    const isMine = msg.sender_id === currentProfileId;
                     return (
                       <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                         <div
                           className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
-                            isMine
-                              ? 'bg-primary text-primary-foreground rounded-br-md'
-                              : 'bg-secondary text-foreground rounded-bl-md'
+                            isMine ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-secondary text-foreground rounded-bl-md'
                           }`}
                         >
                           {msg.content}
                           <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
-                            {new Date(msg.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
@@ -170,12 +207,8 @@ export default function ChatBubble({ currentUser }: Props) {
                   })}
                   <div ref={bottomRef} />
                 </div>
-                {/* Input */}
                 <div className="p-3 border-t border-border bg-card">
-                  <form
-                    onSubmit={e => { e.preventDefault(); handleSend(); }}
-                    className="flex items-center gap-2"
-                  >
+                  <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
                     <Input
                       value={input}
                       onChange={e => setInput(e.target.value)}

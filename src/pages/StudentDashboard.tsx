@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, User as UserIcon, Calendar, BookOpen } from 'lucide-react';
-import { getStoredUser, setStoredUser } from '@/lib/mockData';
-import { User } from '@/lib/types';
+import { useAuth } from '@/hooks/useAuth';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
@@ -10,18 +9,13 @@ import ChatBubble from '@/components/ChatBubble';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const { profile, role, loading, signOut, profileId } = useAuth();
   const [tab, setTab] = useState<'countdown' | 'schedule' | 'profile'>('countdown');
 
-  useEffect(() => {
-    const u = getStoredUser();
-    if (!u || u.role !== 'student') { navigate('/login'); return; }
-    setUser(u);
-  }, [navigate]);
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
+  if (!profile || role !== 'student') { navigate('/login'); return null; }
 
-  if (!user) return null;
-
-  const handleLogout = () => { setStoredUser(null); navigate('/'); };
+  const handleLogout = async () => { await signOut(); navigate('/'); };
 
   const tabs = [
     { key: 'countdown' as const, label: 'Geri Sayım', icon: BookOpen },
@@ -31,7 +25,6 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -41,7 +34,7 @@ export default function StudentDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {user.name}</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
             <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
               <LogOut className="h-5 w-5" />
             </button>
@@ -49,7 +42,6 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Tab nav */}
       <div className="border-b border-border bg-card/30">
         <div className="max-w-5xl mx-auto px-4 flex gap-1">
           {tabs.map(t => (
@@ -57,9 +49,7 @@ export default function StudentDashboard() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === t.key
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                tab === t.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               <t.icon className="h-4 w-4" />
@@ -69,7 +59,6 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-6">
         {tab === 'countdown' && (
           <div className="space-y-8">
@@ -86,21 +75,21 @@ export default function StudentDashboard() {
             </div>
           </div>
         )}
-        {tab === 'schedule' && (
+        {tab === 'schedule' && profileId && (
           <div className="glass-card rounded-2xl p-6">
             <h2 className="font-display text-lg font-semibold mb-4">Haftalık Programım</h2>
-            <StudyPlanner studentId={user.id} />
+            <StudyPlanner studentId={profileId} />
           </div>
         )}
-        {tab === 'profile' && (
+        {tab === 'profile' && profileId && (
           <div className="glass-card rounded-2xl p-6">
             <h2 className="font-display text-lg font-semibold mb-4">Profilim</h2>
-            <StudentProfileForm studentId={user.id} />
+            <StudentProfileForm studentId={profileId} />
           </div>
         )}
       </main>
 
-      <ChatBubble currentUser={user} />
+      {profileId && <ChatBubble currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />}
     </div>
   );
 }
