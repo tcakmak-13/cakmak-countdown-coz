@@ -326,6 +326,8 @@ export type Database = {
           parent_phone: string | null
           phone: string | null
           profile_completed: boolean
+          target_department: string | null
+          target_university: string | null
           updated_at: string
           user_id: string
           username: string | null
@@ -345,6 +347,8 @@ export type Database = {
           parent_phone?: string | null
           phone?: string | null
           profile_completed?: boolean
+          target_department?: string | null
+          target_university?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -364,6 +368,8 @@ export type Database = {
           parent_phone?: string | null
           phone?: string | null
           profile_completed?: boolean
+          target_department?: string | null
+          target_university?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
