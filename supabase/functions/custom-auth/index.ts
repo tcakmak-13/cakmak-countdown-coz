@@ -144,6 +144,12 @@ Deno.serve(async (req) => {
         });
       }
 
+      if (!isPasswordStrong(password)) {
+        return new Response(JSON.stringify({ error: "Şifre en az 8 karakter olmalıdır." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const email = `${username}@${EMAIL_DOMAIN}`;
       const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
         email,
