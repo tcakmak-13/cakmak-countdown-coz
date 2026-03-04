@@ -21,7 +21,7 @@ const tabVariants = {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const { profile, role, loading, signOut, profileId } = useAuth();
+  const { profile, role, loading, signOut, profileId, user } = useAuth();
   const [tab, setTab] = useState<Tab>('ana-menu');
   const [studentArea, setStudentArea] = useState<string>('SAY');
 
@@ -114,7 +114,7 @@ export default function StudentDashboard() {
 
           {tab === 'mesajlar' && profileId && (
             <motion.div key="mesajlar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+              <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={user?.id} />
             </motion.div>
           )}
 

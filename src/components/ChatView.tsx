@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, Paperclip, ArrowLeft, FileText, Download, Circle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface Props {
   currentProfileId: string;
   currentName: string;
   currentRole: 'admin' | 'student' | null;
+  currentUserId?: string;
 }
 
 interface Message {
@@ -27,12 +29,6 @@ interface StudentItem {
   grade: string | null;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
-function getFileUrl(fileName: string) {
-  return `${SUPABASE_URL}/storage/v1/object/public/chat-files/${fileName}`;
-}
-
 function isImage(fileName: string) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
 }
@@ -41,7 +37,7 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
-export default function ChatView({ currentProfileId, currentName, currentRole }: Props) {
+export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [students, setStudents] = useState<StudentItem[]>([]);
@@ -49,8 +45,20 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
   const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
   const [adminName, setAdminName] = useState('Talha Çakmak');
   const [uploading, setUploading] = useState(false);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get signed URL for a file
+  const getSignedUrl = async (fileName: string) => {
+    if (signedUrls[fileName]) return signedUrls[fileName];
+    const { data } = await supabase.storage.from('chat-files').createSignedUrl(fileName, 3600);
+    if (data?.signedUrl) {
+      setSignedUrls(prev => ({ ...prev, [fileName]: data.signedUrl }));
+      return data.signedUrl;
+    }
+    return '';
+  };
 
   // Student: find admin profile via security definer function
   useEffect(() => {
@@ -78,7 +86,15 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
   useEffect(() => {
     const fetchMessages = async () => {
       const { data } = await supabase.from('chat_messages').select('*').order('created_at');
-      if (data) setMessages(data as Message[]);
+      if (data) {
+        setMessages(data as Message[]);
+        // Pre-fetch signed URLs for file messages
+        for (const msg of data) {
+          if (msg.file_name && !signedUrls[msg.file_name]) {
+            getSignedUrl(msg.file_name);
+          }
+        }
+      }
     };
     fetchMessages();
     const channel = supabase.channel('chat-realtime-view')
@@ -121,11 +137,16 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
     messages.filter(m => m.sender_id === studentId && m.receiver_id === currentProfileId && !m.read).length;
 
   const handleSend = async () => {
-    if (!input.trim() || !chatPartnerId) return;
+    const trimmed = input.trim();
+    if (!trimmed || !chatPartnerId) return;
+    if (trimmed.length > 2000) {
+      toast.error('Mesaj çok uzun (maks 2000 karakter)');
+      return;
+    }
     await supabase.from('chat_messages').insert({
       sender_id: currentProfileId,
       receiver_id: chatPartnerId,
-      content: input.trim(),
+      content: trimmed,
       type: 'text',
     });
     setInput('');
@@ -133,13 +154,14 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !chatPartnerId) return;
+    if (!file || !chatPartnerId || !currentUserId) return;
     const allowed = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
     if (!allowed.test(file.name)) return;
 
     setUploading(true);
     const ext = file.name.split('.').pop();
-    const filePath = `${currentProfileId}/${Date.now()}.${ext}`;
+    // Use auth.uid() (currentUserId) for folder path to match storage policies
+    const filePath = `${currentUserId}/${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
     if (uploadError) { setUploading(false); return; }
 
@@ -158,16 +180,21 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
   const renderMessageContent = (msg: Message) => {
     const isMine = msg.sender_id === currentProfileId;
     const timeStr = new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const fileUrl = msg.file_name ? signedUrls[msg.file_name] : '';
 
     if (msg.type === 'image' && msg.file_name) {
       return (
         <div className="space-y-1">
-          <img
-            src={getFileUrl(msg.file_name)}
-            alt="Paylaşılan fotoğraf"
-            className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => window.open(getFileUrl(msg.file_name!), '_blank')}
-          />
+          {fileUrl ? (
+            <img
+              src={fileUrl}
+              alt="Paylaşılan fotoğraf"
+              className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => window.open(fileUrl, '_blank')}
+            />
+          ) : (
+            <div className="w-[200px] h-[150px] rounded-lg bg-secondary animate-pulse" />
+          )}
           <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>{timeStr}</p>
         </div>
       );
@@ -180,16 +207,18 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
             <FileText className="h-5 w-5 shrink-0" />
             <span className="text-sm truncate">{msg.content}</span>
           </div>
-          <a
-            href={getFileUrl(msg.file_name)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'
-            }`}
-          >
-            <Download className="h-3.5 w-3.5" /> PDF İndir
-          </a>
+          {fileUrl && (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'
+              }`}
+            >
+              <Download className="h-3.5 w-3.5" /> PDF İndir
+            </a>
+          )}
           <p className={`text-[10px] ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>{timeStr}</p>
         </div>
       );
@@ -207,7 +236,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
   if (currentRole === 'student') {
     return (
       <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-        {/* Header */}
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-sm font-bold text-primary-foreground shadow-orange">
@@ -223,7 +251,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
           </div>
         </div>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {filteredMessages.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok. Koçunuza bir mesaj gönderin!</p>
@@ -247,7 +274,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
         <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
           <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
             <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
@@ -259,7 +285,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
             >
               {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
             </button>
-            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" />
+            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" maxLength={2000} />
             <button type="submit" className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity shadow-orange">
               <Send className="h-4 w-4 text-primary-foreground" />
             </button>
@@ -323,7 +349,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
 
   return (
     <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-      {/* Header */}
       <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button onClick={() => setSelectedStudent(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
@@ -339,7 +364,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {filteredMessages.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok</p>
@@ -363,7 +387,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
         <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
           <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
@@ -375,7 +398,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
           >
             {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
           </button>
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" />
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" maxLength={2000} />
           <button type="submit" className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity shadow-orange">
             <Send className="h-4 w-4 text-primary-foreground" />
           </button>
