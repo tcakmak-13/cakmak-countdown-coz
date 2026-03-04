@@ -437,6 +437,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_notification: {
+        Args: {
+          _icon?: string
+          _link?: string
+          _message: string
+          _title: string
+          _type?: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       get_admin_profile_id: { Args: never; Returns: string }
       get_admin_profile_info: {
         Args: never
