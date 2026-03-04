@@ -21,7 +21,7 @@ const tabVariants = {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const { profile, role, loading, signOut, profileId } = useAuth();
+  const { profile, role, loading, signOut, profileId, user } = useAuth();
   const [tab, setTab] = useState<Tab>('ana-menu');
   const [studentArea, setStudentArea] = useState<string>('SAY');
 
