@@ -84,7 +84,7 @@ export default function AdminDashboard() {
   };
 
   const loadStudents = () => {
-    supabase.from('profiles').select('id, full_name, area, grade, username').then(({ data }) => {
+    supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department').then(({ data }) => {
       if (data) {
         setStudents(data.filter((s: any) => s.id !== profileId) as StudentProfile[]);
       }
