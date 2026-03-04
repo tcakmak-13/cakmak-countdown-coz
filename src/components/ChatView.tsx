@@ -55,13 +55,10 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
   // Student: find admin profile via security definer function
   useEffect(() => {
     if (currentRole === 'student') {
-      supabase.rpc('get_admin_profile_id').then(({ data }) => {
-        if (data) {
-          setAdminProfileId(data as string);
-          supabase.from('profiles').select('full_name').eq('id', data).single()
-            .then(({ data: p }) => {
-              if (p) setAdminName(p.full_name || 'Talha Çakmak');
-            });
+      supabase.rpc('get_admin_profile_info').then(({ data }) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setAdminProfileId(data[0].id);
+          setAdminName(data[0].full_name || 'Talha Çakmak');
         }
       });
     }
