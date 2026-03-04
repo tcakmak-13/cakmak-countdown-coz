@@ -360,6 +360,13 @@ export type Database = {
     }
     Functions: {
       get_admin_profile_id: { Args: never; Returns: string }
+      get_admin_profile_info: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
