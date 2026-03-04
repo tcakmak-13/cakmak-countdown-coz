@@ -50,8 +50,6 @@ export default function StudentDashboard() {
   }, [profileId]);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
-  if (!profile || role !== 'student') { navigate('/login'); return null; }
-  if (!profile.profile_completed) { navigate('/onboarding'); return null; }
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
 
