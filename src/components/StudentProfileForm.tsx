@@ -5,6 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import SearchableCombobox from '@/components/SearchableCombobox';
+import { UNIVERSITIES } from '@/lib/universities';
+import { DEPARTMENTS } from '@/lib/departments';
 
 interface ProfileData {
   id: string;
@@ -18,6 +21,8 @@ interface ProfileData {
   goals: string | null;
   area: string | null;
   grade: string | null;
+  target_university: string | null;
+  target_department: string | null;
 }
 
 interface Props {
@@ -30,7 +35,7 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
   const [student, setStudent] = useState<ProfileData | null>(null);
 
   useEffect(() => {
-    supabase.from('profiles').select('id, full_name, birthday, phone, parent_phone, email, high_school, obp, goals, area, grade')
+    supabase.from('profiles').select('id, full_name, birthday, phone, parent_phone, email, high_school, obp, goals, area, grade, target_university, target_department')
       .eq('id', studentId).single()
       .then(({ data }) => { if (data) setStudent(data as ProfileData); });
   }, [studentId]);
@@ -55,6 +60,8 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
       goals: student.goals,
       area: student.area,
       grade: student.grade,
+      target_university: student.target_university,
+      target_department: student.target_department,
     }).eq('id', student.id);
     if (error) { toast.error('Güncelleme başarısız.'); return; }
     toast.success('Profil güncellendi!');
@@ -121,6 +128,28 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
               </SelectContent>
             </Select>
           )}
+        </div>
+        <div className="space-y-2">
+          <Label>Hedef Üniversite</Label>
+          <SearchableCombobox
+            options={UNIVERSITIES}
+            value={student.target_university ?? ''}
+            onChange={v => update('target_university', v)}
+            placeholder="Üniversite ara..."
+            readOnly={readOnly}
+            className=""
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Hedef Bölüm</Label>
+          <SearchableCombobox
+            options={DEPARTMENTS}
+            value={student.target_department ?? ''}
+            onChange={v => update('target_department', v)}
+            placeholder="Bölüm ara veya yaz..."
+            readOnly={readOnly}
+            allowCustom={true}
+          />
         </div>
       </div>
       <div className="space-y-2">
