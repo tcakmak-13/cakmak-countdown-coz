@@ -222,7 +222,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
             <div>
               <p className="font-display font-semibold text-sm">{adminName} (Koç)</p>
               <div className="flex items-center gap-1.5">
-                <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" />
+                <Circle className="h-2 w-2 fill-current text-emerald-500" />
                 <span className="text-xs text-emerald-400">Çevrimiçi</span>
               </div>
             </div>
