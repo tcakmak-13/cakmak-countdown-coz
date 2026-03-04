@@ -237,9 +237,12 @@ export default function AdminDashboard() {
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                     {s.full_name?.charAt(0) || '?'}
                   </div>
-                  <div className="min-w-0">
+                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
                     <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
+                    {s.target_university && (
+                      <p className="text-[11px] text-primary/80 truncate mt-0.5">🎯 {s.target_university}{s.target_department ? ` / ${s.target_department}` : ''}</p>
+                    )}
                   </div>
                 </button>
               ))}
