@@ -62,6 +62,48 @@ export type Database = {
           },
         ]
       }
+      coach_info: {
+        Row: {
+          appointment_hours: string | null
+          ayt_net: string | null
+          bio: string
+          experience: string | null
+          id: string
+          instagram: string | null
+          title: string
+          tyt_net: string | null
+          updated_at: string
+          whatsapp_link: string | null
+          yks_ranking: string | null
+        }
+        Insert: {
+          appointment_hours?: string | null
+          ayt_net?: string | null
+          bio?: string
+          experience?: string | null
+          id?: string
+          instagram?: string | null
+          title?: string
+          tyt_net?: string | null
+          updated_at?: string
+          whatsapp_link?: string | null
+          yks_ranking?: string | null
+        }
+        Update: {
+          appointment_hours?: string | null
+          ayt_net?: string | null
+          bio?: string
+          experience?: string | null
+          id?: string
+          instagram?: string | null
+          title?: string
+          tyt_net?: string | null
+          updated_at?: string
+          whatsapp_link?: string | null
+          yks_ranking?: string | null
+        }
+        Relationships: []
+      }
       deneme_results: {
         Row: {
           ayt_biyoloji_dogru: number
