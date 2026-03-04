@@ -62,6 +62,74 @@ export type Database = {
           },
         ]
       }
+      deneme_results: {
+        Row: {
+          created_at: string
+          exam_type: string
+          fen_dogru: number
+          fen_net: number
+          fen_yanlis: number
+          id: string
+          matematik_dogru: number
+          matematik_net: number
+          matematik_yanlis: number
+          sosyal_dogru: number
+          sosyal_net: number
+          sosyal_yanlis: number
+          student_id: string
+          total_net: number
+          turkce_dogru: number
+          turkce_net: number
+          turkce_yanlis: number
+        }
+        Insert: {
+          created_at?: string
+          exam_type?: string
+          fen_dogru?: number
+          fen_net?: number
+          fen_yanlis?: number
+          id?: string
+          matematik_dogru?: number
+          matematik_net?: number
+          matematik_yanlis?: number
+          sosyal_dogru?: number
+          sosyal_net?: number
+          sosyal_yanlis?: number
+          student_id: string
+          total_net?: number
+          turkce_dogru?: number
+          turkce_net?: number
+          turkce_yanlis?: number
+        }
+        Update: {
+          created_at?: string
+          exam_type?: string
+          fen_dogru?: number
+          fen_net?: number
+          fen_yanlis?: number
+          id?: string
+          matematik_dogru?: number
+          matematik_net?: number
+          matematik_yanlis?: number
+          sosyal_dogru?: number
+          sosyal_net?: number
+          sosyal_yanlis?: number
+          student_id?: string
+          total_net?: number
+          turkce_dogru?: number
+          turkce_net?: number
+          turkce_yanlis?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deneme_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           area: string | null
