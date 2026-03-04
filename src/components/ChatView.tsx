@@ -363,7 +363,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         </div>
 
         {renderMessageInput()}
-        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={adminName} />
+        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={adminName} avatarUrl={adminAvatarUrl} />
       </div>
     );
   }
