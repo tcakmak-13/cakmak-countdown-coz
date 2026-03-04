@@ -70,12 +70,7 @@ export default function StudentDashboard() {
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
-            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut className="h-5 w-5" />
-            </button>
-          </div>
+          <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
         </div>
       </header>
 
