@@ -39,6 +39,26 @@ function isPdf(fileName: string) {
 }
 
 function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; onOpenChange: (v: boolean) => void; name: string; avatarUrl: string | null }) {
+  const [info, setInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (open && !info) {
+      supabase.from('coach_info').select('*').limit(1).single().then(({ data }) => {
+        if (data) setInfo(data);
+      });
+    }
+  }, [open]);
+
+  const title = info?.title || 'YKS Koçu • Mentor';
+  const bio = info?.bio || '';
+  const yksRanking = info?.yks_ranking || 'Top 1000';
+  const experience = info?.experience || '3+ Yıl';
+  const tytNet = info?.tyt_net || '112.5';
+  const aytNet = info?.ayt_net || '75.25';
+  const whatsappLink = info?.whatsapp_link || '';
+  const instagram = info?.instagram || '';
+  const appointmentHours = info?.appointment_hours || '';
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="bg-card border-border w-[340px] sm:w-[400px] p-0 overflow-y-auto">
@@ -62,7 +82,7 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
 
           <SheetHeader className="pt-4 pb-2 px-6 text-center">
             <SheetTitle className="font-display text-2xl font-bold">{name}</SheetTitle>
-            <p className="text-sm text-muted-foreground">YKS Koçu • Mentor</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
           </SheetHeader>
 
           <div className="px-6 pb-8 space-y-5">
@@ -71,12 +91,12 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
               <div className="glass-card rounded-xl p-4 text-center border border-primary/20">
                 <Trophy className="h-5 w-5 text-primary mx-auto mb-2" />
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">YKS Sıralaması</p>
-                <p className="font-display text-2xl font-bold text-primary mt-1">Top 1000</p>
+                <p className="font-display text-2xl font-bold text-primary mt-1">{yksRanking}</p>
               </div>
               <div className="glass-card rounded-xl p-4 text-center border border-primary/20">
                 <Star className="h-5 w-5 text-primary mx-auto mb-2" />
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Deneyim</p>
-                <p className="font-display text-2xl font-bold text-primary mt-1">3+ Yıl</p>
+                <p className="font-display text-2xl font-bold text-primary mt-1">{experience}</p>
               </div>
             </div>
 
@@ -87,28 +107,48 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
               </h4>
               <div className="flex items-center justify-between py-2 border-b border-border/50">
                 <span className="text-sm font-medium">TYT Net</span>
-                <span className="font-display text-xl font-bold text-primary">112.5</span>
+                <span className="font-display text-xl font-bold text-primary">{tytNet}</span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm font-medium">AYT Net</span>
-                <span className="font-display text-xl font-bold text-primary">75.25</span>
+                <span className="font-display text-xl font-bold text-primary">{aytNet}</span>
               </div>
             </div>
 
             {/* Bio */}
-            <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
-              <h4 className="text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" /> Hakkında
-              </h4>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                YKS sürecinde yüzlerce öğrenciye rehberlik etmiş, deneyimli bir koç. Motivasyon, planlama ve strateji konularında uzmanlaşmış olup öğrencilerin potansiyellerini en üst düzeye çıkarmayı hedefler.
-              </p>
-            </div>
+            {bio && (
+              <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
+                <h4 className="text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Award className="h-4 w-4 text-primary" /> Hakkında
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{bio}</p>
+              </div>
+            )}
 
-            {/* Username */}
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">@tcakmak1355</p>
-            </div>
+            {/* Contact */}
+            {(whatsappLink || instagram || appointmentHours) && (
+              <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
+                <h4 className="text-xs text-muted-foreground uppercase tracking-widest">İletişim</h4>
+                {whatsappLink && (
+                  <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
+                    <WhatsAppIcon className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm text-muted-foreground">WhatsApp</span>
+                  </a>
+                )}
+                {instagram && (
+                  <a href={`https://instagram.com/${instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-pink-400 transition-colors">
+                    <Instagram className="h-4 w-4 text-pink-500" />
+                    <span className="text-sm text-muted-foreground">{instagram}</span>
+                  </a>
+                )}
+                {appointmentHours && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">{appointmentHours}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </SheetContent>
