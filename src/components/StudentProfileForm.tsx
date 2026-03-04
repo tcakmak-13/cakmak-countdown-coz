@@ -35,7 +35,7 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
   const [student, setStudent] = useState<ProfileData | null>(null);
 
   useEffect(() => {
-    supabase.from('profiles').select('id, full_name, birthday, phone, parent_phone, email, high_school, obp, goals, area, grade')
+    supabase.from('profiles').select('id, full_name, birthday, phone, parent_phone, email, high_school, obp, goals, area, grade, target_university, target_department')
       .eq('id', studentId).single()
       .then(({ data }) => { if (data) setStudent(data as ProfileData); });
   }, [studentId]);
