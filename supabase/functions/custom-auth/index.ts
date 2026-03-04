@@ -9,6 +9,36 @@ const ADMIN_USERNAME = Deno.env.get("ADMIN_USERNAME")!;
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD")!;
 const EMAIL_DOMAIN = "cakmak.internal";
 
+// Simple in-memory rate limiter for failed login attempts
+const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function isRateLimited(username: string): boolean {
+  const record = failedAttempts.get(username);
+  if (!record) return false;
+  if (Date.now() - record.lastAttempt > LOCKOUT_DURATION_MS) {
+    failedAttempts.delete(username);
+    return false;
+  }
+  return record.count >= MAX_FAILED_ATTEMPTS;
+}
+
+function recordFailedAttempt(username: string) {
+  const record = failedAttempts.get(username) || { count: 0, lastAttempt: 0 };
+  record.count += 1;
+  record.lastAttempt = Date.now();
+  failedAttempts.set(username, record);
+}
+
+function clearFailedAttempts(username: string) {
+  failedAttempts.delete(username);
+}
+
+function isPasswordStrong(password: string): boolean {
+  return password.length >= 8;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
