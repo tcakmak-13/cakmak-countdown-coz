@@ -11,6 +11,7 @@ interface Profile {
   username: string | null;
   profile_completed: boolean;
   area: string | null;
+  obp: string | null;
 }
 
 interface AuthContextType {
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfileAndRole = async (userId: string) => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from('profiles').select('id, user_id, full_name, email, avatar_url, username, profile_completed, area').eq('user_id', userId).single(),
+      supabase.from('profiles').select('id, user_id, full_name, email, avatar_url, username, profile_completed, area, obp').eq('user_id', userId).single(),
       supabase.from('user_roles').select('role').eq('user_id', userId).single(),
     ]);
     if (profileRes.data) setProfile(profileRes.data as Profile);

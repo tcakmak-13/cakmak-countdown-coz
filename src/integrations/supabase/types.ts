@@ -292,6 +292,71 @@ export type Database = {
         }
         Relationships: []
       }
+      ranking_calculations: {
+        Row: {
+          ayt_total_net: number
+          calculated_score: number
+          created_at: string
+          estimated_ranking_high: number
+          estimated_ranking_low: number
+          exam_area: string
+          id: string
+          obp: number
+          source_deneme_ids: string[] | null
+          source_type: string
+          student_id: string
+          tyt_fen_net: number
+          tyt_matematik_net: number
+          tyt_sosyal_net: number
+          tyt_total_net: number
+          tyt_turkce_net: number
+        }
+        Insert: {
+          ayt_total_net?: number
+          calculated_score?: number
+          created_at?: string
+          estimated_ranking_high?: number
+          estimated_ranking_low?: number
+          exam_area?: string
+          id?: string
+          obp?: number
+          source_deneme_ids?: string[] | null
+          source_type?: string
+          student_id: string
+          tyt_fen_net?: number
+          tyt_matematik_net?: number
+          tyt_sosyal_net?: number
+          tyt_total_net?: number
+          tyt_turkce_net?: number
+        }
+        Update: {
+          ayt_total_net?: number
+          calculated_score?: number
+          created_at?: string
+          estimated_ranking_high?: number
+          estimated_ranking_low?: number
+          exam_area?: string
+          id?: string
+          obp?: number
+          source_deneme_ids?: string[] | null
+          source_type?: string
+          student_id?: string
+          tyt_fen_net?: number
+          tyt_matematik_net?: number
+          tyt_sosyal_net?: number
+          tyt_total_net?: number
+          tyt_turkce_net?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ranking_calculations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_tasks: {
         Row: {
           completed: boolean
