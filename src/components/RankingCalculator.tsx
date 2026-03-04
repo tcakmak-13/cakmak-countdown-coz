@@ -75,7 +75,7 @@ const REAL_COEFFICIENTS: Record<string, { tyt: Record<string, number>; ayt: Reco
 // Format: [score, cumulativeRank] pairs per year/type
 type RankingPair = [number, number]; // [score, cumRank]
 type YearRankData = Record<string, RankingPair[]>; // { SAY: [[500,1],...], EA: ... }
-const rankingData = rankingDataJson as Record<string, YearRankData>;
+const rankingData = rankingDataJson as unknown as Record<string, YearRankData>;
 
 // ─── Non-Linear Interpolation (Density-aware, JSON-based) ─────────────────
 // Uses the cumulative distribution pairs from ranking_data.json
