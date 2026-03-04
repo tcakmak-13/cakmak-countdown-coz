@@ -1,43 +1,95 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatBubble from '@/components/ChatBubble';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface StudentProfile {
   id: string;
   full_name: string;
   area: string | null;
   grade: string | null;
+  username: string | null;
 }
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { profile, role, loading, signOut, profileId } = useAuth();
+  const { profile, role, loading, signOut, profileId, session } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<'list' | 'schedule' | 'profile'>('list');
 
+  // Student creation
+  const [showCreate, setShowCreate] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const loadStudents = () => {
+    supabase.from('profiles').select('id, full_name, area, grade, username').then(({ data }) => {
+      if (data) {
+        setStudents(data.filter((s: any) => s.id !== profileId) as StudentProfile[]);
+      }
+    });
+  };
+
   useEffect(() => {
     if (!loading && (!profile || role !== 'admin')) { navigate('/login'); return; }
-    if (role === 'admin') {
-      supabase.from('profiles').select('id, full_name, area, grade').then(({ data }) => {
-        if (data) {
-          // Exclude admin's own profile from the student list
-          setStudents(data.filter(s => s.id !== profileId));
-        }
-      });
-    }
+    if (role === 'admin') loadStudents();
   }, [loading, role, profile, navigate, profileId]);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
   if (!profile || role !== 'admin') return null;
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
+
+  const handleCreateStudent = async () => {
+    if (!newUsername.trim() || !newPassword.trim()) {
+      toast.error('Kullanıcı adı ve şifre gerekli.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Şifre en az 6 karakter olmalı.');
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ action: 'create-student', username: newUsername.trim(), password: newPassword }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Öğrenci oluşturulamadı.');
+      } else {
+        toast.success(`Öğrenci "${newUsername}" oluşturuldu!`);
+        setNewUsername('');
+        setNewPassword('');
+        setShowCreate(false);
+        setTimeout(loadStudents, 500);
+      }
+    } catch {
+      toast.error('Bağlantı hatası.');
+    }
+    setCreating(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -62,9 +114,36 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto px-4 py-6 flex gap-6 flex-col lg:flex-row">
         <aside className="w-full lg:w-72 shrink-0">
           <div className="glass-card rounded-2xl p-4">
-            <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <Users className="h-4 w-4" /> Öğrenciler ({students.length})
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" /> Öğrenciler ({students.length})
+              </h2>
+              <Dialog open={showCreate} onOpenChange={setShowCreate}>
+                <DialogTrigger asChild>
+                  <button className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors">
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-border">
+                  <DialogHeader>
+                    <DialogTitle className="font-display">Yeni Öğrenci Oluştur</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label>Kullanıcı Adı</Label>
+                      <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="ogrenci123" className="bg-secondary border-border" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Şifre</Label>
+                      <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border" />
+                    </div>
+                    <Button onClick={handleCreateStudent} disabled={creating} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
+                      {creating ? 'Oluşturuluyor...' : 'Öğrenci Oluştur'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="space-y-2">
               {students.map(s => (
                 <button
@@ -75,11 +154,11 @@ export default function AdminDashboard() {
                   }`}
                 >
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {s.full_name.charAt(0)}
+                    {s.full_name?.charAt(0) || '?'}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
+                    <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
+                    <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
                   </div>
                 </button>
               ))}
@@ -120,7 +199,7 @@ export default function AdminDashboard() {
 
               <div className="glass-card rounded-2xl p-6">
                 <h2 className="font-display text-lg font-semibold mb-4">
-                  {selectedStudent.full_name} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
+                  {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
                 </h2>
                 {tab === 'schedule' ? (
                   <StudyPlanner studentId={selectedStudent.id} />
