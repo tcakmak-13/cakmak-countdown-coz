@@ -23,6 +23,8 @@ interface StudentProfile {
   area: string | null;
   grade: string | null;
   username: string | null;
+  target_university: string | null;
+  target_department: string | null;
 }
 
 export default function AdminDashboard() {
