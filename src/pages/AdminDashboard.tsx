@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
@@ -123,6 +124,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <YKSCountdown compact />
+            <NotificationBell />
             {/* Avatar upload */}
             <label className="relative cursor-pointer group">
               <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange overflow-hidden ring-2 ring-primary/30">
