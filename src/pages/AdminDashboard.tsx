@@ -200,10 +200,26 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* Analytics button */}
+          <button
+            onClick={() => { setSelectedStudent(null); setTab('analytics'); }}
+            className={`w-full mt-3 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+              tab === 'analytics' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
+            }`}
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Analiz Merkezi</p>
+              <p className="text-xs text-muted-foreground">Isı haritası & uyarılar</p>
+            </div>
+          </button>
+
           {/* Messages button */}
           <button
             onClick={() => { setSelectedStudent(null); setTab('messages'); }}
-            className={`w-full mt-3 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            className={`w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors ${
               tab === 'messages' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
             }`}
           >
