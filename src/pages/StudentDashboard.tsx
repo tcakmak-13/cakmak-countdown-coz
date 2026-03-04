@@ -11,7 +11,7 @@ import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import Denemelerim from '@/components/Denemelerim';
-import CoachInfo from '@/components/CoachInfo';
+
 
 
 type Tab = 'denemelerim' | 'ana-menu' | 'mesajlar' | 'profilim';
@@ -124,7 +124,6 @@ export default function StudentDashboard() {
                   <h2 className="font-display text-lg font-semibold mb-4">Profilim</h2>
                   <StudentProfileForm studentId={profileId} onAreaChange={setStudentArea} />
                 </div>
-                <CoachInfo />
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="w-full gap-2">

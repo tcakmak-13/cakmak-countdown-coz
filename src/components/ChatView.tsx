@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, ArrowLeft, FileText, Download, Circle } from 'lucide-react';
+import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 interface Props {
   currentProfileId: string;
@@ -37,6 +38,80 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
+function CoachDrawer({ open, onOpenChange, name }: { open: boolean; onOpenChange: (v: boolean) => void; name: string }) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="bg-card border-border w-[340px] sm:w-[400px] p-0 overflow-y-auto">
+        <div className="relative">
+          {/* Hero gradient header */}
+          <div className="h-36 bg-gradient-orange relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(35_100%_60%/0.4),transparent_60%)]" />
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent" />
+          </div>
+
+          {/* Avatar */}
+          <div className="flex justify-center -mt-14 relative z-10">
+            <div className="h-24 w-24 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange ring-4 ring-card">
+              <span className="font-display text-3xl font-bold text-primary-foreground">T</span>
+            </div>
+          </div>
+
+          <SheetHeader className="pt-4 pb-2 px-6 text-center">
+            <SheetTitle className="font-display text-2xl font-bold">{name}</SheetTitle>
+            <p className="text-sm text-muted-foreground">YKS Koçu • Mentor</p>
+          </SheetHeader>
+
+          <div className="px-6 pb-8 space-y-5">
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-card rounded-xl p-4 text-center border border-primary/20">
+                <Trophy className="h-5 w-5 text-primary mx-auto mb-2" />
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">YKS Sıralaması</p>
+                <p className="font-display text-2xl font-bold text-primary mt-1">Top 1000</p>
+              </div>
+              <div className="glass-card rounded-xl p-4 text-center border border-primary/20">
+                <Star className="h-5 w-5 text-primary mx-auto mb-2" />
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Deneyim</p>
+                <p className="font-display text-2xl font-bold text-primary mt-1">3+ Yıl</p>
+              </div>
+            </div>
+
+            {/* Net scores */}
+            <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
+              <h4 className="text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary" /> Sınav Başarısı
+              </h4>
+              <div className="flex items-center justify-between py-2 border-b border-border/50">
+                <span className="text-sm font-medium">TYT Net</span>
+                <span className="font-display text-xl font-bold text-primary">112.5</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm font-medium">AYT Net</span>
+                <span className="font-display text-xl font-bold text-primary">75.25</span>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
+              <h4 className="text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" /> Hakkında
+              </h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                YKS sürecinde yüzlerce öğrenciye rehberlik etmiş, deneyimli bir koç. Motivasyon, planlama ve strateji konularında uzmanlaşmış olup öğrencilerin potansiyellerini en üst düzeye çıkarmayı hedefler.
+              </p>
+            </div>
+
+            {/* Username */}
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">@tcakmak1355</p>
+            </div>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -46,10 +121,10 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [adminName, setAdminName] = useState('Talha Çakmak');
   const [uploading, setUploading] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [coachDrawerOpen, setCoachDrawerOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get signed URL for a file
   const getSignedUrl = async (fileName: string) => {
     if (signedUrls[fileName]) return signedUrls[fileName];
     const { data } = await supabase.storage.from('chat-files').createSignedUrl(fileName, 3600);
@@ -60,7 +135,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     return '';
   };
 
-  // Student: find admin profile via security definer function
   useEffect(() => {
     if (currentRole === 'student') {
       supabase.rpc('get_admin_profile_info').then(({ data }) => {
@@ -72,7 +146,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     }
   }, [currentRole]);
 
-  // Admin: load students
   useEffect(() => {
     if (currentRole === 'admin') {
       supabase.from('profiles').select('id, full_name, area, grade')
@@ -82,13 +155,11 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     }
   }, [currentRole, currentProfileId]);
 
-  // Fetch & subscribe to messages
   useEffect(() => {
     const fetchMessages = async () => {
       const { data } = await supabase.from('chat_messages').select('*').order('created_at');
       if (data) {
         setMessages(data as Message[]);
-        // Pre-fetch signed URLs for file messages
         for (const msg of data) {
           if (msg.file_name && !signedUrls[msg.file_name]) {
             getSignedUrl(msg.file_name);
@@ -103,7 +174,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Mark messages as read
   useEffect(() => {
     const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
     if (!chatPartnerId) return;
@@ -160,7 +230,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       toast.error('Desteklenmeyen dosya türü. Yalnızca resim ve PDF yükleyebilirsiniz.');
       return;
     }
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       toast.error('Dosya boyutu çok büyük (maks 10MB).');
       return;
@@ -168,7 +238,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
     setUploading(true);
     const ext = file.name.split('.').pop();
-    // Use auth.uid() (currentUserId) for folder path to match storage policies
     const filePath = `${currentUserId}/${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
     if (uploadError) { setUploading(false); return; }
@@ -194,12 +263,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       return (
         <div className="space-y-1">
           {fileUrl ? (
-            <img
-              src={fileUrl}
-              alt="Paylaşılan fotoğraf"
-              className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => window.open(fileUrl, '_blank')}
-            />
+            <img src={fileUrl} alt="Paylaşılan fotoğraf" className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(fileUrl, '_blank')} />
           ) : (
             <div className="w-[200px] h-[150px] rounded-lg bg-secondary animate-pulse" />
           )}
@@ -216,14 +280,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             <span className="text-sm truncate">{msg.content}</span>
           </div>
           {fileUrl && (
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'
-              }`}
-            >
+            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'}`}>
               <Download className="h-3.5 w-3.5" /> PDF İndir
             </a>
           )}
@@ -240,24 +297,43 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     );
   };
 
+  const renderMessageInput = () => (
+    <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
+      <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
+        <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
+          {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
+        </button>
+        <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" maxLength={2000} />
+        <button type="submit" className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity shadow-orange">
+          <Send className="h-4 w-4 text-primary-foreground" />
+        </button>
+      </form>
+    </div>
+  );
+
   // Student: direct chat view
   if (currentRole === 'student') {
     return (
       <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-        <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+        <button
+          onClick={() => setCoachDrawerOpen(true)}
+          className="p-4 border-b border-border bg-card/80 backdrop-blur-xl hover:bg-card/95 transition-colors cursor-pointer text-left"
+        >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-sm font-bold text-primary-foreground shadow-orange">
+            <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange ring-2 ring-primary/30">
               T
             </div>
-            <div>
-              <p className="font-display font-semibold text-sm">{adminName} (Koç)</p>
+            <div className="flex-1">
+              <p className="font-display font-bold text-base">{adminName}</p>
               <div className="flex items-center gap-1.5">
                 <Circle className="h-2 w-2 fill-current text-emerald-500" />
                 <span className="text-xs text-emerald-400">Çevrimiçi</span>
               </div>
             </div>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Profili Gör</span>
           </div>
-        </div>
+        </button>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {filteredMessages.length === 0 && (
@@ -267,13 +343,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             const isMine = msg.sender_id === currentProfileId;
             return (
               <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[75%] px-4 py-2.5 text-sm ${
-                    isMine
-                      ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]'
-                      : 'glass-card rounded-2xl rounded-bl-md'
-                  }`}
-                >
+                <div className={`max-w-[75%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'glass-card rounded-2xl rounded-bl-md'}`}>
                   {renderMessageContent(msg)}
                 </div>
               </div>
@@ -282,28 +352,13 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
           <div ref={bottomRef} />
         </div>
 
-        <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
-          <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
-            <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
-            >
-              {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
-            </button>
-            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" maxLength={2000} />
-            <button type="submit" className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity shadow-orange">
-              <Send className="h-4 w-4 text-primary-foreground" />
-            </button>
-          </form>
-        </div>
+        {renderMessageInput()}
+        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={adminName} />
       </div>
     );
   }
 
-  // Admin: student list or chat
+  // Admin: student list
   if (currentRole === 'admin' && !selectedStudent) {
     return (
       <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
@@ -318,31 +373,17 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             const lastMsg = getLastMessage(s.id);
             const unread = getUnreadForStudent(s.id);
             return (
-              <button
-                key={s.id}
-                onClick={() => setSelectedStudent(s.id)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50"
-              >
+              <button key={s.id} onClick={() => setSelectedStudent(s.id)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
                 <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                   {s.full_name?.charAt(0) || '?'}
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-sm font-medium truncate">{s.full_name}</p>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
-                  </p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMsg ? lastMsg.content : 'Henüz mesaj yok'}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  {lastMsg && (
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  )}
-                  {unread > 0 && (
-                    <span className="h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold px-1.5 shadow-orange">
-                      {unread}
-                    </span>
-                  )}
+                  {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                  {unread > 0 && <span className="h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold px-1.5 shadow-orange">{unread}</span>}
                 </div>
               </button>
             );
@@ -380,13 +421,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
           const isMine = msg.sender_id === currentProfileId;
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[75%] px-4 py-2.5 text-sm ${
-                  isMine
-                    ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]'
-                    : 'glass-card rounded-2xl rounded-bl-md'
-                }`}
-              >
+              <div className={`max-w-[75%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'glass-card rounded-2xl rounded-bl-md'}`}>
                 {renderMessageContent(msg)}
               </div>
             </div>
@@ -395,23 +430,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         <div ref={bottomRef} />
       </div>
 
-      <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
-        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
-          <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
-          >
-            {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
-          </button>
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" maxLength={2000} />
-          <button type="submit" className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity shadow-orange">
-            <Send className="h-4 w-4 text-primary-foreground" />
-          </button>
-        </form>
-      </div>
+      {renderMessageInput()}
     </div>
   );
 }
