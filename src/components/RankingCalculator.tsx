@@ -71,228 +71,43 @@ const REAL_COEFFICIENTS: Record<string, { tyt: Record<string, number>; ayt: Reco
   },
 };
 
-// ─── ÖSYM Yığınsal Dağılım Verileri (2023 & 2024) ─────────────────
-// Kaynak: ÖSYM Sayısal Bilgiler Kitapçığı — Yığınsal Kişi Sayıları
-// Her dilim: o puan ve üzerindeki toplam aday sayısı (cumulative)
-// 2025: 2024 baz alınarak simüle edilmiştir.
-type YearData = { score: number; hamRank: number; yerlRank: number }[];
+// ─── ÖSYM Yığınsal Dağılım Verileri — ranking_data.json'dan yüklenir ─────
+// Format: [score, cumulativeRank] pairs per year/type
+type RankingPair = [number, number]; // [score, cumRank]
+type YearRankData = Record<string, RankingPair[]>; // { SAY: [[500,1],...], EA: ... }
+const rankingData = rankingDataJson as Record<string, YearRankData>;
 
-// ── SAY Puan Türü ──
-const SAY_2023: YearData = [
-  { score: 500, hamRank: 32, yerlRank: 22 },
-  { score: 480, hamRank: 165, yerlRank: 128 },
-  { score: 460, hamRank: 635, yerlRank: 498 },
-  { score: 440, hamRank: 1980, yerlRank: 1610 },
-  { score: 420, hamRank: 5100, yerlRank: 4200 },
-  { score: 400, hamRank: 11200, yerlRank: 9400 },
-  { score: 380, hamRank: 22500, yerlRank: 18900 },
-  { score: 360, hamRank: 40800, yerlRank: 34500 },
-  { score: 340, hamRank: 68000, yerlRank: 57800 },
-  { score: 320, hamRank: 105000, yerlRank: 90500 },
-  { score: 300, hamRank: 162000, yerlRank: 141000 },
-  { score: 280, hamRank: 238000, yerlRank: 210000 },
-  { score: 260, hamRank: 340000, yerlRank: 305000 },
-  { score: 240, hamRank: 465000, yerlRank: 420000 },
-  { score: 220, hamRank: 610000, yerlRank: 560000 },
-  { score: 200, hamRank: 780000, yerlRank: 725000 },
-];
+// ─── Non-Linear Interpolation (Density-aware, JSON-based) ─────────────────
+// Uses the cumulative distribution pairs from ranking_data.json
+// Between two data points, student density increases at lower scores.
+function interpolateFromPairs(score: number, pairs: RankingPair[]): number {
+  if (!pairs || pairs.length === 0) return 2000000;
 
-const SAY_2024: YearData = [
-  { score: 500, hamRank: 38, yerlRank: 27 },
-  { score: 480, hamRank: 185, yerlRank: 145 },
-  { score: 460, hamRank: 710, yerlRank: 560 },
-  { score: 440, hamRank: 2200, yerlRank: 1820 },
-  { score: 420, hamRank: 5600, yerlRank: 4650 },
-  { score: 400, hamRank: 12400, yerlRank: 10400 },
-  { score: 380, hamRank: 24800, yerlRank: 20900 },
-  { score: 360, hamRank: 44500, yerlRank: 37800 },
-  { score: 340, hamRank: 74000, yerlRank: 63200 },
-  { score: 320, hamRank: 115000, yerlRank: 99000 },
-  { score: 300, hamRank: 178000, yerlRank: 155000 },
-  { score: 280, hamRank: 261000, yerlRank: 230000 },
-  { score: 260, hamRank: 372000, yerlRank: 334000 },
-  { score: 240, hamRank: 508000, yerlRank: 460000 },
-  { score: 220, hamRank: 665000, yerlRank: 612000 },
-  { score: 200, hamRank: 845000, yerlRank: 790000 },
-];
+  // Pairs are sorted descending by score: [[500,1],[480,950],...]
+  const sorted = [...pairs].sort((a, b) => b[0] - a[0]);
 
-// ── EA Puan Türü ──
-const EA_2023: YearData = [
-  { score: 500, hamRank: 18, yerlRank: 12 },
-  { score: 480, hamRank: 110, yerlRank: 82 },
-  { score: 460, hamRank: 430, yerlRank: 340 },
-  { score: 440, hamRank: 1350, yerlRank: 1100 },
-  { score: 420, hamRank: 3500, yerlRank: 2900 },
-  { score: 400, hamRank: 7800, yerlRank: 6500 },
-  { score: 380, hamRank: 15500, yerlRank: 13000 },
-  { score: 360, hamRank: 28000, yerlRank: 24000 },
-  { score: 340, hamRank: 47000, yerlRank: 40500 },
-  { score: 320, hamRank: 74000, yerlRank: 64500 },
-  { score: 300, hamRank: 112000, yerlRank: 98000 },
-  { score: 280, hamRank: 168000, yerlRank: 148000 },
-  { score: 260, hamRank: 245000, yerlRank: 218000 },
-  { score: 240, hamRank: 340000, yerlRank: 305000 },
-  { score: 220, hamRank: 458000, yerlRank: 415000 },
-  { score: 200, hamRank: 590000, yerlRank: 545000 },
-];
+  // Above highest score
+  if (score >= sorted[0][0]) return Math.max(1, sorted[0][1]);
 
-const EA_2024: YearData = [
-  { score: 500, hamRank: 22, yerlRank: 15 },
-  { score: 480, hamRank: 125, yerlRank: 95 },
-  { score: 460, hamRank: 490, yerlRank: 385 },
-  { score: 440, hamRank: 1520, yerlRank: 1250 },
-  { score: 420, hamRank: 3900, yerlRank: 3250 },
-  { score: 400, hamRank: 8600, yerlRank: 7200 },
-  { score: 380, hamRank: 17200, yerlRank: 14500 },
-  { score: 360, hamRank: 31000, yerlRank: 26500 },
-  { score: 340, hamRank: 52000, yerlRank: 44800 },
-  { score: 320, hamRank: 81000, yerlRank: 70500 },
-  { score: 300, hamRank: 123000, yerlRank: 108000 },
-  { score: 280, hamRank: 184000, yerlRank: 163000 },
-  { score: 260, hamRank: 268000, yerlRank: 240000 },
-  { score: 240, hamRank: 372000, yerlRank: 335000 },
-  { score: 220, hamRank: 500000, yerlRank: 455000 },
-  { score: 200, hamRank: 645000, yerlRank: 598000 },
-];
-
-// ── SÖZ Puan Türü ──
-const SOZ_2023: YearData = [
-  { score: 480, hamRank: 20, yerlRank: 14 },
-  { score: 460, hamRank: 95, yerlRank: 72 },
-  { score: 440, hamRank: 350, yerlRank: 275 },
-  { score: 420, hamRank: 1050, yerlRank: 850 },
-  { score: 400, hamRank: 2800, yerlRank: 2300 },
-  { score: 380, hamRank: 6200, yerlRank: 5200 },
-  { score: 360, hamRank: 12500, yerlRank: 10600 },
-  { score: 340, hamRank: 23000, yerlRank: 19800 },
-  { score: 320, hamRank: 38500, yerlRank: 33500 },
-  { score: 300, hamRank: 60000, yerlRank: 52500 },
-  { score: 280, hamRank: 90000, yerlRank: 79500 },
-  { score: 260, hamRank: 132000, yerlRank: 118000 },
-  { score: 240, hamRank: 186000, yerlRank: 168000 },
-  { score: 220, hamRank: 255000, yerlRank: 232000 },
-  { score: 200, hamRank: 340000, yerlRank: 312000 },
-];
-
-const SOZ_2024: YearData = [
-  { score: 480, hamRank: 25, yerlRank: 18 },
-  { score: 460, hamRank: 108, yerlRank: 82 },
-  { score: 440, hamRank: 395, yerlRank: 315 },
-  { score: 420, hamRank: 1180, yerlRank: 960 },
-  { score: 400, hamRank: 3100, yerlRank: 2550 },
-  { score: 380, hamRank: 6900, yerlRank: 5800 },
-  { score: 360, hamRank: 13800, yerlRank: 11800 },
-  { score: 340, hamRank: 25500, yerlRank: 22000 },
-  { score: 320, hamRank: 42500, yerlRank: 37000 },
-  { score: 300, hamRank: 66000, yerlRank: 58000 },
-  { score: 280, hamRank: 99000, yerlRank: 88000 },
-  { score: 260, hamRank: 145000, yerlRank: 130000 },
-  { score: 240, hamRank: 205000, yerlRank: 185000 },
-  { score: 220, hamRank: 280000, yerlRank: 256000 },
-  { score: 200, hamRank: 375000, yerlRank: 345000 },
-];
-
-// ── TYT Puan Türü ──
-const TYT_2023: YearData = [
-  { score: 440, hamRank: 35, yerlRank: 28 },
-  { score: 420, hamRank: 210, yerlRank: 170 },
-  { score: 400, hamRank: 1200, yerlRank: 980 },
-  { score: 380, hamRank: 4800, yerlRank: 4000 },
-  { score: 360, hamRank: 14500, yerlRank: 12200 },
-  { score: 340, hamRank: 35000, yerlRank: 29800 },
-  { score: 320, hamRank: 72000, yerlRank: 62000 },
-  { score: 300, hamRank: 135000, yerlRank: 118000 },
-  { score: 280, hamRank: 235000, yerlRank: 208000 },
-  { score: 260, hamRank: 380000, yerlRank: 342000 },
-  { score: 240, hamRank: 570000, yerlRank: 520000 },
-  { score: 220, hamRank: 810000, yerlRank: 748000 },
-  { score: 200, hamRank: 1100000, yerlRank: 1025000 },
-];
-
-const TYT_2024: YearData = [
-  { score: 440, hamRank: 42, yerlRank: 34 },
-  { score: 420, hamRank: 240, yerlRank: 195 },
-  { score: 400, hamRank: 1400, yerlRank: 1140 },
-  { score: 380, hamRank: 5500, yerlRank: 4600 },
-  { score: 360, hamRank: 16500, yerlRank: 14000 },
-  { score: 340, hamRank: 39000, yerlRank: 33500 },
-  { score: 320, hamRank: 80000, yerlRank: 69000 },
-  { score: 300, hamRank: 150000, yerlRank: 132000 },
-  { score: 280, hamRank: 260000, yerlRank: 232000 },
-  { score: 260, hamRank: 420000, yerlRank: 380000 },
-  { score: 240, hamRank: 630000, yerlRank: 576000 },
-  { score: 220, hamRank: 895000, yerlRank: 830000 },
-  { score: 200, hamRank: 1210000, yerlRank: 1130000 },
-];
-
-// Combine into lookup
-const HISTORICAL_DATA: Record<string, Record<string, YearData>> = {
-  SAY: { '2023': SAY_2023, '2024': SAY_2024 },
-  EA:  { '2023': EA_2023,  '2024': EA_2024 },
-  SÖZ: { '2023': SOZ_2023, '2024': SOZ_2024 },
-  TYT: { '2023': TYT_2023, '2024': TYT_2024 },
-};
-
-// Generate 2025 simulated data from 2024 (slight inflation)
-Object.keys(HISTORICAL_DATA).forEach(area => {
-  const d2024 = HISTORICAL_DATA[area]['2024'];
-  HISTORICAL_DATA[area]['2025'] = d2024.map(p => ({
-    score: p.score,
-    hamRank: Math.round(p.hamRank * 1.02),
-    yerlRank: Math.round(p.yerlRank * 1.02),
-  }));
-});
-
-// ─── Non-Linear Interpolation (Density-aware) ─────────────────
-// Between two data points, ranking grows non-linearly:
-// more students cluster at lower scores (higher density).
-// We use a power-curve interpolation: ratio^exponent
-// where exponent > 1 models higher density at the lower end.
-function interpolateRanking(score: number, yearData: YearData): { ham: number; yerl: number } {
-  if (yearData.length === 0) return { ham: 2000000, yerl: 1900000 };
-
-  // Above the top score
-  if (score >= yearData[0].score) {
-    if (score === yearData[0].score) return { ham: yearData[0].hamRank, yerl: yearData[0].yerlRank };
-    // Extrapolate above: very few people, scale linearly
-    const top = yearData[0];
-    const second = yearData[1];
-    const perPoint = (second.hamRank - top.hamRank) / (top.score - second.score);
-    const diff = score - top.score;
-    return {
-      ham: Math.max(1, Math.round(top.hamRank - diff * perPoint)),
-      yerl: Math.max(1, Math.round(top.yerlRank - diff * perPoint * 0.8)),
-    };
-  }
-
-  // Below the bottom score
-  const last = yearData[yearData.length - 1];
-  if (score <= last.score) {
-    const prev = yearData[yearData.length - 2];
-    const perPoint = (last.hamRank - prev.hamRank) / (prev.score - last.score);
-    const diff = last.score - score;
-    return {
-      ham: Math.round(last.hamRank + diff * perPoint * 1.3),
-      yerl: Math.round(last.yerlRank + diff * perPoint * 1.2),
-    };
+  // Below lowest score
+  const last = sorted[sorted.length - 1];
+  if (score <= last[0]) {
+    const prev = sorted[sorted.length - 2];
+    if (!prev) return last[1];
+    const perPoint = (last[1] - prev[1]) / (prev[0] - last[0]);
+    return Math.round(last[1] + (last[0] - score) * perPoint * 1.3);
   }
 
   // Find bracket
-  for (let i = 0; i < yearData.length - 1; i++) {
-    const upper = yearData[i];     // higher score, lower rank
-    const lower = yearData[i + 1]; // lower score, higher rank
-    if (score <= upper.score && score >= lower.score) {
-      // Linear ratio 0→1 from lower to upper
-      const t = (score - lower.score) / (upper.score - lower.score);
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const upper = sorted[i];     // [higherScore, lowerRank]
+    const lower = sorted[i + 1]; // [lowerScore, higherRank]
+    if (score <= upper[0] && score >= lower[0]) {
+      const t = (score - lower[0]) / (upper[0] - lower[0]); // 0→1 from lower to upper
+      const rankSpan = lower[1] - upper[1];
+      const avgRank = (upper[1] + lower[1]) / 2;
 
-      // Density-aware exponent: at lower scores (larger ranks),
-      // the student density is higher, so the rank changes faster.
-      // We calculate a local density factor.
-      const hamSpan = lower.hamRank - upper.hamRank;
-      const yerlSpan = lower.yerlRank - upper.yerlRank;
-
-      // Use a mild power curve (exponent 1.15-1.4) based on rank magnitude
-      const avgRank = (upper.hamRank + lower.hamRank) / 2;
+      // Density-aware exponent: more students cluster at lower scores
       let exp = 1.0;
       if (avgRank > 500000) exp = 1.35;
       else if (avgRank > 200000) exp = 1.28;
@@ -301,17 +116,45 @@ function interpolateRanking(score: number, yearData: YearData): { ham: number; y
       else if (avgRank > 10000) exp = 1.12;
       else exp = 1.05;
 
-      // Power-adjusted interpolation
       const adjustedT = Math.pow(t, exp);
-
-      return {
-        ham: Math.round(lower.hamRank - adjustedT * hamSpan),
-        yerl: Math.round(lower.yerlRank - adjustedT * yerlSpan),
-      };
+      return Math.round(lower[1] - adjustedT * rankSpan);
     }
   }
 
-  return { ham: last.hamRank, yerl: last.yerlRank };
+  return last[1];
+}
+
+// Helper: get ranking for a score across all years for a given score type
+function getRankingsForAllYears(score: number, scoreType: string): Record<string, { ham: number; yerl: number }> {
+  const years: Record<string, { ham: number; yerl: number }> = {};
+  const typeKey = scoreType === 'SÖZ' ? 'SÖZ' : scoreType;
+
+  // 2023
+  const data2023 = rankingData['2023']?.[typeKey];
+  if (data2023) {
+    const ham = interpolateFromPairs(score, data2023);
+    years['2023'] = { ham, yerl: Math.round(ham * 0.88) }; // yerleştirme ~12% less
+  }
+
+  // 2024
+  const data2024 = rankingData['2024']?.[typeKey];
+  if (data2024) {
+    const ham = interpolateFromPairs(score, data2024);
+    years['2024'] = { ham, yerl: Math.round(ham * 0.87) };
+  }
+
+  // 2025 (simülasyon)
+  const data2025 = rankingData['2025_TAHMIN']?.[typeKey];
+  if (data2025) {
+    const ham = interpolateFromPairs(score, data2025);
+    years['2025'] = { ham, yerl: Math.round(ham * 0.87) };
+  } else if (data2024) {
+    // Fallback: inflate 2024 by 2%
+    const ham = Math.round(interpolateFromPairs(score, data2024) * 1.02);
+    years['2025'] = { ham, yerl: Math.round(ham * 0.87) };
+  }
+
+  return years;
 }
 
 interface Props {
