@@ -8,6 +8,8 @@ interface Profile {
   full_name: string;
   email: string;
   avatar_url: string | null;
+  username: string | null;
+  profile_completed: boolean;
 }
 
 interface AuthContextType {
@@ -17,9 +19,8 @@ interface AuthContextType {
   role: 'admin' | 'student' | null;
   profileId: string | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,11 +34,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfileAndRole = async (userId: string) => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from('profiles').select('id, user_id, full_name, email, avatar_url').eq('user_id', userId).single(),
+      supabase.from('profiles').select('id, user_id, full_name, email, avatar_url, username, profile_completed').eq('user_id', userId).single(),
       supabase.from('user_roles').select('role').eq('user_id', userId).single(),
     ]);
     if (profileRes.data) setProfile(profileRes.data as Profile);
     if (roleRes.data) setRole(roleRes.data.role as 'admin' | 'student');
+  };
+
+  const refreshProfile = async () => {
+    if (user) await fetchProfileAndRole(user.id);
   };
 
   useEffect(() => {
@@ -65,26 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
-  };
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
-    });
-    return { error: error as Error | null };
-  };
-
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, role, profileId: profile?.id ?? null, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, role, profileId: profile?.id ?? null, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
