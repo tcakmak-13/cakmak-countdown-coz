@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
+import AdminAnalytics from '@/components/AdminAnalytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
   const { profile, role, loading, signOut, profileId, session } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages'>('list');
+  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics'>('analytics');
 
   // Student creation
   const [showCreate, setShowCreate] = useState(false);
@@ -199,10 +200,26 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* Analytics button */}
+          <button
+            onClick={() => { setSelectedStudent(null); setTab('analytics'); }}
+            className={`w-full mt-3 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+              tab === 'analytics' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
+            }`}
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Analiz Merkezi</p>
+              <p className="text-xs text-muted-foreground">Isı haritası & uyarılar</p>
+            </div>
+          </button>
+
           {/* Messages button */}
           <button
             onClick={() => { setSelectedStudent(null); setTab('messages'); }}
-            className={`w-full mt-3 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+            className={`w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors ${
               tab === 'messages' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
             }`}
           >
@@ -217,7 +234,9 @@ export default function AdminDashboard() {
         </aside>
 
         <main className="flex-1 min-w-0">
-          {tab === 'messages' && profileId ? (
+          {tab === 'analytics' ? (
+            <AdminAnalytics students={students} adminProfileId={profileId} />
+          ) : tab === 'messages' && profileId ? (
             <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
           ) : !selectedStudent ? (
             <div className="glass-card rounded-2xl p-10 text-center">
