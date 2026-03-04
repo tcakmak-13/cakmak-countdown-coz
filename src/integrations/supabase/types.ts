@@ -64,6 +64,39 @@ export type Database = {
       }
       deneme_results: {
         Row: {
+          ayt_biyoloji_dogru: number
+          ayt_biyoloji_net: number
+          ayt_biyoloji_yanlis: number
+          ayt_cografya1_dogru: number
+          ayt_cografya1_net: number
+          ayt_cografya1_yanlis: number
+          ayt_cografya2_dogru: number
+          ayt_cografya2_net: number
+          ayt_cografya2_yanlis: number
+          ayt_din_dogru: number
+          ayt_din_net: number
+          ayt_din_yanlis: number
+          ayt_edebiyat_dogru: number
+          ayt_edebiyat_net: number
+          ayt_edebiyat_yanlis: number
+          ayt_felsefe_dogru: number
+          ayt_felsefe_net: number
+          ayt_felsefe_yanlis: number
+          ayt_fizik_dogru: number
+          ayt_fizik_net: number
+          ayt_fizik_yanlis: number
+          ayt_kimya_dogru: number
+          ayt_kimya_net: number
+          ayt_kimya_yanlis: number
+          ayt_matematik_dogru: number
+          ayt_matematik_net: number
+          ayt_matematik_yanlis: number
+          ayt_tarih1_dogru: number
+          ayt_tarih1_net: number
+          ayt_tarih1_yanlis: number
+          ayt_tarih2_dogru: number
+          ayt_tarih2_net: number
+          ayt_tarih2_yanlis: number
           created_at: string
           exam_type: string
           fen_dogru: number
@@ -76,6 +109,7 @@ export type Database = {
           sosyal_dogru: number
           sosyal_net: number
           sosyal_yanlis: number
+          student_area: string | null
           student_id: string
           total_net: number
           turkce_dogru: number
@@ -83,6 +117,39 @@ export type Database = {
           turkce_yanlis: number
         }
         Insert: {
+          ayt_biyoloji_dogru?: number
+          ayt_biyoloji_net?: number
+          ayt_biyoloji_yanlis?: number
+          ayt_cografya1_dogru?: number
+          ayt_cografya1_net?: number
+          ayt_cografya1_yanlis?: number
+          ayt_cografya2_dogru?: number
+          ayt_cografya2_net?: number
+          ayt_cografya2_yanlis?: number
+          ayt_din_dogru?: number
+          ayt_din_net?: number
+          ayt_din_yanlis?: number
+          ayt_edebiyat_dogru?: number
+          ayt_edebiyat_net?: number
+          ayt_edebiyat_yanlis?: number
+          ayt_felsefe_dogru?: number
+          ayt_felsefe_net?: number
+          ayt_felsefe_yanlis?: number
+          ayt_fizik_dogru?: number
+          ayt_fizik_net?: number
+          ayt_fizik_yanlis?: number
+          ayt_kimya_dogru?: number
+          ayt_kimya_net?: number
+          ayt_kimya_yanlis?: number
+          ayt_matematik_dogru?: number
+          ayt_matematik_net?: number
+          ayt_matematik_yanlis?: number
+          ayt_tarih1_dogru?: number
+          ayt_tarih1_net?: number
+          ayt_tarih1_yanlis?: number
+          ayt_tarih2_dogru?: number
+          ayt_tarih2_net?: number
+          ayt_tarih2_yanlis?: number
           created_at?: string
           exam_type?: string
           fen_dogru?: number
@@ -95,6 +162,7 @@ export type Database = {
           sosyal_dogru?: number
           sosyal_net?: number
           sosyal_yanlis?: number
+          student_area?: string | null
           student_id: string
           total_net?: number
           turkce_dogru?: number
@@ -102,6 +170,39 @@ export type Database = {
           turkce_yanlis?: number
         }
         Update: {
+          ayt_biyoloji_dogru?: number
+          ayt_biyoloji_net?: number
+          ayt_biyoloji_yanlis?: number
+          ayt_cografya1_dogru?: number
+          ayt_cografya1_net?: number
+          ayt_cografya1_yanlis?: number
+          ayt_cografya2_dogru?: number
+          ayt_cografya2_net?: number
+          ayt_cografya2_yanlis?: number
+          ayt_din_dogru?: number
+          ayt_din_net?: number
+          ayt_din_yanlis?: number
+          ayt_edebiyat_dogru?: number
+          ayt_edebiyat_net?: number
+          ayt_edebiyat_yanlis?: number
+          ayt_felsefe_dogru?: number
+          ayt_felsefe_net?: number
+          ayt_felsefe_yanlis?: number
+          ayt_fizik_dogru?: number
+          ayt_fizik_net?: number
+          ayt_fizik_yanlis?: number
+          ayt_kimya_dogru?: number
+          ayt_kimya_net?: number
+          ayt_kimya_yanlis?: number
+          ayt_matematik_dogru?: number
+          ayt_matematik_net?: number
+          ayt_matematik_yanlis?: number
+          ayt_tarih1_dogru?: number
+          ayt_tarih1_net?: number
+          ayt_tarih1_yanlis?: number
+          ayt_tarih2_dogru?: number
+          ayt_tarih2_net?: number
+          ayt_tarih2_yanlis?: number
           created_at?: string
           exam_type?: string
           fen_dogru?: number
@@ -114,6 +215,7 @@ export type Database = {
           sosyal_dogru?: number
           sosyal_net?: number
           sosyal_yanlis?: number
+          student_area?: string | null
           student_id?: string
           total_net?: number
           turkce_dogru?: number
