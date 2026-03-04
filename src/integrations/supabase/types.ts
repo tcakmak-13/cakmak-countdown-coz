@@ -77,8 +77,10 @@ export type Database = {
           obp: string | null
           parent_phone: string | null
           phone: string | null
+          profile_completed: boolean
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           area?: string | null
@@ -94,8 +96,10 @@ export type Database = {
           obp?: string | null
           parent_phone?: string | null
           phone?: string | null
+          profile_completed?: boolean
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           area?: string | null
@@ -111,8 +115,10 @@ export type Database = {
           obp?: string | null
           parent_phone?: string | null
           phone?: string | null
+          profile_completed?: boolean
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }

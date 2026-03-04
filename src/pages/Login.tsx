@@ -1,63 +1,70 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Flame, GraduationCap, Shield } from 'lucide-react';
+import { Flame, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<'select' | 'login' | 'signup'>('select');
-  const [role, setRole] = useState<'admin' | 'student' | null>(null);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) {
-      setError('Geçersiz e-posta veya şifre.');
+    if (!username.trim() || !password.trim()) {
+      setError('Kullanıcı adı ve şifre gerekli.');
       return;
     }
-    // Auth state change in useAuth will update, but we navigate based on role
-    // We need to wait briefly for profile/role to load
-    setTimeout(() => {
-      // Role will be checked on the dashboard pages themselves
-      if (role === 'admin') navigate('/admin');
-      else navigate('/student');
-    }, 500);
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!fullName.trim()) { setError('Ad Soyad gerekli.'); return; }
     setLoading(true);
-    const { error } = await signUp(email, password, fullName);
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    setError('');
-    setMode('login');
-    // Show success
-    setError('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
-  };
 
-  const goBack = () => {
-    setMode('select');
-    setRole(null);
-    setError('');
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+          body: JSON.stringify({ action: 'login', username: username.trim(), password }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Giriş başarısız.');
+        setLoading(false);
+        return;
+      }
+
+      // Set the session from the edge function response
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      // Brief wait for auth state to propagate, then check role + profile
+      setTimeout(async () => {
+        const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', data.user.id).single();
+        const { data: profileData } = await supabase.from('profiles').select('profile_completed').eq('user_id', data.user.id).single();
+
+        if (roleData?.role === 'admin') {
+          navigate('/admin');
+        } else if (!profileData?.profile_completed) {
+          navigate('/onboarding');
+        } else {
+          navigate('/student');
+        }
+        setLoading(false);
+      }, 300);
+    } catch {
+      setError('Bağlantı hatası.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,106 +84,57 @@ export default function Login() {
           </span>
         </div>
 
-        {mode === 'select' ? (
-          <div className="space-y-4">
-            <h2 className="text-center text-2xl font-display font-bold mb-6">Giriş Yap</h2>
-            <button
-              onClick={() => { setRole('student'); setMode('login'); }}
-              className="w-full glass-card rounded-xl p-6 flex items-center gap-4 hover:border-primary/40 transition-all group"
-            >
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <GraduationCap className="h-6 w-6 text-primary" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-display font-semibold text-foreground">Öğrenci Girişi</h3>
-                <p className="text-sm text-muted-foreground">Program ve profil yönetimi</p>
-              </div>
-            </button>
-            <button
-              onClick={() => { setRole('admin'); setMode('login'); }}
-              className="w-full glass-card rounded-xl p-6 flex items-center gap-4 hover:border-primary/40 transition-all group"
-            >
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-display font-semibold text-foreground">Admin Girişi</h3>
-                <p className="text-sm text-muted-foreground">Öğrenci ve program yönetimi</p>
-              </div>
-            </button>
+        <motion.form
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          onSubmit={handleLogin}
+          className="glass-card rounded-2xl p-8 space-y-6"
+        >
+          <div className="text-center mb-2">
+            <h2 className="font-display text-2xl font-bold">Giriş Yap</h2>
+            <p className="text-sm text-muted-foreground mt-1">Hesabınıza giriş yapın</p>
           </div>
-        ) : (
-          <motion.form
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            onSubmit={mode === 'signup' ? handleSignup : handleLogin}
-            className="glass-card rounded-xl p-6 space-y-5"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <button type="button" onClick={goBack} className="text-muted-foreground hover:text-foreground text-sm">
-                ← Geri
-              </button>
-            </div>
-            <h2 className="font-display text-xl font-bold">
-              {mode === 'signup' ? 'Kayıt Ol' : (role === 'admin' ? 'Admin Girişi' : 'Öğrenci Girişi')}
-            </h2>
 
-            {mode === 'signup' && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Ad Soyad</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Adınız Soyadınız"
-                  className="bg-secondary border-border"
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">E-posta</Label>
+          <div className="space-y-2">
+            <Label htmlFor="username">Kullanıcı Adı</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="ornek@email.com"
-                className="bg-secondary border-border"
+                id="username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="Kullanıcı adınız"
+                className="bg-secondary border-border pl-10"
+                autoComplete="username"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Şifre</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Şifre</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="bg-secondary border-border"
+                className="bg-secondary border-border pl-10"
+                autoComplete="current-password"
               />
             </div>
-            {error && (
-              <p className={`text-sm rounded-lg p-3 ${error.includes('başarılı') ? 'text-green-400 bg-green-400/10' : 'text-destructive bg-destructive/10'}`}>{error}</p>
-            )}
-            <Button type="submit" disabled={loading} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
-              {loading ? 'Yükleniyor...' : (mode === 'signup' ? 'Kayıt Ol' : 'Giriş Yap')}
-            </Button>
+          </div>
 
-            {role === 'student' && (
-              <p className="text-sm text-center text-muted-foreground">
-                {mode === 'login' ? (
-                  <>Hesabınız yok mu?{' '}
-                    <button type="button" onClick={() => { setMode('signup'); setError(''); }} className="text-primary hover:underline">Kayıt Ol</button>
-                  </>
-                ) : (
-                  <>Zaten hesabınız var mı?{' '}
-                    <button type="button" onClick={() => { setMode('login'); setError(''); }} className="text-primary hover:underline">Giriş Yap</button>
-                  </>
-                )}
-              </p>
-            )}
-          </motion.form>
-        )}
+          {error && (
+            <p className="text-sm rounded-lg p-3 text-destructive bg-destructive/10">{error}</p>
+          )}
+
+          <Button type="submit" disabled={loading} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-11">
+            {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          </Button>
+        </motion.form>
       </motion.div>
     </div>
   );
