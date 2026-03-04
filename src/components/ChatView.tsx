@@ -41,7 +41,7 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
-export default function ChatView({ currentProfileId, currentName, currentRole }: Props) {
+export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [students, setStudents] = useState<StudentItem[]>([]);
