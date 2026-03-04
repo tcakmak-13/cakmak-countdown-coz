@@ -756,6 +756,13 @@ export default function RankingCalculator({ studentId, studentArea, profileObp }
                   </tbody>
                 </table>
               </div>
+              {/* 2025 simülasyon uyarısı */}
+              <div className="mt-2 flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-yellow-500/90 leading-relaxed">
+                  2025 verileri, 2024 ÖSYM yığınsal dağılımı baz alınarak simüle edilmiştir. Resmi sonuçlar açıklanana kadar tahmini değerlerdir.
+                </p>
+              </div>
             </div>
 
             {/* Progress bar */}
