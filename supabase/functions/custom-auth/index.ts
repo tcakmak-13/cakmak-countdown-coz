@@ -58,6 +58,13 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Rate limiting check
+      if (isRateLimited(username)) {
+        return new Response(JSON.stringify({ error: "Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const email = `${username}@${EMAIL_DOMAIN}`;
 
       // Check if admin account exists, create if first login
