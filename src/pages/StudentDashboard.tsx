@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, Calculator } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,9 +10,9 @@ import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import Denemelerim from '@/components/Denemelerim';
 import CoachInfo from '@/components/CoachInfo';
-import RankingCalculator from '@/components/RankingCalculator';
 
-type Tab = 'denemelerim' | 'ana-menu' | 'siralama' | 'mesajlar' | 'profilim';
+
+type Tab = 'denemelerim' | 'ana-menu' | 'mesajlar' | 'profilim';
 
 const tabVariants = {
   initial: { opacity: 0, y: 12 },
@@ -58,7 +58,6 @@ export default function StudentDashboard() {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
-    { key: 'siralama', label: 'Sıralama', icon: Calculator },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
   ];
@@ -114,11 +113,8 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
-          {tab === 'siralama' && profileId && (
-            <motion.div key="siralama" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <RankingCalculator studentId={profileId} studentArea={studentArea} profileObp={profile.obp || '0'} />
-            </motion.div>
-          )}
+
+
 
           {tab === 'mesajlar' && profileId && (
             <motion.div key="mesajlar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
