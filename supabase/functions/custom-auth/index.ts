@@ -99,11 +99,13 @@ Deno.serve(async (req) => {
       const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
 
       if (error) {
+        recordFailedAttempt(username);
         return new Response(JSON.stringify({ error: "Geçersiz kullanıcı adı veya şifre." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
+      clearFailedAttempts(username);
       return new Response(JSON.stringify({ session: data.session, user: data.user }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
