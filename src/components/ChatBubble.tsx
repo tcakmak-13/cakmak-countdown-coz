@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Paperclip, FileText, Download, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ interface Message {
   receiver_id: string;
   content: string;
   type: string;
+  file_name: string | null;
   created_at: string;
   read: boolean;
 }
@@ -27,6 +28,20 @@ interface StudentItem {
   grade: string | null;
 }
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+function getFileUrl(fileName: string) {
+  return `${SUPABASE_URL}/storage/v1/object/public/chat-files/${fileName}`;
+}
+
+function isImage(fileName: string) {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+}
+
+function isPdf(fileName: string) {
+  return /\.pdf$/i.test(fileName);
+}
+
 export default function ChatBubble({ currentProfileId, currentName, currentRole }: Props) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -34,9 +49,10 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Find admin profile for student chat
   useEffect(() => {
     if (currentRole === 'student') {
       supabase.from('user_roles').select('user_id').eq('role', 'admin').limit(1)
@@ -49,7 +65,6 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
     }
   }, [currentRole]);
 
-  // Load students for admin
   useEffect(() => {
     if (currentRole === 'admin') {
       supabase.from('profiles').select('id, full_name, area, grade')
@@ -59,26 +74,16 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
     }
   }, [currentRole, currentProfileId]);
 
-  // Load messages
   useEffect(() => {
     if (!open) return;
     const fetchMessages = async () => {
-      const { data } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .order('created_at');
-      if (data) setMessages(data);
+      const { data } = await supabase.from('chat_messages').select('*').order('created_at');
+      if (data) setMessages(data as Message[]);
     };
     fetchMessages();
-
-    // Realtime subscription
-    const channel = supabase
-      .channel('chat-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => {
-        fetchMessages();
-      })
+    const channel = supabase.channel('chat-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => fetchMessages())
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [open]);
 
@@ -108,6 +113,90 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
       type: 'text',
     });
     setInput('');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !chatPartnerId) return;
+
+    const allowed = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
+    if (!allowed.test(file.name)) {
+      return;
+    }
+
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const filePath = `${currentProfileId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
+    if (uploadError) {
+      setUploading(false);
+      return;
+    }
+
+    const fileType = isImage(file.name) ? 'image' : 'file';
+    await supabase.from('chat_messages').insert({
+      sender_id: currentProfileId,
+      receiver_id: chatPartnerId,
+      content: fileType === 'image' ? '📷 Fotoğraf' : `📄 ${file.name}`,
+      type: fileType,
+      file_name: filePath,
+    });
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const renderMessageContent = (msg: Message) => {
+    const isMine = msg.sender_id === currentProfileId;
+
+    if (msg.type === 'image' && msg.file_name) {
+      return (
+        <div className="space-y-1">
+          <img
+            src={getFileUrl(msg.file_name)}
+            alt="Paylaşılan fotoğraf"
+            className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => window.open(getFileUrl(msg.file_name!), '_blank')}
+          />
+          <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+            {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+      );
+    }
+
+    if (msg.type === 'file' && msg.file_name && isPdf(msg.file_name)) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 shrink-0" />
+            <span className="text-sm truncate">{msg.content}</span>
+          </div>
+          <a
+            href={getFileUrl(msg.file_name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'
+            }`}
+          >
+            <Download className="h-3.5 w-3.5" /> PDF İndir
+          </a>
+          <p className={`text-[10px] ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+            {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {msg.content}
+        <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+          {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      </>
+    );
   };
 
   return (
@@ -197,10 +286,7 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
                             isMine ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-secondary text-foreground rounded-bl-md'
                           }`}
                         >
-                          {msg.content}
-                          <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
-                            {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                          {renderMessageContent(msg)}
                         </div>
                       </div>
                     );
@@ -209,6 +295,25 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
                 </div>
                 <div className="p-3 border-t border-border bg-card">
                   <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Paperclip className="h-4 w-4" />
+                      )}
+                    </button>
                     <Input
                       value={input}
                       onChange={e => setInput(e.target.value)}

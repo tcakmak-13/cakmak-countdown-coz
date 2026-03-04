@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
+import ProgressCircle from '@/components/ProgressCircle';
 
 // ─── Subject Configuration ────────────────────────────────────
 interface SubjectConfig {
@@ -52,7 +53,6 @@ const AYT_BY_AREA: Record<string, SubjectConfig[]> = {
   ],
 };
 
-// ─── Helpers ──────────────────────────────────────────────────
 function calcNet(d: number, y: number) {
   return Math.max(0, d - y * 0.25);
 }
@@ -65,7 +65,6 @@ function emptyScores(subjects: SubjectConfig[]): ScoreMap {
   return m;
 }
 
-// ─── Component ────────────────────────────────────────────────
 export default function Denemelerim({ studentId, studentArea }: { studentId: string; studentArea: string }) {
   const [results, setResults] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -77,7 +76,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   const activeSubjects = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[studentArea] || AYT_BY_AREA['SAY']);
 
-  // Reset scores when exam type changes
   useEffect(() => {
     setScores(emptyScores(activeSubjects));
     setErrors({});
@@ -94,7 +92,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   useEffect(() => { fetchResults(); }, [fetchResults]);
 
-  // ─── Validation ──────────────────────────────────────
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
     activeSubjects.forEach(s => {
@@ -108,25 +105,20 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     return Object.keys(newErrors).length === 0;
   }, [activeSubjects, scores]);
 
-  // ─── Net Calculations ────────────────────────────────
   const totalNet = useMemo(() => {
     return activeSubjects.reduce((sum, s) => {
       return sum + calcNet(scores[`${s.key}_dogru`] || 0, scores[`${s.key}_yanlis`] || 0);
     }, 0);
   }, [scores, activeSubjects]);
 
-  // ─── Save ────────────────────────────────────────────
   const handleSave = async () => {
     if (!validate()) { toast.error('Lütfen hataları düzeltin.'); return; }
     setSaving(true);
-
     const row: Record<string, any> = {
       student_id: studentId,
       exam_type: examType,
       student_area: examType === 'AYT' ? studentArea : null,
     };
-
-    // Build net fields
     activeSubjects.forEach(s => {
       const d = scores[`${s.key}_dogru`] || 0;
       const y = scores[`${s.key}_yanlis`] || 0;
@@ -134,8 +126,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       row[`${s.key}_yanlis`] = y;
       row[`${s.key}_net`] = calcNet(d, y);
     });
-
-    // Total net
     row.total_net = activeSubjects.reduce((sum, s) => sum + calcNet(scores[`${s.key}_dogru`] || 0, scores[`${s.key}_yanlis`] || 0), 0);
 
     const { error } = await supabase.from('deneme_results').insert(row as any);
@@ -147,6 +137,21 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     fetchResults();
   };
 
+  // ─── Progress Circles Data (last result) ─────────────
+  const lastResult = useMemo(() => {
+    const filtered = results.filter(r => r.exam_type === examType);
+    return filtered.length > 0 ? filtered[filtered.length - 1] : null;
+  }, [results, examType]);
+
+  const progressData = useMemo(() => {
+    if (!lastResult) return [];
+    const subs = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[lastResult.student_area || studentArea] || AYT_BY_AREA['SAY']);
+    return subs.map(s => ({
+      label: s.label,
+      percentage: s.maxQ > 0 ? ((Number(lastResult[`${s.key}_dogru`]) || 0) / s.maxQ) * 100 : 0,
+    }));
+  }, [lastResult, examType, studentArea]);
+
   // ─── Chart Data ──────────────────────────────────────
   const filteredResults = results.filter(r => r.exam_type === examType);
   const chartData = filteredResults.slice(-10).map(r => {
@@ -154,7 +159,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       date: new Date(r.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
       net: Number(r.total_net),
     };
-    // Add per-subject nets
     const subs = r.exam_type === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[r.student_area] || AYT_BY_AREA[studentArea] || []);
     subs.forEach((s: SubjectConfig) => {
       point[s.label] = Number(r[`${s.key}_net`] || 0);
@@ -195,10 +199,21 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
         ))}
       </div>
 
+      {/* Progress Circles */}
+      {progressData.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-5 border border-primary/20">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-4">Son Deneme — Başarı Oranı</h3>
+          <div className="flex flex-wrap justify-center gap-4">
+            {progressData.map(p => (
+              <ProgressCircle key={p.label} label={p.label} percentage={p.percentage} />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Charts */}
       {chartData.length > 0 ? (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-5 border border-primary/20 shadow-orange space-y-4">
-          {/* Chart Toggle */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" /> Net Grafiği
@@ -217,7 +232,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
               ))}
             </div>
           </div>
-
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 18%)" />
@@ -271,7 +285,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
             <DialogDescription>Doğru ve yanlış sayılarını girin.</DialogDescription>
           </DialogHeader>
 
-          {/* TYT/AYT Toggle */}
           <div className="flex gap-2 mb-2">
             {(['TYT', 'AYT'] as const).map(t => (
               <button
@@ -292,7 +305,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
             </p>
           )}
 
-          {/* Subject rows */}
           <div className="space-y-4">
             {activeSubjects.map(s => {
               const d = scores[`${s.key}_dogru`] || 0;
@@ -309,24 +321,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
                     <span className={`text-xs font-semibold ${hasError ? 'text-destructive' : 'text-primary'}`}>{net.toFixed(2)} net</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={s.maxQ}
-                      placeholder="Doğru"
-                      value={d || ''}
-                      onChange={e => updateScore(`${s.key}_dogru`, e.target.value)}
-                      className={`bg-secondary ${hasError ? 'border-destructive focus:border-destructive' : 'border-primary/20 focus:border-primary'}`}
-                    />
-                    <Input
-                      type="number"
-                      min={0}
-                      max={s.maxQ}
-                      placeholder="Yanlış"
-                      value={y || ''}
-                      onChange={e => updateScore(`${s.key}_yanlis`, e.target.value)}
-                      className={`bg-secondary ${hasError ? 'border-destructive focus:border-destructive' : 'border-primary/20 focus:border-primary'}`}
-                    />
+                    <Input type="number" min={0} max={s.maxQ} placeholder="Doğru" value={d || ''} onChange={e => updateScore(`${s.key}_dogru`, e.target.value)} className={`bg-secondary ${hasError ? 'border-destructive' : 'border-primary/20 focus:border-primary'}`} />
+                    <Input type="number" min={0} max={s.maxQ} placeholder="Yanlış" value={y || ''} onChange={e => updateScore(`${s.key}_yanlis`, e.target.value)} className={`bg-secondary ${hasError ? 'border-destructive' : 'border-primary/20 focus:border-primary'}`} />
                   </div>
                   {hasError && (
                     <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1.5 text-xs text-destructive font-medium drop-shadow-[0_0_6px_hsl(25_95%_53%/0.5)]">
@@ -339,7 +335,6 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
             })}
           </div>
 
-          {/* Total */}
           <div className="mt-4 glass-card rounded-xl p-4 text-center border border-primary/30 shadow-orange">
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Toplam Net</p>
             <p className="font-display text-3xl font-bold text-primary">{totalNet.toFixed(2)}</p>
