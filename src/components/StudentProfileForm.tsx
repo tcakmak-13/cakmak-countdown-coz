@@ -21,6 +21,8 @@ interface ProfileData {
   goals: string | null;
   area: string | null;
   grade: string | null;
+  target_university: string | null;
+  target_department: string | null;
 }
 
 interface Props {
