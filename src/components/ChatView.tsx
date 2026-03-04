@@ -52,21 +52,15 @@ export default function ChatView({ currentProfileId, currentName, currentRole }:
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Student: find admin profile
+  // Student: find admin profile via security definer function
   useEffect(() => {
     if (currentRole === 'student') {
-      supabase.from('user_roles').select('user_id').eq('role', 'admin').limit(1)
-        .then(({ data }) => {
-          if (data?.[0]) {
-            supabase.from('profiles').select('id, full_name').eq('user_id', data[0].user_id).single()
-              .then(({ data: p }) => {
-                if (p) {
-                  setAdminProfileId(p.id);
-                  setAdminName(p.full_name || 'Talha Çakmak');
-                }
-              });
-          }
-        });
+      supabase.rpc('get_admin_profile_info').then(({ data }) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setAdminProfileId(data[0].id);
+          setAdminName(data[0].full_name || 'Talha Çakmak');
+        }
+      });
     }
   }, [currentRole]);
 
