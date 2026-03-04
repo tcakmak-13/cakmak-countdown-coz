@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const { profile, role, loading, signOut, profileId, session } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages'>('list');
+  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics'>('analytics');
 
   // Student creation
   const [showCreate, setShowCreate] = useState(false);
