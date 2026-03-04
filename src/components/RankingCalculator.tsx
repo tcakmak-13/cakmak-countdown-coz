@@ -289,12 +289,8 @@ export default function RankingCalculator({ studentId, studentArea, profileObp }
     const obpMultiplier = brokenObp ? 0.3 : 0.6;
     finalScore += obp * obpMultiplier;
 
-    // Get rankings for each year
-    const areaData = HISTORICAL_DATA[activeScoreType] || HISTORICAL_DATA['SAY'];
-    const years: Record<string, { ham: number; yerl: number }> = {};
-    ['2023', '2024', '2025'].forEach(year => {
-      years[year] = interpolateRanking(finalScore, areaData[year] || []);
-    });
+    // Get rankings for each year using JSON-based data
+    const years = getRankingsForAllYears(finalScore, activeScoreType);
 
     setResult({ score: Math.round(finalScore * 100) / 100, years, scoreType: activeScoreType });
   };
