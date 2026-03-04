@@ -129,6 +129,28 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
             </Select>
           )}
         </div>
+        <div className="space-y-2">
+          <Label>Hedef Üniversite</Label>
+          <SearchableCombobox
+            options={UNIVERSITIES}
+            value={student.target_university ?? ''}
+            onChange={v => update('target_university', v)}
+            placeholder="Üniversite ara..."
+            readOnly={readOnly}
+            className=""
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Hedef Bölüm</Label>
+          <SearchableCombobox
+            options={DEPARTMENTS}
+            value={student.target_department ?? ''}
+            onChange={v => update('target_department', v)}
+            placeholder="Bölüm ara veya yaz..."
+            readOnly={readOnly}
+            allowCustom={true}
+          />
+        </div>
       </div>
       <div className="space-y-2">
         <Label>Hedefler ve Beklentiler</Label>
