@@ -217,6 +217,22 @@ export default function AdminDashboard() {
             </div>
           </button>
 
+          {/* Coach Edit button */}
+          <button
+            onClick={() => { setSelectedStudent(null); setTab('coach-edit'); }}
+            className={`w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+              tab === 'coach-edit' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
+            }`}
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
+              <Settings className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Koç Profilim</p>
+              <p className="text-xs text-muted-foreground">Önizle & düzenle</p>
+            </div>
+          </button>
+
           {/* Messages button */}
           <button
             onClick={() => { setSelectedStudent(null); setTab('messages'); }}
