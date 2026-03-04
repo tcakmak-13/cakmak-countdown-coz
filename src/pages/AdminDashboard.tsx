@@ -234,7 +234,9 @@ export default function AdminDashboard() {
         </aside>
 
         <main className="flex-1 min-w-0">
-          {tab === 'messages' && profileId ? (
+          {tab === 'analytics' ? (
+            <AdminAnalytics students={students} adminProfileId={profileId} />
+          ) : tab === 'messages' && profileId ? (
             <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
           ) : !selectedStudent ? (
             <div className="glass-card rounded-2xl p-10 text-center">
