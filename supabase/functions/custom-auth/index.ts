@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_USERNAME = "tcakmak1355";
-const ADMIN_PASSWORD = "talha55T";
+const ADMIN_USERNAME = Deno.env.get("ADMIN_USERNAME")!;
+const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD")!;
 const EMAIL_DOMAIN = "cakmak.internal";
 
 Deno.serve(async (req) => {
@@ -43,7 +43,8 @@ Deno.serve(async (req) => {
             user_metadata: { full_name: "Admin", username: ADMIN_USERNAME },
           });
           if (createErr) {
-            return new Response(JSON.stringify({ error: createErr.message }), {
+            console.error('Admin creation error:', createErr);
+            return new Response(JSON.stringify({ error: "Admin hesabı oluşturulamadı." }), {
               status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
@@ -113,12 +114,13 @@ Deno.serve(async (req) => {
       });
 
       if (createErr) {
+        console.error('User creation error:', createErr);
         if (createErr.message.includes("already been registered")) {
           return new Response(JSON.stringify({ error: "Bu kullanıcı adı zaten mevcut." }), {
             status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        return new Response(JSON.stringify({ error: createErr.message }), {
+        return new Response(JSON.stringify({ error: "Kullanıcı oluşturulamadı." }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -132,7 +134,8 @@ Deno.serve(async (req) => {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('Custom auth error:', err);
+    return new Response(JSON.stringify({ error: "Bir hata oluştu. Lütfen tekrar deneyin." }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
