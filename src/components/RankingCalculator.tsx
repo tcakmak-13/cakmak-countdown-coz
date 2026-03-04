@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
+import rankingDataJson from '@/data/ranking_data.json';
 
 // ─── Subject Config ────────────────────────────────────
 interface SubjectConfig {
