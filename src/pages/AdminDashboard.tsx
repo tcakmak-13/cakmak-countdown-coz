@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
-import ChatBubble from '@/components/ChatBubble';
+import ChatView from '@/components/ChatView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const { profile, role, loading, signOut, profileId, session } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'list' | 'schedule' | 'profile'>('list');
+  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages'>('list');
 
   // Student creation
   const [showCreate, setShowCreate] = useState(false);
@@ -212,7 +212,6 @@ export default function AdminDashboard() {
         </main>
       </div>
 
-      {profileId && <ChatBubble currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />}
     </div>
   );
 }

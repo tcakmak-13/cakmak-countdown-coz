@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
-import ChatBubble from '@/components/ChatBubble';
+import ChatView from '@/components/ChatView';
 import Denemelerim from '@/components/Denemelerim';
 import CoachInfo from '@/components/CoachInfo';
 
-type Tab = 'denemelerim' | 'ana-menu' | 'profilim';
+type Tab = 'denemelerim' | 'ana-menu' | 'mesajlar' | 'profilim';
 
 const tabVariants = {
   initial: { opacity: 0, y: 12 },
@@ -57,6 +57,7 @@ export default function StudentDashboard() {
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
+    { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
   ];
 
@@ -111,6 +112,12 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
+          {tab === 'mesajlar' && profileId && (
+            <motion.div key="mesajlar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+            </motion.div>
+          )}
+
           {tab === 'profilim' && profileId && (
             <motion.div key="profilim" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <div className="space-y-6 pb-24">
@@ -142,7 +149,6 @@ export default function StudentDashboard() {
         </div>
       </nav>
 
-      {profileId && <ChatBubble currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />}
     </div>
   );
 }
