@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Paperclip, FileText, Download, Image as ImageIcon } from 'lucide-react';
+import { MessageCircle, X, Send, Paperclip, FileText, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 interface Props {
   currentProfileId: string;
   currentName: string;
   currentRole: 'admin' | 'student' | null;
+  currentUserId?: string;
 }
 
 interface Message {
@@ -28,12 +30,6 @@ interface StudentItem {
   grade: string | null;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
-function getFileUrl(fileName: string) {
-  return `${SUPABASE_URL}/storage/v1/object/public/chat-files/${fileName}`;
-}
-
 function isImage(fileName: string) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
 }
@@ -42,7 +38,7 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
-export default function ChatBubble({ currentProfileId, currentName, currentRole }: Props) {
+export default function ChatBubble({ currentProfileId, currentName, currentRole, currentUserId }: Props) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -50,8 +46,19 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getSignedUrl = async (fileName: string) => {
+    if (signedUrls[fileName]) return signedUrls[fileName];
+    const { data } = await supabase.storage.from('chat-files').createSignedUrl(fileName, 3600);
+    if (data?.signedUrl) {
+      setSignedUrls(prev => ({ ...prev, [fileName]: data.signedUrl }));
+      return data.signedUrl;
+    }
+    return '';
+  };
 
   useEffect(() => {
     if (currentRole === 'student') {
@@ -78,7 +85,14 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
     if (!open) return;
     const fetchMessages = async () => {
       const { data } = await supabase.from('chat_messages').select('*').order('created_at');
-      if (data) setMessages(data as Message[]);
+      if (data) {
+        setMessages(data as Message[]);
+        for (const msg of data) {
+          if (msg.file_name && !signedUrls[msg.file_name]) {
+            getSignedUrl(msg.file_name);
+          }
+        }
+      }
     };
     fetchMessages();
     const channel = supabase.channel('chat-realtime')
@@ -105,11 +119,16 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
     messages.filter(m => m.sender_id === studentId && m.receiver_id === currentProfileId && !m.read).length;
 
   const handleSend = async () => {
-    if (!input.trim() || !chatPartnerId) return;
+    const trimmed = input.trim();
+    if (!trimmed || !chatPartnerId) return;
+    if (trimmed.length > 2000) {
+      toast.error('Mesaj çok uzun (maks 2000 karakter)');
+      return;
+    }
     await supabase.from('chat_messages').insert({
       sender_id: currentProfileId,
       receiver_id: chatPartnerId,
-      content: input.trim(),
+      content: trimmed,
       type: 'text',
     });
     setInput('');
@@ -117,16 +136,14 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !chatPartnerId) return;
+    if (!file || !chatPartnerId || !currentUserId) return;
 
     const allowed = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
-    if (!allowed.test(file.name)) {
-      return;
-    }
+    if (!allowed.test(file.name)) return;
 
     setUploading(true);
     const ext = file.name.split('.').pop();
-    const filePath = `${currentProfileId}/${Date.now()}.${ext}`;
+    const filePath = `${currentUserId}/${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
     if (uploadError) {
@@ -148,16 +165,21 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
 
   const renderMessageContent = (msg: Message) => {
     const isMine = msg.sender_id === currentProfileId;
+    const fileUrl = msg.file_name ? signedUrls[msg.file_name] : '';
 
     if (msg.type === 'image' && msg.file_name) {
       return (
         <div className="space-y-1">
-          <img
-            src={getFileUrl(msg.file_name)}
-            alt="Paylaşılan fotoğraf"
-            className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => window.open(getFileUrl(msg.file_name!), '_blank')}
-          />
+          {fileUrl ? (
+            <img
+              src={fileUrl}
+              alt="Paylaşılan fotoğraf"
+              className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => window.open(fileUrl, '_blank')}
+            />
+          ) : (
+            <div className="w-[200px] h-[150px] rounded-lg bg-secondary animate-pulse" />
+          )}
           <p className={`text-[10px] mt-1 ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
             {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
           </p>
@@ -172,16 +194,18 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
             <FileText className="h-5 w-5 shrink-0" />
             <span className="text-sm truncate">{msg.content}</span>
           </div>
-          <a
-            href={getFileUrl(msg.file_name)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'
-            }`}
-          >
-            <Download className="h-3.5 w-3.5" /> PDF İndir
-          </a>
+          {fileUrl && (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isMine ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground' : 'bg-primary/10 hover:bg-primary/20 text-primary'
+              }`}
+            >
+              <Download className="h-3.5 w-3.5" /> PDF İndir
+            </a>
+          )}
           <p className={`text-[10px] ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
             {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
           </p>
@@ -319,6 +343,7 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole 
                       onChange={e => setInput(e.target.value)}
                       placeholder="Mesaj yaz..."
                       className="bg-secondary border-border text-sm"
+                      maxLength={2000}
                     />
                     <button type="submit" className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
                       <Send className="h-4 w-4 text-primary-foreground" />
