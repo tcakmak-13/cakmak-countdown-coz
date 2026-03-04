@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
@@ -91,6 +91,23 @@ export default function AdminDashboard() {
     setCreating(false);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session?.user?.id) return;
+    if (!/\.(jpg|jpeg|png|webp)$/i.test(file.name)) {
+      toast.error('Yalnızca JPG, PNG veya WebP yükleyebilirsiniz.');
+      return;
+    }
+    const ext = file.name.split('.').pop();
+    const filePath = `${session.user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+    if (uploadError) { toast.error('Yükleme hatası: ' + uploadError.message); return; }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const avatarUrl = urlData.publicUrl + '?t=' + Date.now();
+    await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', profileId);
+    toast.success('Profil fotoğrafı güncellendi!');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
@@ -104,6 +121,20 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <YKSCountdown compact />
+            {/* Avatar upload */}
+            <label className="relative cursor-pointer group">
+              <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange overflow-hidden ring-2 ring-primary/30">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold text-primary-foreground">{profile.full_name?.charAt(0)}</span>
+                )}
+              </div>
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="h-4 w-4 text-white" />
+              </div>
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAvatarUpload} className="hidden" />
+            </label>
             <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
               <LogOut className="h-5 w-5" />
             </button>

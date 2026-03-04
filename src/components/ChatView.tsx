@@ -38,7 +38,7 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
-function CoachDrawer({ open, onOpenChange, name }: { open: boolean; onOpenChange: (v: boolean) => void; name: string }) {
+function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; onOpenChange: (v: boolean) => void; name: string; avatarUrl: string | null }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="bg-card border-border w-[340px] sm:w-[400px] p-0 overflow-y-auto">
@@ -51,8 +51,12 @@ function CoachDrawer({ open, onOpenChange, name }: { open: boolean; onOpenChange
 
           {/* Avatar */}
           <div className="flex justify-center -mt-14 relative z-10">
-            <div className="h-24 w-24 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange ring-4 ring-card">
-              <span className="font-display text-3xl font-bold text-primary-foreground">T</span>
+            <div className="h-24 w-24 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange ring-4 ring-card overflow-hidden">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+              ) : (
+                <span className="font-display text-3xl font-bold text-primary-foreground">{name.charAt(0)}</span>
+              )}
             </div>
           </div>
 
@@ -119,6 +123,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
   const [adminName, setAdminName] = useState('Talha Çakmak');
+  const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [coachDrawerOpen, setCoachDrawerOpen] = useState(false);
@@ -141,6 +146,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         if (data && Array.isArray(data) && data.length > 0) {
           setAdminProfileId(data[0].id);
           setAdminName(data[0].full_name || 'Talha Çakmak');
+          setAdminAvatarUrl(data[0].avatar_url || null);
         }
       });
     }
@@ -321,8 +327,12 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
           className="p-4 border-b border-border bg-card/80 backdrop-blur-xl hover:bg-card/95 transition-colors cursor-pointer text-left"
         >
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange ring-2 ring-primary/30">
-              T
+            <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange ring-2 ring-primary/30 overflow-hidden">
+              {adminAvatarUrl ? (
+                <img src={adminAvatarUrl} alt={adminName} className="h-full w-full object-cover" />
+              ) : (
+                adminName.charAt(0)
+              )}
             </div>
             <div className="flex-1">
               <p className="font-display font-bold text-base">{adminName}</p>
@@ -353,7 +363,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         </div>
 
         {renderMessageInput()}
-        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={adminName} />
+        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={adminName} avatarUrl={adminAvatarUrl} />
       </div>
     );
   }

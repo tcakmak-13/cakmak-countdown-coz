@@ -363,6 +363,7 @@ export type Database = {
       get_admin_profile_info: {
         Args: never
         Returns: {
+          avatar_url: string
           full_name: string
           id: string
         }[]
