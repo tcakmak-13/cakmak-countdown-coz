@@ -50,7 +50,7 @@ export default function StudentDashboard() {
 
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-6">
-        {tab === 'denemelerim' && profileId && <Denemelerim studentId={profileId} />}
+        {tab === 'denemelerim' && profileId && <Denemelerim studentId={profileId} studentArea={profile.area ?? 'SAY'} />}
 
         {tab === 'ana-menu' && (
           <div className="space-y-8">
