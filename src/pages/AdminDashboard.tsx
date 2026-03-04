@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ import CoachProfileEditor from '@/components/CoachProfileEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -36,6 +37,49 @@ export default function AdminDashboard() {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Announcement
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementBody, setAnnouncementBody] = useState('');
+  const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
+
+  const handleSendAnnouncement = async () => {
+    if (!announcementTitle.trim() || !announcementBody.trim()) {
+      toast.error('Başlık ve içerik gerekli.');
+      return;
+    }
+    setSendingAnnouncement(true);
+    try {
+      // Get all student user_ids
+      const { data: studentRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'student');
+      if (!studentRoles || studentRoles.length === 0) {
+        toast.error('Bildirim gönderilecek öğrenci bulunamadı.');
+        setSendingAnnouncement(false);
+        return;
+      }
+      const rows = studentRoles.map(r => ({
+        user_id: r.user_id,
+        title: announcementTitle.trim(),
+        message: announcementBody.trim(),
+        type: 'announcement',
+        icon: 'megaphone',
+        link: null,
+      }));
+      const { error } = await supabase.from('notifications').insert(rows);
+      if (error) {
+        toast.error('Duyuru gönderilemedi: ' + error.message);
+      } else {
+        toast.success(`Duyuru ${studentRoles.length} öğrenciye gönderildi!`);
+        setAnnouncementTitle('');
+        setAnnouncementBody('');
+        setShowAnnouncement(false);
+      }
+    } catch {
+      toast.error('Bağlantı hatası.');
+    }
+    setSendingAnnouncement(false);
+  };
 
   const loadStudents = () => {
     supabase.from('profiles').select('id, full_name, area, grade, username').then(({ data }) => {
@@ -250,6 +294,59 @@ export default function AdminDashboard() {
               <p className="text-xs text-muted-foreground">Öğrenci sohbetleri</p>
             </div>
           </button>
+
+          {/* Announcement button */}
+          <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
+            <DialogTrigger asChild>
+              <button className="w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors glass-card hover:bg-secondary">
+                <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                  <Megaphone className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Duyuru Gönder</p>
+                  <p className="text-xs text-muted-foreground">Tüm öğrencilere bildirim</p>
+                </div>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <Megaphone className="h-5 w-5 text-amber-400" /> Duyuru Gönder
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Başlık</Label>
+                  <Input
+                    value={announcementTitle}
+                    onChange={e => setAnnouncementTitle(e.target.value)}
+                    placeholder="Önemli Duyuru"
+                    className="bg-secondary border-border"
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>İçerik</Label>
+                  <Textarea
+                    value={announcementBody}
+                    onChange={e => setAnnouncementBody(e.target.value)}
+                    placeholder="Tüm öğrencilere iletmek istediğiniz mesajı yazın..."
+                    className="bg-secondary border-border min-h-[100px] resize-none"
+                    maxLength={500}
+                  />
+                  <p className="text-[11px] text-muted-foreground text-right">{announcementBody.length}/500</p>
+                </div>
+                <Button
+                  onClick={handleSendAnnouncement}
+                  disabled={sendingAnnouncement}
+                  className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2"
+                >
+                  <Megaphone className="h-4 w-4" />
+                  {sendingAnnouncement ? 'Gönderiliyor...' : `Tüm Öğrencilere Gönder (${students.length})`}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </aside>
 
         <main className="flex-1 min-w-0">
