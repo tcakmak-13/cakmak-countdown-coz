@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,7 +73,10 @@ export default function StudentDashboard() {
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
           </div>
-          <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
+            <NotificationBell />
+          </div>
         </div>
       </header>
 
