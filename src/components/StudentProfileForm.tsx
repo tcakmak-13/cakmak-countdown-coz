@@ -23,9 +23,10 @@ interface ProfileData {
 interface Props {
   studentId: string;
   readOnly?: boolean;
+  onAreaChange?: (area: string) => void;
 }
 
-export default function StudentProfileForm({ studentId, readOnly = false }: Props) {
+export default function StudentProfileForm({ studentId, readOnly = false, onAreaChange }: Props) {
   const [student, setStudent] = useState<ProfileData | null>(null);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function StudentProfileForm({ studentId, readOnly = false }: Prop
 
   const update = (key: keyof ProfileData, value: string) => {
     setStudent(prev => prev ? { ...prev, [key]: value } : null);
+    if (key === 'area' && onAreaChange) onAreaChange(value);
   };
 
   const handleSave = async () => {

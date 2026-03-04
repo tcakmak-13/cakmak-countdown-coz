@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import YKSCountdown from '@/components/YKSCountdown';
 import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
@@ -11,10 +13,40 @@ import CoachInfo from '@/components/CoachInfo';
 
 type Tab = 'denemelerim' | 'ana-menu' | 'profilim';
 
+const tabVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+};
+
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const { profile, role, loading, signOut, profileId } = useAuth();
   const [tab, setTab] = useState<Tab>('ana-menu');
+  const [studentArea, setStudentArea] = useState<string>('SAY');
+
+  // Sync area from profile and listen for realtime changes
+  useEffect(() => {
+    if (profile?.area) setStudentArea(profile.area);
+  }, [profile?.area]);
+
+  // Subscribe to profile changes for dynamic area sync
+  useEffect(() => {
+    if (!profileId) return;
+    const channel = supabase
+      .channel('profile-area-sync')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${profileId}`,
+      }, (payload) => {
+        const newArea = (payload.new as any)?.area;
+        if (newArea) setStudentArea(newArea);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profileId]);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
   if (!profile || role !== 'student') { navigate('/login'); return null; }
@@ -30,7 +62,6 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -48,44 +79,52 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-6">
-        {tab === 'denemelerim' && profileId && <Denemelerim studentId={profileId} studentArea={profile.area ?? 'SAY'} />}
+        <AnimatePresence mode="wait">
+          {tab === 'denemelerim' && profileId && (
+            <motion.div key="denemelerim" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <Denemelerim studentId={profileId} studentArea={studentArea} />
+            </motion.div>
+          )}
 
-        {tab === 'ana-menu' && (
-          <div className="space-y-8">
-            <div className="glass-card rounded-2xl p-6 sm:p-10 shadow-orange text-center">
-              <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4">YKS'ye Kalan Süre</p>
-              <YKSCountdown />
-              <p className="text-xs text-muted-foreground mt-4">20 Haziran 2026 — 10:15</p>
-            </div>
-            {profileId && (
-              <div className="glass-card rounded-2xl p-6">
-                <h2 className="font-display text-lg font-semibold mb-4">Haftalık Programım</h2>
-                <StudyPlanner studentId={profileId} />
+          {tab === 'ana-menu' && (
+            <motion.div key="ana-menu" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="space-y-8">
+                <div className="glass-card rounded-2xl p-6 sm:p-10 shadow-orange text-center">
+                  <p className="text-sm text-muted-foreground uppercase tracking-widest mb-4">YKS'ye Kalan Süre</p>
+                  <YKSCountdown />
+                  <p className="text-xs text-muted-foreground mt-4">20 Haziran 2026 — 10:15</p>
+                </div>
+                {profileId && (
+                  <div className="glass-card rounded-2xl p-6">
+                    <h2 className="font-display text-lg font-semibold mb-4">Haftalık Programım</h2>
+                    <StudyPlanner studentId={profileId} />
+                  </div>
+                )}
+                <div className="glass-card rounded-2xl p-6">
+                  <h2 className="font-display text-lg font-semibold mb-1">Motivasyon</h2>
+                  <p className="text-muted-foreground text-sm">
+                    "Başarı, her gün tekrarlanan küçük çabaların toplamıdır." — Robert Collier
+                  </p>
+                </div>
               </div>
-            )}
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="font-display text-lg font-semibold mb-1">Motivasyon</h2>
-              <p className="text-muted-foreground text-sm">
-                "Başarı, her gün tekrarlanan küçük çabaların toplamıdır." — Robert Collier
-              </p>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
 
-        {tab === 'profilim' && profileId && (
-          <div className="space-y-6 pb-24">
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="font-display text-lg font-semibold mb-4">Profilim</h2>
-              <StudentProfileForm studentId={profileId} />
-            </div>
-            <CoachInfo />
-          </div>
-        )}
+          {tab === 'profilim' && profileId && (
+            <motion.div key="profilim" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="space-y-6 pb-24">
+                <div className="glass-card rounded-2xl p-6">
+                  <h2 className="font-display text-lg font-semibold mb-4">Profilim</h2>
+                  <StudentProfileForm studentId={profileId} onAreaChange={setStudentArea} />
+                </div>
+                <CoachInfo />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* Bottom Nav */}
       <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-primary/20 bg-card/90 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto flex">
           {tabs.map(t => (
