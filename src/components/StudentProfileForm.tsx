@@ -60,6 +60,8 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
       goals: student.goals,
       area: student.area,
       grade: student.grade,
+      target_university: student.target_university,
+      target_department: student.target_department,
     }).eq('id', student.id);
     if (error) { toast.error('Güncelleme başarısız.'); return; }
     toast.success('Profil güncellendi!');
