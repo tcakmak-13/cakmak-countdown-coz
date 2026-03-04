@@ -139,7 +139,15 @@ export default function ChatBubble({ currentProfileId, currentName, currentRole,
     if (!file || !chatPartnerId || !currentUserId) return;
 
     const allowed = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
-    if (!allowed.test(file.name)) return;
+    if (!allowed.test(file.name)) {
+      toast.error('Desteklenmeyen dosya türü. Yalnızca resim ve PDF yükleyebilirsiniz.');
+      return;
+    }
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Dosya boyutu çok büyük (maks 10MB).');
+      return;
+    }
 
     setUploading(true);
     const ext = file.name.split('.').pop();
