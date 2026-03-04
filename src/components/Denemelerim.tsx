@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import ProgressCircle from '@/components/ProgressCircle';
@@ -65,6 +66,15 @@ function emptyScores(subjects: SubjectConfig[]): ScoreMap {
   return m;
 }
 
+function scoresFromResult(result: any, subjects: SubjectConfig[]): ScoreMap {
+  const m: ScoreMap = {};
+  subjects.forEach(s => {
+    m[`${s.key}_dogru`] = Number(result[`${s.key}_dogru`]) || 0;
+    m[`${s.key}_yanlis`] = Number(result[`${s.key}_yanlis`]) || 0;
+  });
+  return m;
+}
+
 export default function Denemelerim({ studentId, studentArea }: { studentId: string; studentArea: string }) {
   const [results, setResults] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -73,12 +83,16 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [chartTab, setChartTab] = useState<'total' | 'subjects'>('total');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const activeSubjects = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[studentArea] || AYT_BY_AREA['SAY']);
 
   useEffect(() => {
-    setScores(emptyScores(activeSubjects));
-    setErrors({});
+    if (!editingId) {
+      setScores(emptyScores(activeSubjects));
+      setErrors({});
+    }
   }, [examType, studentArea]);
 
   const fetchResults = useCallback(async () => {
@@ -128,13 +142,44 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     });
     row.total_net = activeSubjects.reduce((sum, s) => sum + calcNet(scores[`${s.key}_dogru`] || 0, scores[`${s.key}_yanlis`] || 0), 0);
 
-    const { error } = await supabase.from('deneme_results').insert(row as any);
+    let error;
+    if (editingId) {
+      const res = await supabase.from('deneme_results').update(row as any).eq('id', editingId);
+      error = res.error;
+    } else {
+      const res = await supabase.from('deneme_results').insert(row as any);
+      error = res.error;
+    }
     setSaving(false);
     if (error) { toast.error('Kaydetme hatası: ' + error.message); return; }
-    toast.success('Deneme kaydedildi!');
+    toast.success(editingId ? 'Deneme güncellendi!' : 'Deneme kaydedildi!');
     setOpen(false);
+    setEditingId(null);
     setScores(emptyScores(activeSubjects));
     fetchResults();
+  };
+
+  const handleEdit = (result: any) => {
+    const type = result.exam_type as 'TYT' | 'AYT';
+    setExamType(type);
+    const subs = type === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[result.student_area || studentArea] || AYT_BY_AREA['SAY']);
+    setScores(scoresFromResult(result, subs));
+    setEditingId(result.id);
+    setErrors({});
+    setOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from('deneme_results').delete().eq('id', deleteId);
+    if (error) { toast.error('Silme hatası: ' + error.message); }
+    else { toast.success('Deneme silindi.'); fetchResults(); }
+    setDeleteId(null);
+  };
+
+  const handleModalClose = (val: boolean) => {
+    setOpen(val);
+    if (!val) { setEditingId(null); setScores(emptyScores(activeSubjects)); setErrors({}); }
   };
 
   // ─── Progress Circles Data (last result) ─────────────
@@ -179,7 +224,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-display text-xl font-bold">Denemelerim</h2>
-        <Button onClick={() => setOpen(true)} size="icon" className="rounded-full bg-gradient-orange border-0 hover:opacity-90 shadow-orange h-10 w-10">
+        <Button onClick={() => { setEditingId(null); setScores(emptyScores(activeSubjects)); setOpen(true); }} size="icon" className="rounded-full bg-gradient-orange border-0 hover:opacity-90 shadow-orange h-10 w-10">
           <Plus className="h-5 w-5" />
         </Button>
       </div>
@@ -266,38 +311,64 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
         <div className="space-y-3">
           <h3 className="text-sm text-muted-foreground uppercase tracking-widest">Son Sonuçlar</h3>
           {filteredResults.slice(-5).reverse().map(r => (
-            <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-4 flex items-center justify-between border border-border">
+            <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-4 flex items-center justify-between border border-border group relative">
               <div>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{r.exam_type}</span>
                 <span className="text-xs text-muted-foreground ml-2">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
               </div>
-              <span className="font-display text-lg font-bold text-primary">{Number(r.total_net).toFixed(2)} Net</span>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-lg font-bold text-primary">{Number(r.total_net).toFixed(2)} Net</span>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEdit(r)}
+                    className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    title="Düzenle"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(r.id)}
+                    className="p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                    title="Sil"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
       )}
 
-      {/* ─── Add Modal ──────────────────────────────────── */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* ─── Add/Edit Modal ──────────────────────────────── */}
+      <Dialog open={open} onOpenChange={handleModalClose}>
         <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Yeni Deneme Ekle</DialogTitle>
+            <DialogTitle className="font-display">{editingId ? 'Deneme Düzenle' : 'Yeni Deneme Ekle'}</DialogTitle>
             <DialogDescription>Doğru ve yanlış sayılarını girin.</DialogDescription>
           </DialogHeader>
 
-          <div className="flex gap-2 mb-2">
-            {(['TYT', 'AYT'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setExamType(t)}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  examType === t ? 'bg-gradient-orange text-primary-foreground shadow-orange' : 'bg-secondary text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          {!editingId && (
+            <div className="flex gap-2 mb-2">
+              {(['TYT', 'AYT'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setExamType(t)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    examType === t ? 'bg-gradient-orange text-primary-foreground shadow-orange' : 'bg-secondary text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {editingId && (
+            <p className="text-xs text-muted-foreground text-center mb-2">
+              Sınav Türü: <span className="text-primary font-semibold">{examType}</span>
+            </p>
+          )}
 
           {examType === 'AYT' && (
             <p className="text-xs text-muted-foreground text-center mb-2">
@@ -341,10 +412,24 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
           </div>
 
           <Button onClick={handleSave} disabled={saving} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-11 mt-2">
-            {saving ? 'Kaydediliyor...' : 'Kaydet'}
+            {saving ? 'Kaydediliyor...' : editingId ? 'Güncelle' : 'Kaydet'}
           </Button>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Delete Confirmation ─────────────────────────── */}
+      <AlertDialog open={!!deleteId} onOpenChange={(val) => { if (!val) setDeleteId(null); }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bu denemeyi silmek istediğinize emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>Bu işlem geri alınamaz. Deneme sonucu kalıcı olarak silinecektir.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sil</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
