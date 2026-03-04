@@ -1,18 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { user, role, profile, loading: authLoading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (authLoading) return;
+    if (user && role) {
+      if (role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (profile && !profile.profile_completed) {
+        navigate('/onboarding', { replace: true });
+      } else if (profile?.profile_completed) {
+        navigate('/student', { replace: true });
+      }
+    }
+  }, [user, role, profile, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +57,13 @@ export default function Login() {
         return;
       }
 
+      // Save remember me preference
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
+
       // Set the session from the edge function response
       if (data.session) {
         await supabase.auth.setSession({
@@ -53,11 +78,11 @@ export default function Login() {
         const { data: profileData } = await supabase.from('profiles').select('profile_completed').eq('user_id', data.user.id).single();
 
         if (roleData?.role === 'admin') {
-          navigate('/admin');
+          navigate('/admin', { replace: true });
         } else if (!profileData?.profile_completed) {
-          navigate('/onboarding');
+          navigate('/onboarding', { replace: true });
         } else {
-          navigate('/student');
+          navigate('/student', { replace: true });
         }
         setLoading(false);
       }, 300);
@@ -66,6 +91,17 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // Don't render form if already authenticated and redirecting
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Yükleniyor...</p>
+      </div>
+    );
+  }
+
+  if (user && role) return null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative overflow-hidden">
@@ -125,6 +161,18 @@ export default function Login() {
                 autoComplete="current-password"
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="rememberMe"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
+              className="border-primary data-[state=checked]:bg-primary"
+            />
+            <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+              Beni Hatırla
+            </Label>
           </div>
 
           {error && (
