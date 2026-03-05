@@ -476,7 +476,7 @@ export default function HataKumbarasi({ studentId }: Props) {
 
                     {/* Zoom icon */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setFullscreenImg(q.image_url); }}
+                      onClick={(e) => { e.stopPropagation(); setFullscreenImg(getImageUrl(q)); }}
                       className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ZoomIn className="h-3.5 w-3.5" />
@@ -568,11 +568,11 @@ export default function HataKumbarasi({ studentId }: Props) {
             <div className="space-y-4">
               {/* Image preview */}
               <button
-                onClick={() => { setFullscreenImg(detailQuestion.image_url); }}
+                onClick={() => { setFullscreenImg(getImageUrl(detailQuestion)); }}
                 className="w-full rounded-xl overflow-hidden border border-border relative group"
               >
                 <img
-                  src={detailQuestion.image_url}
+                  src={getImageUrl(detailQuestion)}
                   alt="Soru"
                   className="w-full max-h-[40vh] object-contain bg-secondary"
                 />
