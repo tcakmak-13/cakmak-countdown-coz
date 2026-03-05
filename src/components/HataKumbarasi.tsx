@@ -77,6 +77,7 @@ export default function HataKumbarasi({ studentId }: Props) {
   const [detailQuestion, setDetailQuestion] = useState<ErrorQuestion | null>(null);
   const [editNote, setEditNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
