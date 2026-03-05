@@ -73,6 +73,9 @@ export default function HataKumbarasi({ studentId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<ErrorQuestion | null>(null);
+  const [detailQuestion, setDetailQuestion] = useState<ErrorQuestion | null>(null);
+  const [editNote, setEditNote] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load all questions for counts
