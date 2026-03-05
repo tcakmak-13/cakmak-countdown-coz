@@ -302,7 +302,30 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const renderMessageContent = (msg: Message) => {
+  const handleMultiImageUpload = useCallback(async (files: File[]) => {
+    if (!chatPartnerId || !currentUserId) return;
+    setUploading(true);
+    for (const file of files) {
+      const ext = file.name.split('.').pop();
+      const filePath = `${currentUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
+      if (uploadError) {
+        toast.error(`Yükleme hatası: ${file.name}`);
+        continue;
+      }
+      await supabase.from('chat_messages').insert({
+        sender_id: currentProfileId,
+        receiver_id: chatPartnerId,
+        content: '📷 Fotoğraf',
+        type: 'image',
+        file_name: filePath,
+      });
+    }
+    setUploading(false);
+    toast.success(`${files.length} fotoğraf gönderildi!`);
+  }, [chatPartnerId, currentUserId, currentProfileId]);
+
+
     const isMine = msg.sender_id === currentProfileId;
     const timeStr = new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     const fileUrl = msg.file_name ? signedUrls[msg.file_name] : '';
