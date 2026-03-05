@@ -257,14 +257,17 @@ export default function HataKumbarasi({ studentId }: Props) {
 
   const handleDelete = async () => {
     if (!questionToDelete) return;
-    // Extract file path from URL
-    const url = questionToDelete.image_url;
-    const bucketPath = url.split('/error-questions/')[1]?.split('?')[0];
-    if (bucketPath) {
-      await supabase.storage.from('error-questions').remove([decodeURIComponent(bucketPath)]);
+    const storagePath = getStoragePath(questionToDelete.image_url);
+    if (storagePath) {
+      await supabase.storage.from('error-questions').remove([storagePath]);
     }
     await supabase.from('error_questions').delete().eq('id', questionToDelete.id);
     setAllQuestions(prev => prev.filter(q => q.id !== questionToDelete.id));
+    setSignedUrls(prev => {
+      const next = { ...prev };
+      delete next[questionToDelete.id];
+      return next;
+    });
     setQuestionToDelete(null);
     toast.success('Soru silindi.');
   };
