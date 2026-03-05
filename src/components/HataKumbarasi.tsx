@@ -126,8 +126,13 @@ export default function HataKumbarasi({ studentId }: Props) {
       .eq('student_id', studentId)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
-        if (data) setAllQuestions(data as ErrorQuestion[]);
+        if (data) {
+          const qs = data as ErrorQuestion[];
+          setAllQuestions(qs);
+          generateSignedUrls(qs);
+        }
       });
+  }, [studentId]);
   }, [studentId]);
 
   // Load filtered questions when entering gallery
