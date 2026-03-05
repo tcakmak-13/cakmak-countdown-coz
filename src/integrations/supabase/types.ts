@@ -67,6 +67,7 @@ export type Database = {
           appointment_hours: string | null
           ayt_net: string | null
           bio: string
+          daily_quote: string | null
           experience: string | null
           id: string
           instagram: string | null
@@ -80,6 +81,7 @@ export type Database = {
           appointment_hours?: string | null
           ayt_net?: string | null
           bio?: string
+          daily_quote?: string | null
           experience?: string | null
           id?: string
           instagram?: string | null
@@ -93,6 +95,7 @@ export type Database = {
           appointment_hours?: string | null
           ayt_net?: string | null
           bio?: string
+          daily_quote?: string | null
           experience?: string | null
           id?: string
           instagram?: string | null

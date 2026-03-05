@@ -1,0 +1,1 @@
+ALTER TABLE public.coach_info ADD COLUMN daily_quote text DEFAULT '';
