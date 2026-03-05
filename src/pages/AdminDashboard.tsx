@@ -301,7 +301,23 @@ export default function AdminDashboard() {
             </div>
           </button>
 
-          {/* Announcement button */}
+          {/* Appointments button */}
+          <button
+            onClick={() => { setSelectedStudent(null); setTab('appointments'); }}
+            className={`w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+              tab === 'appointments' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
+            }`}
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
+              <CalendarCheck className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Randevular</p>
+              <p className="text-xs text-muted-foreground">Görüşme talepleri</p>
+            </div>
+          </button>
+
+
           <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
             <DialogTrigger asChild>
               <button className="w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors glass-card hover:bg-secondary">
@@ -358,6 +374,8 @@ export default function AdminDashboard() {
         <main className="flex-1 min-w-0">
           {tab === 'analytics' ? (
             <AdminAnalytics students={students} adminProfileId={profileId} />
+          ) : tab === 'appointments' ? (
+            <AdminAppointments />
           ) : tab === 'coach-edit' ? (
             <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
           ) : tab === 'messages' && profileId ? (
