@@ -387,9 +387,9 @@ export default function HataKumbarasi({ studentId }: Props) {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {questions.map((q) => (
                   <div key={q.id} className="group relative rounded-xl overflow-hidden border border-border bg-card">
-                    {/* Image */}
+                    {/* Image - tap to open detail */}
                     <button
-                      onClick={() => setFullscreenImg(q.image_url)}
+                      onClick={() => openDetail(q)}
                       className="w-full aspect-[3/4] overflow-hidden"
                     >
                       <img
@@ -409,9 +409,16 @@ export default function HataKumbarasi({ studentId }: Props) {
                       </div>
                     )}
 
+                    {/* Note indicator */}
+                    {q.note && (
+                      <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-amber-500/90 flex items-center justify-center">
+                        <StickyNote className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+
                     {/* Zoom icon */}
                     <button
-                      onClick={() => setFullscreenImg(q.image_url)}
+                      onClick={(e) => { e.stopPropagation(); setFullscreenImg(q.image_url); }}
                       className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ZoomIn className="h-3.5 w-3.5" />
@@ -431,6 +438,9 @@ export default function HataKumbarasi({ studentId }: Props) {
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
+                      {q.note && (
+                        <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">{q.note}</p>
+                      )}
                       <button
                         onClick={() => toggleStatus(q)}
                         className={`w-full text-xs font-medium py-1.5 rounded-lg transition-colors ${
