@@ -235,6 +235,7 @@ export default function AvatarUpload({ size = 'md', className = '' }: Props) {
           <X className="h-3 w-3" />
         </button>
       )}
+      </div>
 
       <Dialog open={showDialog} onOpenChange={(open) => { if (!open) handleClose(); }}>
         <DialogContent className="bg-card border-border max-w-md">
