@@ -18,10 +18,9 @@ const ADMIN_USERNAME = Deno.env.get("ADMIN_USERNAME")!;
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD")!;
 const EMAIL_DOMAIN = "cakmak.internal";
 
-// Simple in-memory rate limiter for failed login attempts
 const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 function isRateLimited(username: string): boolean {
   const record = failedAttempts.get(username);
@@ -49,8 +48,10 @@ function isPasswordStrong(password: string): boolean {
 }
 
 Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -63,20 +64,18 @@ Deno.serve(async (req) => {
     if (action === "login") {
       if (!username || !password) {
         return new Response(JSON.stringify({ error: "Kullanıcı adı ve şifre gerekli." }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
-      // Rate limiting check
       if (isRateLimited(username)) {
         return new Response(JSON.stringify({ error: "Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       const email = `${username}@${EMAIL_DOMAIN}`;
 
-      // Check if admin account exists, create if first login
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         const { data: existing } = await supabase.auth.admin.listUsers();
         const adminExists = existing?.users?.some((u) => u.email === email);
@@ -91,10 +90,9 @@ Deno.serve(async (req) => {
           if (createErr) {
             console.error('Admin creation error:', createErr);
             return new Response(JSON.stringify({ error: "Admin hesabı oluşturulamadı." }), {
-              status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500, headers: { ...cors, "Content-Type": "application/json" },
             });
           }
-          // Set role to admin
           if (newUser?.user) {
             await supabase.from("user_roles").update({ role: "admin" }).eq("user_id", newUser.user.id);
             await supabase.from("profiles").update({ profile_completed: true, full_name: "Admin" }).eq("user_id", newUser.user.id);
@@ -102,7 +100,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Sign in using the anon key client for proper session
       const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
       const anonClient = createClient(supabaseUrl, anonKey);
       const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
@@ -110,22 +107,21 @@ Deno.serve(async (req) => {
       if (error) {
         recordFailedAttempt(username);
         return new Response(JSON.stringify({ error: "Geçersiz kullanıcı adı veya şifre." }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       clearFailedAttempts(username);
       return new Response(JSON.stringify({ session: data.session, user: data.user }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
     if (action === "create-student") {
-      // Verify caller is admin
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
@@ -136,26 +132,26 @@ Deno.serve(async (req) => {
       const { data: callerUser } = await callerClient.auth.getUser();
       if (!callerUser?.user) {
         return new Response(JSON.stringify({ error: "Geçersiz oturum." }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
       if (roleData?.role !== "admin") {
         return new Response(JSON.stringify({ error: "Sadece adminler öğrenci oluşturabilir." }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       if (!username || !password) {
         return new Response(JSON.stringify({ error: "Kullanıcı adı ve şifre gerekli." }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       if (!isPasswordStrong(password)) {
         return new Response(JSON.stringify({ error: "Şifre en az 8 karakter olmalıdır." }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
@@ -171,26 +167,26 @@ Deno.serve(async (req) => {
         console.error('User creation error:', createErr);
         if (createErr.message.includes("already been registered")) {
           return new Response(JSON.stringify({ error: "Bu kullanıcı adı zaten mevcut." }), {
-            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 409, headers: { ...cors, "Content-Type": "application/json" },
           });
         }
         return new Response(JSON.stringify({ error: "Kullanıcı oluşturulamadı." }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ error: "Geçersiz işlem." }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error('Custom auth error:', err);
     return new Response(JSON.stringify({ error: "Bir hata oluştu. Lütfen tekrar deneyin." }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });
