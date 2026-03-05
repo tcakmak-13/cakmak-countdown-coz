@@ -106,6 +106,20 @@ export default function StudentDashboard() {
                     <StudyPlanner studentId={profileId} />
                   </div>
                 )}
+                {profileId && (
+                  <button
+                    onClick={() => setTab('randevular' as Tab)}
+                    className="w-full glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors text-left"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-gradient-orange flex items-center justify-center shadow-orange shrink-0">
+                      <CalendarIcon className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-display font-semibold">Randevu Al</p>
+                      <p className="text-xs text-muted-foreground">Koçunla görüşme planla</p>
+                    </div>
+                  </button>
+                )}
                 <MotivationQuote />
               </div>
             </motion.div>
