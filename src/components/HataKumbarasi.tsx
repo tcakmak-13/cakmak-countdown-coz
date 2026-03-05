@@ -457,8 +457,6 @@ export default function HataKumbarasi({ studentId }: Props) {
                         </div>
                       )}
                     </button>
-                      />
-                    </button>
 
                     {/* Learned overlay */}
                     {q.status === 'learned' && (
