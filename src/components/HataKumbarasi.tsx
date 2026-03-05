@@ -77,6 +77,46 @@ export default function HataKumbarasi({ studentId }: Props) {
   const [editNote, setEditNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  // Helper: extract storage path from image_url (handles both full URLs and plain paths)
+  const getStoragePath = (imageUrl: string): string => {
+    if (imageUrl.includes('/error-questions/')) {
+      const path = imageUrl.split('/object/public/error-questions/')[1] 
+        || imageUrl.split('/object/sign/error-questions/')[1]
+        || imageUrl.split('/error-questions/')[1];
+      return path ? decodeURIComponent(path.split('?')[0]) : imageUrl;
+    }
+    return imageUrl;
+  };
+
+  // Generate signed URLs for all questions
+  const generateSignedUrls = async (questions: ErrorQuestion[]) => {
+    const paths = questions.map(q => getStoragePath(q.image_url));
+    if (paths.length === 0) return;
+    
+    const { data } = await supabase.storage
+      .from('error-questions')
+      .createSignedUrls(paths, 3600); // 1 hour TTL
+    
+    if (data) {
+      const urlMap: Record<string, string> = {};
+      data.forEach((item) => {
+        if (item.signedUrl && !item.error) {
+          // Map the original question image_url to signed URL
+          const matchingQ = questions.find(q => getStoragePath(q.image_url) === item.path);
+          if (matchingQ) {
+            urlMap[matchingQ.id] = item.signedUrl;
+          }
+        }
+      });
+      setSignedUrls(prev => ({ ...prev, ...urlMap }));
+    }
+  };
+
+  const getImageUrl = (q: ErrorQuestion): string => {
+    return signedUrls[q.id] || '';
+  };
 
   // Load all questions for counts
   useEffect(() => {
