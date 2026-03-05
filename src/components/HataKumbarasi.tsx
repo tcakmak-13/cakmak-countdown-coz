@@ -167,59 +167,57 @@ export default function HataKumbarasi({ studentId }: Props) {
     else if (view === 'subjects') setView('home');
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user?.id) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Dosya boyutu 10MB\'dan küçük olmalı.');
-      return;
-    }
-
+  const handleMultiUpload = useCallback(async (files: File[]) => {
+    if (!user?.id) return;
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const fileName = `${user.id}/${examType}/${selectedSubject}/${Date.now()}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('error-questions')
-      .upload(fileName, file, { upsert: false });
-
-    if (uploadError) {
-      toast.error('Yükleme hatası: ' + uploadError.message);
-      setUploading(false);
-      e.target.value = '';
-      return;
-    }
-
-    const { data: inserted, error: insertError } = await supabase
-      .from('error_questions')
-      .insert({
-        student_id: studentId,
-        exam_type: examType,
-        subject: selectedSubject,
-        image_url: fileName, // Store only the storage path
-        status: 'unsolved',
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      toast.error('Kayıt hatası.');
-    } else if (inserted) {
-      const q = inserted as ErrorQuestion;
-      setAllQuestions(prev => [q, ...prev]);
-      // Generate signed URL for the new question
-      const { data: signedData } = await supabase.storage
-        .from('error-questions')
-        .createSignedUrl(fileName, 3600);
-      if (signedData?.signedUrl) {
-        setSignedUrls(prev => ({ ...prev, [q.id]: signedData.signedUrl }));
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`"${file.name}" 10MB sınırını aşıyor, atlandı.`);
+        continue;
       }
-      toast.success('Soru eklendi!');
+
+      const ext = file.name.split('.').pop();
+      const fileName = `${user.id}/${examType}/${selectedSubject}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('error-questions')
+        .upload(fileName, file, { upsert: false });
+
+      if (uploadError) {
+        toast.error(`Yükleme hatası: ${file.name}`);
+        continue;
+      }
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('error_questions')
+        .insert({
+          student_id: studentId,
+          exam_type: examType,
+          subject: selectedSubject,
+          image_url: fileName,
+          status: 'unsolved',
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        toast.error('Kayıt hatası.');
+      } else if (inserted) {
+        const q = inserted as ErrorQuestion;
+        setAllQuestions(prev => [q, ...prev]);
+        const { data: signedData } = await supabase.storage
+          .from('error-questions')
+          .createSignedUrl(fileName, 3600);
+        if (signedData?.signedUrl) {
+          setSignedUrls(prev => ({ ...prev, [q.id]: signedData.signedUrl }));
+        }
+      }
     }
+
+    toast.success(`${files.length} fotoğraf başarıyla eklendi!`);
     setUploading(false);
-    e.target.value = '';
-  };
+  }, [user?.id, examType, selectedSubject, studentId]);
 
   const toggleStatus = async (question: ErrorQuestion) => {
     const newStatus = question.status === 'learned' ? 'unsolved' : 'learned';
