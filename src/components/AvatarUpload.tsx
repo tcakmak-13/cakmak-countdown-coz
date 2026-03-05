@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, ZoomIn, ZoomOut, RotateCw, Check, X } from 'lucide-react';
+import { Camera, ZoomIn, ZoomOut, RotateCw, Check, X, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -173,6 +173,23 @@ export default function AvatarUpload({ size = 'md', className = '' }: Props) {
     handleClose();
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!user?.id || !profileId) return;
+    setUploading(true);
+    
+    // Remove from storage (ignore errors if file doesn't exist)
+    await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`, `${user.id}/avatar.png`, `${user.id}/avatar.webp`, `${user.id}/avatar.jpeg`]);
+    
+    const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profileId);
+    if (error) {
+      toast.error('Fotoğraf kaldırılamadı.');
+    } else {
+      toast.success('Profil fotoğrafı kaldırıldı.');
+      await refreshProfile();
+    }
+    setUploading(false);
+  };
+
   const handleClose = () => {
     setShowDialog(false);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -207,6 +224,16 @@ export default function AvatarUpload({ size = 'md', className = '' }: Props) {
           disabled={uploading}
         />
       </label>
+      {profile?.avatar_url && (
+        <button
+          onClick={handleRemoveAvatar}
+          disabled={uploading}
+          className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-destructive flex items-center justify-center text-destructive-foreground hover:opacity-80 transition-opacity shadow-md"
+          title="Fotoğrafı kaldır"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
 
       <Dialog open={showDialog} onOpenChange={(open) => { if (!open) handleClose(); }}>
         <DialogContent className="bg-card border-border max-w-md">
