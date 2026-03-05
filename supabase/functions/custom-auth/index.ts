@@ -39,7 +39,7 @@ function isPasswordStrong(password: string): boolean {
 }
 
 Deno.serve(async (req) => {
-  const cors = getCorsHeaders(req);
+  const cors = corsHeaders;
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: cors });
