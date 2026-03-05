@@ -497,6 +497,100 @@ export default function HataKumbarasi({ studentId }: Props) {
         </DialogContent>
       </Dialog>
 
+      {/* Question detail dialog with notes */}
+      <Dialog open={!!detailQuestion} onOpenChange={(open) => { if (!open) setDetailQuestion(null); }}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <StickyNote className="h-4 w-4 text-primary" />
+              Soru Detayı
+            </DialogTitle>
+          </DialogHeader>
+          {detailQuestion && (
+            <div className="space-y-4">
+              {/* Image preview */}
+              <button
+                onClick={() => { setFullscreenImg(detailQuestion.image_url); }}
+                className="w-full rounded-xl overflow-hidden border border-border relative group"
+              >
+                <img
+                  src={detailQuestion.image_url}
+                  alt="Soru"
+                  className="w-full max-h-[40vh] object-contain bg-secondary"
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ZoomIn className="h-6 w-6 text-white" />
+                </div>
+              </button>
+
+              {/* Info */}
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {formatDate(detailQuestion.created_at)}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-secondary text-xs font-medium">
+                  {detailQuestion.exam_type} — {detailQuestion.subject}
+                </span>
+              </div>
+
+              {/* Status toggle */}
+              <button
+                onClick={() => {
+                  toggleStatus(detailQuestion);
+                  setDetailQuestion(prev => prev ? { ...prev, status: prev.status === 'learned' ? 'unsolved' : 'learned' } : null);
+                }}
+                className={`w-full text-sm font-medium py-2.5 rounded-xl transition-colors ${
+                  detailQuestion.status === 'learned'
+                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                    : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                }`}
+              >
+                {detailQuestion.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
+              </button>
+
+              {/* Note editor */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <StickyNote className="h-4 w-4 text-primary" />
+                  Not / Çözüm İpucu
+                </label>
+                <Textarea
+                  value={editNote}
+                  onChange={(e) => setEditNote(e.target.value)}
+                  placeholder="Bu soru hakkında notlarını yaz... Çözüm ipucu, hatırlatma, formül vb."
+                  className="bg-secondary border-border min-h-[100px] text-sm leading-relaxed resize-y"
+                  maxLength={1000}
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">{editNote.length}/1000</span>
+                  <Button
+                    onClick={saveNote}
+                    disabled={savingNote}
+                    size="sm"
+                    className="gap-1.5 bg-gradient-orange text-primary-foreground border-0 hover:opacity-90"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {savingNote ? 'Kaydediliyor...' : 'Notu Kaydet'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Delete */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setDetailQuestion(null); setQuestionToDelete(detailQuestion); }}
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Soruyu Sil
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Delete confirmation */}
       <AlertDialog open={!!questionToDelete} onOpenChange={() => setQuestionToDelete(null)}>
         <AlertDialogContent>
