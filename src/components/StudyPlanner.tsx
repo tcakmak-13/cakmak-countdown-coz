@@ -130,7 +130,8 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     <div>
       {/* ── Weekly Strip + Calendar Icon ── */}
       <div className="flex items-center gap-2 mb-5">
-        <div className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide">
+        <div className="flex-1 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1.5 w-max px-0.5">
           {weekDates.map((date, i) => {
             const dayIdx = jsDayToIndex(date);
             const isActive = isSameDay(date, selectedDate);
@@ -143,7 +144,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                 key={i}
                 onClick={() => setSelectedDate(date)}
                 className={cn(
-                  'relative flex flex-col items-center gap-0.5 rounded-2xl px-3 py-2.5 transition-all min-w-[52px]',
+                  'relative flex flex-col items-center gap-0.5 rounded-2xl px-3 py-2.5 transition-all min-w-[52px] shrink-0',
                   isActive
                     ? 'bg-[hsl(45,100%,50%)] text-[hsl(0,0%,4%)] shadow-[0_0_20px_hsl(45,100%,50%,0.4)] scale-110 font-black'
                     : today
@@ -153,6 +154,15 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               >
                 <span className="text-[10px] uppercase tracking-wider">{DAY_LABELS_SHORT[i]}</span>
                 <span className={cn('text-lg font-display', isActive ? 'text-[hsl(0,0%,4%)]' : '')}>{format(date, 'd')}</span>
+                {/* Today dot / active underline */}
+                {(isActive || today) && (
+                  <span className={cn(
+                    'mt-0.5 rounded-full transition-all',
+                    isActive
+                      ? 'w-5 h-[3px] bg-[hsl(0,0%,4%)]'
+                      : 'w-1.5 h-1.5 bg-primary'
+                  )} />
+                )}
                 {dayTaskCount > 0 && (
                   <span className={cn(
                     'absolute -top-1 -right-1 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center',
@@ -164,6 +174,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* Calendar icon */}
