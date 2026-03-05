@@ -202,7 +202,8 @@ export default function AvatarUpload({ size = 'md', className = '' }: Props) {
 
   return (
     <>
-      <label className={`relative cursor-pointer group ${className}`}>
+      <div className={`relative ${className}`}>
+      <label className="relative cursor-pointer group">
         <div className={`${sizeClasses[size]} rounded-full bg-gradient-orange flex items-center justify-center shadow-orange overflow-hidden ring-2 ring-primary/30 ${uploading ? 'opacity-60' : ''}`}>
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
