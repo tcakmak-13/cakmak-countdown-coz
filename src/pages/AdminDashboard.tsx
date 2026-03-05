@@ -48,6 +48,10 @@ export default function AdminDashboard() {
   const [announcementBody, setAnnouncementBody] = useState('');
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
 
+  // Student deletion
+  const [studentToDelete, setStudentToDelete] = useState<StudentProfile | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const handleSendAnnouncement = async () => {
     if (!announcementTitle.trim() || !announcementBody.trim()) {
       toast.error('Başlık ve içerik gerekli.');
