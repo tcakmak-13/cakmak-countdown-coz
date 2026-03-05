@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
+import AdminAppointments from '@/components/AdminAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@ export default function AdminDashboard() {
   const { profile, role, loading, signOut, profileId, session } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit'>('analytics');
+  const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('analytics');
 
   // Student creation
   const [showCreate, setShowCreate] = useState(false);
@@ -300,7 +301,23 @@ export default function AdminDashboard() {
             </div>
           </button>
 
-          {/* Announcement button */}
+          {/* Appointments button */}
+          <button
+            onClick={() => { setSelectedStudent(null); setTab('appointments'); }}
+            className={`w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors ${
+              tab === 'appointments' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
+            }`}
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
+              <CalendarCheck className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Randevular</p>
+              <p className="text-xs text-muted-foreground">Görüşme talepleri</p>
+            </div>
+          </button>
+
+
           <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
             <DialogTrigger asChild>
               <button className="w-full mt-2 flex items-center gap-3 p-3 rounded-xl transition-colors glass-card hover:bg-secondary">
@@ -357,6 +374,8 @@ export default function AdminDashboard() {
         <main className="flex-1 min-w-0">
           {tab === 'analytics' ? (
             <AdminAnalytics students={students} adminProfileId={profileId} />
+          ) : tab === 'appointments' ? (
+            <AdminAppointments />
           ) : tab === 'coach-edit' ? (
             <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
           ) : tab === 'messages' && profileId ? (
