@@ -38,6 +38,11 @@ function isPasswordStrong(password: string): boolean {
   return password.length >= 8;
 }
 
+function isUsernameValid(username: string): boolean {
+  // Only allow alphanumeric, dots, hyphens, underscores — no spaces or special chars
+  return /^[a-zA-Z0-9._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
+}
+
 Deno.serve(async (req) => {
   const cors = corsHeaders;
 
@@ -136,6 +141,12 @@ Deno.serve(async (req) => {
 
       if (!username || !password) {
         return new Response(JSON.stringify({ error: "Kullanıcı adı ve şifre gerekli." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!isUsernameValid(username)) {
+        return new Response(JSON.stringify({ error: "Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir (en az 2 karakter)." }), {
           status: 400, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
