@@ -58,8 +58,8 @@ export default function StudentDashboard() {
 
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
-    { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'randevular', label: 'Randevu', icon: CalendarIcon },
+    { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
   ];
