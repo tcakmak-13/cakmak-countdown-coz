@@ -18,6 +18,7 @@ interface CoachData {
   experience: string;
   tyt_net: string;
   ayt_net: string;
+  daily_quote: string;
 }
 
 interface Props {
@@ -58,6 +59,7 @@ export default function CoachProfileEditor({ adminName, adminAvatarUrl, onAvatar
         experience: data.experience,
         tyt_net: data.tyt_net,
         ayt_net: data.ayt_net,
+        daily_quote: data.daily_quote,
         updated_at: new Date().toISOString(),
       })
       .eq('id', data.id);
