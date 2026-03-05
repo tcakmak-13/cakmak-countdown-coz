@@ -7,10 +7,11 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock
+  Triangle, Clock, StickyNote, Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface ErrorQuestion {
@@ -72,6 +73,9 @@ export default function HataKumbarasi({ studentId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<ErrorQuestion | null>(null);
+  const [detailQuestion, setDetailQuestion] = useState<ErrorQuestion | null>(null);
+  const [editNote, setEditNote] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load all questions for counts
@@ -178,6 +182,28 @@ export default function HataKumbarasi({ studentId }: Props) {
         prev.map(q => q.id === question.id ? { ...q, status: newStatus } : q)
       );
     }
+  };
+
+  const openDetail = (q: ErrorQuestion) => {
+    setDetailQuestion(q);
+    setEditNote(q.note || '');
+  };
+
+  const saveNote = async () => {
+    if (!detailQuestion) return;
+    setSavingNote(true);
+    const { error } = await supabase
+      .from('error_questions')
+      .update({ note: editNote })
+      .eq('id', detailQuestion.id);
+    if (!error) {
+      setAllQuestions(prev =>
+        prev.map(q => q.id === detailQuestion.id ? { ...q, note: editNote } : q)
+      );
+      setDetailQuestion(prev => prev ? { ...prev, note: editNote } : null);
+      toast.success('Not kaydedildi!');
+    }
+    setSavingNote(false);
   };
 
   const handleDelete = async () => {
@@ -361,9 +387,9 @@ export default function HataKumbarasi({ studentId }: Props) {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {questions.map((q) => (
                   <div key={q.id} className="group relative rounded-xl overflow-hidden border border-border bg-card">
-                    {/* Image */}
+                    {/* Image - tap to open detail */}
                     <button
-                      onClick={() => setFullscreenImg(q.image_url)}
+                      onClick={() => openDetail(q)}
                       className="w-full aspect-[3/4] overflow-hidden"
                     >
                       <img
@@ -383,9 +409,16 @@ export default function HataKumbarasi({ studentId }: Props) {
                       </div>
                     )}
 
+                    {/* Note indicator */}
+                    {q.note && (
+                      <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-amber-500/90 flex items-center justify-center">
+                        <StickyNote className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+
                     {/* Zoom icon */}
                     <button
-                      onClick={() => setFullscreenImg(q.image_url)}
+                      onClick={(e) => { e.stopPropagation(); setFullscreenImg(q.image_url); }}
                       className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ZoomIn className="h-3.5 w-3.5" />
@@ -405,6 +438,9 @@ export default function HataKumbarasi({ studentId }: Props) {
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
+                      {q.note && (
+                        <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">{q.note}</p>
+                      )}
                       <button
                         onClick={() => toggleStatus(q)}
                         className={`w-full text-xs font-medium py-1.5 rounded-lg transition-colors ${
@@ -456,6 +492,100 @@ export default function HataKumbarasi({ studentId }: Props) {
                 className="max-w-full max-h-[90vh] object-contain select-none"
                 style={{ touchAction: 'pinch-zoom' }}
               />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Question detail dialog with notes */}
+      <Dialog open={!!detailQuestion} onOpenChange={(open) => { if (!open) setDetailQuestion(null); }}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <StickyNote className="h-4 w-4 text-primary" />
+              Soru Detayı
+            </DialogTitle>
+          </DialogHeader>
+          {detailQuestion && (
+            <div className="space-y-4">
+              {/* Image preview */}
+              <button
+                onClick={() => { setFullscreenImg(detailQuestion.image_url); }}
+                className="w-full rounded-xl overflow-hidden border border-border relative group"
+              >
+                <img
+                  src={detailQuestion.image_url}
+                  alt="Soru"
+                  className="w-full max-h-[40vh] object-contain bg-secondary"
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ZoomIn className="h-6 w-6 text-white" />
+                </div>
+              </button>
+
+              {/* Info */}
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {formatDate(detailQuestion.created_at)}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-secondary text-xs font-medium">
+                  {detailQuestion.exam_type} — {detailQuestion.subject}
+                </span>
+              </div>
+
+              {/* Status toggle */}
+              <button
+                onClick={() => {
+                  toggleStatus(detailQuestion);
+                  setDetailQuestion(prev => prev ? { ...prev, status: prev.status === 'learned' ? 'unsolved' : 'learned' } : null);
+                }}
+                className={`w-full text-sm font-medium py-2.5 rounded-xl transition-colors ${
+                  detailQuestion.status === 'learned'
+                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                    : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                }`}
+              >
+                {detailQuestion.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
+              </button>
+
+              {/* Note editor */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <StickyNote className="h-4 w-4 text-primary" />
+                  Not / Çözüm İpucu
+                </label>
+                <Textarea
+                  value={editNote}
+                  onChange={(e) => setEditNote(e.target.value)}
+                  placeholder="Bu soru hakkında notlarını yaz... Çözüm ipucu, hatırlatma, formül vb."
+                  className="bg-secondary border-border min-h-[100px] text-sm leading-relaxed resize-y"
+                  maxLength={1000}
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">{editNote.length}/1000</span>
+                  <Button
+                    onClick={saveNote}
+                    disabled={savingNote}
+                    size="sm"
+                    className="gap-1.5 bg-gradient-orange text-primary-foreground border-0 hover:opacity-90"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {savingNote ? 'Kaydediliyor...' : 'Notu Kaydet'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Delete */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setDetailQuestion(null); setQuestionToDelete(detailQuestion); }}
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Soruyu Sil
+              </Button>
             </div>
           )}
         </DialogContent>
