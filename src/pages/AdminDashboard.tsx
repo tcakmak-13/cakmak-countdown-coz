@@ -146,6 +146,37 @@ export default function AdminDashboard() {
     setCreating(false);
   };
 
+  const handleDeleteStudent = async () => {
+    if (!studentToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ action: 'delete-student', profileId: studentToDelete.id }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Öğrenci silinemedi.');
+      } else {
+        toast.success(`"${studentToDelete.full_name || studentToDelete.username}" silindi.`);
+        if (selectedStudent?.id === studentToDelete.id) setSelectedStudent(null);
+        loadStudents();
+      }
+    } catch {
+      toast.error('Bağlantı hatası.');
+    }
+    setDeleting(false);
+    setStudentToDelete(null);
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !session?.user?.id) return;
