@@ -517,7 +517,7 @@ export default function HataKumbarasi({ studentId }: Props) {
 
             {/* FAB: Add question */}
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setPickerOpen(true)}
               disabled={uploading}
               className="fixed bottom-24 right-6 z-50 h-14 w-14 rounded-full bg-gradient-to-r from-primary to-orange-600 text-white shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
             >
@@ -527,13 +527,18 @@ export default function HataKumbarasi({ studentId }: Props) {
                 <Plus className="h-7 w-7" />
               )}
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleUpload}
-              className="hidden"
+
+            {/* Image Picker Modal */}
+            <ImagePicker
+              open={pickerOpen}
+              onOpenChange={setPickerOpen}
+              onUpload={handleMultiUpload}
+              multiple={true}
+              maxFiles={10}
+              maxSizeMB={10}
+              title="Hata Sorusu Ekle"
+              description="Yapamadığın soruları fotoğrafla ve arşivle"
+              uploading={uploading}
             />
           </motion.div>
         )}
