@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import ImagePicker from '@/components/ImagePicker';
 
 interface Props {
   currentProfileId: string;
