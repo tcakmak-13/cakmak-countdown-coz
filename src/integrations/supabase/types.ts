@@ -19,7 +19,11 @@ export type Database = {
           created_at: string
           id: string
           note: string | null
+          recurring: boolean
+          recurring_day: number | null
+          recurring_time: string | null
           scheduled_at: string
+          series_ended_at: string | null
           status: string
           student_id: string
           type: string
@@ -29,7 +33,11 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          recurring?: boolean
+          recurring_day?: number | null
+          recurring_time?: string | null
           scheduled_at: string
+          series_ended_at?: string | null
           status?: string
           student_id: string
           type?: string
@@ -39,7 +47,11 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          recurring?: boolean
+          recurring_day?: number | null
+          recurring_time?: string | null
           scheduled_at?: string
+          series_ended_at?: string | null
           status?: string
           student_id?: string
           type?: string
