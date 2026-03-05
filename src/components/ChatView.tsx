@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import ImagePicker from '@/components/ImagePicker';
 
 interface Props {
   currentProfileId: string;
@@ -169,6 +170,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [coachDrawerOpen, setCoachDrawerOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
 
   const getSignedUrl = async (fileName: string) => {
     if (signedUrls[fileName]) return signedUrls[fileName];
@@ -300,6 +302,29 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleMultiImageUpload = useCallback(async (files: File[]) => {
+    if (!chatPartnerId || !currentUserId) return;
+    setUploading(true);
+    for (const file of files) {
+      const ext = file.name.split('.').pop();
+      const filePath = `${currentUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
+      if (uploadError) {
+        toast.error(`Yükleme hatası: ${file.name}`);
+        continue;
+      }
+      await supabase.from('chat_messages').insert({
+        sender_id: currentProfileId,
+        receiver_id: chatPartnerId,
+        content: '📷 Fotoğraf',
+        type: 'image',
+        file_name: filePath,
+      });
+    }
+    setUploading(false);
+    toast.success(`${files.length} fotoğraf gönderildi!`);
+  }, [chatPartnerId, currentUserId, currentProfileId]);
+
   const renderMessageContent = (msg: Message) => {
     const isMine = msg.sender_id === currentProfileId;
     const timeStr = new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -347,14 +372,30 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
       <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
         <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
+        {/* PDF/file attach */}
         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
           {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
+        </button>
+        {/* Image picker */}
+        <button type="button" onClick={() => setImagePickerOpen(true)} disabled={uploading} className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
+          <ImagePlus className="h-4 w-4" />
         </button>
         <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Mesaj yaz..." className="bg-secondary border-border text-sm h-10" maxLength={2000} />
         <button type="submit" className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity shadow-orange">
           <Send className="h-4 w-4 text-primary-foreground" />
         </button>
       </form>
+      <ImagePicker
+        open={imagePickerOpen}
+        onOpenChange={setImagePickerOpen}
+        onUpload={handleMultiImageUpload}
+        multiple={true}
+        maxFiles={10}
+        maxSizeMB={10}
+        title="Fotoğraf Gönder"
+        description="Koçuna göndermek istediğin fotoğrafları seç"
+        uploading={uploading}
+      />
     </div>
   );
 
