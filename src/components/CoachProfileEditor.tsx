@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, Trophy, Star, GraduationCap, Award, Save, Instagram, MessageCircle as WhatsAppIcon, Clock, Circle } from 'lucide-react';
+import { Camera, Trophy, Star, GraduationCap, Award, Save, Instagram, MessageCircle as WhatsAppIcon, Clock, Circle, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -170,6 +170,24 @@ export default function CoachProfileEditor({ adminName, adminAvatarUrl, onAvatar
             <Clock className="h-4 w-4 text-primary shrink-0" />
             <Input value={data.appointment_hours} onChange={e => update('appointment_hours', e.target.value)} placeholder="Pazartesi-Cuma 10:00-18:00" className="bg-secondary border-border h-10 text-sm" />
           </div>
+        </div>
+
+        {/* Daily Quote Override */}
+        <div className="space-y-2 border-t border-border pt-4">
+          <Label className="font-semibold text-sm flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Günün Sözünü Ben Belirle
+          </Label>
+          <Textarea
+            value={data.daily_quote}
+            onChange={e => update('daily_quote', e.target.value)}
+            placeholder="Boş bırakırsan rastgele söz gösterilir. Bir söz yazarsan tüm öğrenciler bunu görür."
+            className="bg-secondary border-border min-h-[80px] text-sm leading-relaxed resize-y"
+            maxLength={300}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {data.daily_quote ? '✅ Özel söz aktif — tüm öğrenciler bunu görecek.' : '🎲 Rastgele söz modu aktif.'}
+          </p>
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold">
