@@ -83,6 +83,13 @@
 }
 
 @layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
   .text-gradient-orange {
     background: linear-gradient(135deg, hsl(25, 95%, 53%), hsl(35, 100%, 60%));
     -webkit-background-clip: text;
