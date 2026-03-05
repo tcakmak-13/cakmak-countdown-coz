@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const allowedOrigins = [
   "https://cakmak-countdown-coz.lovable.app",
   "https://id-preview--aa1cb8dd-ba48-4c1e-849b-63083861ae18.lovable.app",
+  "https://aa1cb8dd-ba48-4c1e-849b-63083861ae18.lovableproject.com",
 ];
 
 function getCorsHeaders(req: Request) {
