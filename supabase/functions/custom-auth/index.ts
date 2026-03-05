@@ -38,6 +38,11 @@ function isPasswordStrong(password: string): boolean {
   return password.length >= 8;
 }
 
+function isUsernameValid(username: string): boolean {
+  // Only allow alphanumeric, dots, hyphens, underscores — no spaces or special chars
+  return /^[a-zA-Z0-9._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
+}
+
 Deno.serve(async (req) => {
   const cors = corsHeaders;
 
