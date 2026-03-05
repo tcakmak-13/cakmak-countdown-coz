@@ -469,6 +469,27 @@ export default function AdminDashboard() {
         </main>
       </div>
 
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!studentToDelete} onOpenChange={(open) => { if (!open) setStudentToDelete(null); }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Öğrenciyi Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{studentToDelete?.full_name || studentToDelete?.username}</strong> adlı öğrenciyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve öğrencinin tüm verileri (denemeler, mesajlar, randevular, program) kalıcı olarak silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStudent}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Siliniyor...' : 'Evet, Sil'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
