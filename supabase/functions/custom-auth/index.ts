@@ -145,6 +145,12 @@ Deno.serve(async (req) => {
         });
       }
 
+      if (!isUsernameValid(username)) {
+        return new Response(JSON.stringify({ error: "Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir (en az 2 karakter)." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
       if (!isPasswordStrong(password)) {
         return new Response(JSON.stringify({ error: "Şifre en az 8 karakter olmalıdır." }), {
           status: 400, headers: { ...cors, "Content-Type": "application/json" },
