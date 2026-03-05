@@ -444,11 +444,19 @@ export default function HataKumbarasi({ studentId }: Props) {
                       onClick={() => openDetail(q)}
                       className="w-full aspect-[3/4] overflow-hidden"
                     >
-                      <img
-                        src={q.image_url}
-                        alt="Soru"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
+                      {getImageUrl(q) ? (
+                        <img
+                          src={getImageUrl(q)}
+                          alt="Soru"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-secondary">
+                          <div className="h-6 w-6 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </button>
                       />
                     </button>
 
