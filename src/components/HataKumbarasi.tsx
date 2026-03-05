@@ -1,0 +1,481 @@
+import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
+  BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
+  Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
+  Triangle, Clock
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
+interface ErrorQuestion {
+  id: string;
+  student_id: string;
+  exam_type: string;
+  subject: string;
+  image_url: string;
+  status: string;
+  note: string;
+  created_at: string;
+}
+
+interface SubjectDef {
+  name: string;
+  icon: typeof Calculator;
+  color: string;
+}
+
+const TYT_SUBJECTS: SubjectDef[] = [
+  { name: 'Matematik', icon: Calculator, color: 'from-blue-500 to-blue-600' },
+  { name: 'Geometri', icon: Triangle, color: 'from-indigo-500 to-indigo-600' },
+  { name: 'Türkçe', icon: BookOpen, color: 'from-red-500 to-red-600' },
+  { name: 'Fizik', icon: Atom, color: 'from-cyan-500 to-cyan-600' },
+  { name: 'Kimya', icon: FlaskConical, color: 'from-emerald-500 to-emerald-600' },
+  { name: 'Biyoloji', icon: Dna, color: 'from-green-500 to-green-600' },
+  { name: 'Tarih', icon: Landmark, color: 'from-amber-500 to-amber-600' },
+  { name: 'Coğrafya', icon: Globe2, color: 'from-teal-500 to-teal-600' },
+  { name: 'Felsefe', icon: Brain, color: 'from-purple-500 to-purple-600' },
+  { name: 'Din Kültürü', icon: BookMarked, color: 'from-orange-500 to-orange-600' },
+];
+
+const AYT_SUBJECTS: SubjectDef[] = [
+  { name: 'Matematik', icon: Calculator, color: 'from-blue-500 to-blue-600' },
+  { name: 'Fizik', icon: Atom, color: 'from-cyan-500 to-cyan-600' },
+  { name: 'Kimya', icon: FlaskConical, color: 'from-emerald-500 to-emerald-600' },
+  { name: 'Biyoloji', icon: Dna, color: 'from-green-500 to-green-600' },
+  { name: 'Edebiyat', icon: PenTool, color: 'from-rose-500 to-rose-600' },
+  { name: 'Tarih', icon: Landmark, color: 'from-amber-500 to-amber-600' },
+  { name: 'Coğrafya', icon: Globe2, color: 'from-teal-500 to-teal-600' },
+  { name: 'Felsefe', icon: Brain, color: 'from-purple-500 to-purple-600' },
+  { name: 'Din Kültürü', icon: BookMarked, color: 'from-orange-500 to-orange-600' },
+  { name: 'Dil', icon: Languages, color: 'from-pink-500 to-pink-600' },
+];
+
+type View = 'home' | 'subjects' | 'gallery';
+
+interface Props {
+  studentId: string;
+}
+
+export default function HataKumbarasi({ studentId }: Props) {
+  const { user } = useAuth();
+  const [view, setView] = useState<View>('home');
+  const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [questions, setQuestions] = useState<ErrorQuestion[]>([]);
+  const [allQuestions, setAllQuestions] = useState<ErrorQuestion[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
+  const [questionToDelete, setQuestionToDelete] = useState<ErrorQuestion | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load all questions for counts
+  useEffect(() => {
+    supabase
+      .from('error_questions')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setAllQuestions(data as ErrorQuestion[]);
+      });
+  }, [studentId]);
+
+  // Load filtered questions when entering gallery
+  useEffect(() => {
+    if (view === 'gallery' && selectedSubject) {
+      const filtered = allQuestions.filter(
+        q => q.exam_type === examType && q.subject === selectedSubject
+      );
+      setQuestions(filtered);
+    }
+  }, [view, selectedSubject, examType, allQuestions]);
+
+  const getSubjectCount = (exam: string, subject: string) =>
+    allQuestions.filter(q => q.exam_type === exam && q.subject === subject).length;
+
+  const getExamCount = (exam: string) =>
+    allQuestions.filter(q => q.exam_type === exam).length;
+
+  const handleSelectExam = (type: 'TYT' | 'AYT') => {
+    setExamType(type);
+    setView('subjects');
+  };
+
+  const handleSelectSubject = (subject: string) => {
+    setSelectedSubject(subject);
+    setView('gallery');
+  };
+
+  const handleBack = () => {
+    if (view === 'gallery') { setView('subjects'); setSelectedSubject(''); }
+    else if (view === 'subjects') setView('home');
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Dosya boyutu 10MB\'dan küçük olmalı.');
+      return;
+    }
+
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const fileName = `${user.id}/${examType}/${selectedSubject}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('error-questions')
+      .upload(fileName, file, { upsert: false });
+
+    if (uploadError) {
+      toast.error('Yükleme hatası: ' + uploadError.message);
+      setUploading(false);
+      e.target.value = '';
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from('error-questions').getPublicUrl(fileName);
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('error_questions')
+      .insert({
+        student_id: studentId,
+        exam_type: examType,
+        subject: selectedSubject,
+        image_url: urlData.publicUrl,
+        status: 'unsolved',
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      toast.error('Kayıt hatası.');
+    } else if (inserted) {
+      const q = inserted as ErrorQuestion;
+      setAllQuestions(prev => [q, ...prev]);
+      toast.success('Soru eklendi!');
+    }
+    setUploading(false);
+    e.target.value = '';
+  };
+
+  const toggleStatus = async (question: ErrorQuestion) => {
+    const newStatus = question.status === 'learned' ? 'unsolved' : 'learned';
+    const { error } = await supabase
+      .from('error_questions')
+      .update({ status: newStatus })
+      .eq('id', question.id);
+
+    if (!error) {
+      setAllQuestions(prev =>
+        prev.map(q => q.id === question.id ? { ...q, status: newStatus } : q)
+      );
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!questionToDelete) return;
+    // Extract file path from URL
+    const url = questionToDelete.image_url;
+    const bucketPath = url.split('/error-questions/')[1]?.split('?')[0];
+    if (bucketPath) {
+      await supabase.storage.from('error-questions').remove([decodeURIComponent(bucketPath)]);
+    }
+    await supabase.from('error_questions').delete().eq('id', questionToDelete.id);
+    setAllQuestions(prev => prev.filter(q => q.id !== questionToDelete.id));
+    setQuestionToDelete(null);
+    toast.success('Soru silindi.');
+  };
+
+  const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header with back button */}
+      <div className="flex items-center gap-3">
+        {view !== 'home' && (
+          <button onClick={handleBack} className="p-2 rounded-xl hover:bg-secondary transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
+        <div>
+          <h2 className="font-display text-xl font-bold flex items-center gap-2">
+            <ScrollText className="h-5 w-5 text-primary" />
+            Hata Kumbarası
+          </h2>
+          {view === 'subjects' && (
+            <p className="text-sm text-muted-foreground mt-0.5">{examType} Dersleri</p>
+          )}
+          {view === 'gallery' && (
+            <p className="text-sm text-muted-foreground mt-0.5">{examType} — {selectedSubject}</p>
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {/* HOME: Exam type selection */}
+        {view === 'home' && (
+          <motion.div
+            key="home"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-4"
+          >
+            <p className="text-sm text-muted-foreground text-center">
+              Yapamadığın soruları fotoğraflayarak arşivle, ilerlemeni takip et.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* TYT Card */}
+              <button
+                onClick={() => handleSelectExam('TYT')}
+                className="group relative overflow-hidden rounded-2xl p-8 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-700 opacity-90" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_60%)]" />
+                <div className="relative z-10">
+                  <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                    <BookOpen className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="font-display text-2xl font-bold text-white mb-1">TYT</h3>
+                  <p className="text-sm text-white/70">Temel Yeterlilik Testi</p>
+                  <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
+                    <span className="text-xs font-medium text-white">{getExamCount('TYT')} Soru</span>
+                  </div>
+                </div>
+              </button>
+
+              {/* AYT Card */}
+              <button
+                onClick={() => handleSelectExam('AYT')}
+                className="group relative overflow-hidden rounded-2xl p-8 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary to-orange-700 opacity-90" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.15),transparent_60%)]" />
+                <div className="relative z-10">
+                  <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                    <ScrollText className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="font-display text-2xl font-bold text-white mb-1">AYT</h3>
+                  <p className="text-sm text-white/70">Alan Yeterlilik Testi</p>
+                  <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
+                    <span className="text-xs font-medium text-white">{getExamCount('AYT')} Soru</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Stats summary */}
+            <div className="glass-card rounded-2xl p-5 mt-2">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="font-display text-2xl font-bold text-primary">{allQuestions.length}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Toplam</p>
+                </div>
+                <div>
+                  <p className="font-display text-2xl font-bold text-red-400">{allQuestions.filter(q => q.status === 'unsolved').length}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Çözemedim</p>
+                </div>
+                <div>
+                  <p className="font-display text-2xl font-bold text-emerald-400">{allQuestions.filter(q => q.status === 'learned').length}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mt-1">Öğrendim</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* SUBJECTS: Folder-style subject list */}
+        {view === 'subjects' && (
+          <motion.div
+            key="subjects"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {subjects.map((s) => {
+                const count = getSubjectCount(examType, s.name);
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.name}
+                    onClick={() => handleSelectSubject(s.name)}
+                    className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${s.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                    <div className="relative z-10">
+                      <Icon className="h-7 w-7 text-white/90 mb-3" />
+                      <p className="font-display text-base font-bold text-white leading-tight">{s.name}</p>
+                      <p className="text-xs text-white/60 mt-1.5">{count} Soru</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* GALLERY: Question grid */}
+        {view === 'gallery' && (
+          <motion.div
+            key="gallery"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="space-y-4"
+          >
+            {/* Stats bar */}
+            <div className="flex items-center gap-3 text-sm">
+              <span className="px-3 py-1 rounded-full bg-secondary text-muted-foreground font-medium">
+                {questions.length} Soru
+              </span>
+              <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">
+                ✓ {questions.filter(q => q.status === 'learned').length} Öğrenildi
+              </span>
+              <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-400 font-medium">
+                ✗ {questions.filter(q => q.status === 'unsolved').length} Çözemedim
+              </span>
+            </div>
+
+            {questions.length === 0 ? (
+              <div className="glass-card rounded-2xl p-12 text-center">
+                <ScrollText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">Henüz soru eklenmedi</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Aşağıdaki butonla ilk sorunuzu ekleyin</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {questions.map((q) => (
+                  <div key={q.id} className="group relative rounded-xl overflow-hidden border border-border bg-card">
+                    {/* Image */}
+                    <button
+                      onClick={() => setFullscreenImg(q.image_url)}
+                      className="w-full aspect-[3/4] overflow-hidden"
+                    >
+                      <img
+                        src={q.image_url}
+                        alt="Soru"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </button>
+
+                    {/* Learned overlay */}
+                    {q.status === 'learned' && (
+                      <div className="absolute inset-0 bg-emerald-500/15 pointer-events-none flex items-center justify-center">
+                        <div className="h-14 w-14 rounded-full bg-emerald-500/80 flex items-center justify-center">
+                          <Check className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Zoom icon */}
+                    <button
+                      onClick={() => setFullscreenImg(q.image_url)}
+                      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ZoomIn className="h-3.5 w-3.5" />
+                    </button>
+
+                    {/* Bottom bar */}
+                    <div className="p-2.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(q.created_at)}
+                        </span>
+                        <button
+                          onClick={() => setQuestionToDelete(q)}
+                          className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => toggleStatus(q)}
+                        className={`w-full text-xs font-medium py-1.5 rounded-lg transition-colors ${
+                          q.status === 'learned'
+                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                            : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                        }`}
+                      >
+                        {q.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* FAB: Add question */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="fixed bottom-24 right-6 z-50 h-14 w-14 rounded-full bg-gradient-to-r from-primary to-orange-600 text-white shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {uploading ? (
+                <div className="h-6 w-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Plus className="h-7 w-7" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleUpload}
+              className="hidden"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen image dialog */}
+      <Dialog open={!!fullscreenImg} onOpenChange={() => setFullscreenImg(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none overflow-hidden">
+          {fullscreenImg && (
+            <div className="w-full h-full flex items-center justify-center p-2 overflow-auto">
+              <img
+                src={fullscreenImg}
+                alt="Soru - Tam Ekran"
+                className="max-w-full max-h-[90vh] object-contain select-none"
+                style={{ touchAction: 'pinch-zoom' }}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!questionToDelete} onOpenChange={() => setQuestionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Soruyu silmek istediğinize emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>Bu işlem geri alınamaz. Fotoğraf kalıcı olarak silinecektir.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Evet, Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

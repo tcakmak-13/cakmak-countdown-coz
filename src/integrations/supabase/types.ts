@@ -330,6 +330,47 @@ export type Database = {
           },
         ]
       }
+      error_questions: {
+        Row: {
+          created_at: string
+          exam_type: string
+          id: string
+          image_url: string
+          note: string | null
+          status: string
+          student_id: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          exam_type?: string
+          id?: string
+          image_url: string
+          note?: string | null
+          status?: string
+          student_id: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          exam_type?: string
+          id?: string
+          image_url?: string
+          note?: string | null
+          status?: string
+          student_id?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_questions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

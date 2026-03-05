@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,9 @@ import ChatView from '@/components/ChatView';
 import Denemelerim from '@/components/Denemelerim';
 import MotivationQuote from '@/components/MotivationQuote';
 import AppointmentBooking from '@/components/AppointmentBooking';
+import HataKumbarasi from '@/components/HataKumbarasi';
 
-type Tab = 'denemelerim' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
 const tabVariants = {
   initial: { opacity: 0, y: 12 },
@@ -59,7 +60,7 @@ export default function StudentDashboard() {
 
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
-    { key: 'randevular', label: 'Randevu', icon: CalendarIcon },
+    { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
@@ -105,6 +106,20 @@ export default function StudentDashboard() {
                     <StudyPlanner studentId={profileId} />
                   </div>
                 )}
+                {profileId && (
+                  <button
+                    onClick={() => setTab('randevular' as Tab)}
+                    className="w-full glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors text-left"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-gradient-orange flex items-center justify-center shadow-orange shrink-0">
+                      <CalendarIcon className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-display font-semibold">Randevu Al</p>
+                      <p className="text-xs text-muted-foreground">Koçunla görüşme planla</p>
+                    </div>
+                  </button>
+                )}
                 <MotivationQuote />
               </div>
             </motion.div>
@@ -116,6 +131,11 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
+          {tab === 'hata-kumbarasi' && profileId && (
+            <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <HataKumbarasi studentId={profileId} />
+            </motion.div>
+          )}
 
           {tab === 'mesajlar' && profileId && (
             <motion.div key="mesajlar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
