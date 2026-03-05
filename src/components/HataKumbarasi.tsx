@@ -184,6 +184,28 @@ export default function HataKumbarasi({ studentId }: Props) {
     }
   };
 
+  const openDetail = (q: ErrorQuestion) => {
+    setDetailQuestion(q);
+    setEditNote(q.note || '');
+  };
+
+  const saveNote = async () => {
+    if (!detailQuestion) return;
+    setSavingNote(true);
+    const { error } = await supabase
+      .from('error_questions')
+      .update({ note: editNote })
+      .eq('id', detailQuestion.id);
+    if (!error) {
+      setAllQuestions(prev =>
+        prev.map(q => q.id === detailQuestion.id ? { ...q, note: editNote } : q)
+      );
+      setDetailQuestion(prev => prev ? { ...prev, note: editNote } : null);
+      toast.success('Not kaydedildi!');
+    }
+    setSavingNote(false);
+  };
+
   const handleDelete = async () => {
     if (!questionToDelete) return;
     // Extract file path from URL
