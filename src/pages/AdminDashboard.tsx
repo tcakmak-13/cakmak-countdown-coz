@@ -264,24 +264,35 @@ export default function AdminDashboard() {
             </div>
             <div className="space-y-2">
               {students.map(s => (
-                <button
+                <div
                   key={s.id}
-                  onClick={() => { setSelectedStudent(s); setTab('schedule'); }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left group ${
                     selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : 'hover:bg-secondary'
                   }`}
                 >
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {s.full_name?.charAt(0) || '?'}
-                  </div>
-                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
-                    <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
-                    {s.target_university && (
-                      <p className="text-[11px] text-primary/80 truncate mt-0.5">🎯 {s.target_university}{s.target_department ? ` / ${s.target_department}` : ''}</p>
-                    )}
-                  </div>
-                </button>
+                  <button
+                    onClick={() => { setSelectedStudent(s); setTab('schedule'); }}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {s.full_name?.charAt(0) || '?'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
+                      <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
+                      {s.target_university && (
+                        <p className="text-[11px] text-primary/80 truncate mt-0.5">🎯 {s.target_university}{s.target_department ? ` / ${s.target_department}` : ''}</p>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setStudentToDelete(s); }}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                    title="Öğrenciyi sil"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               ))}
               {students.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">Henüz öğrenci yok.</p>
