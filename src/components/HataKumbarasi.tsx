@@ -133,7 +133,6 @@ export default function HataKumbarasi({ studentId }: Props) {
         }
       });
   }, [studentId]);
-  }, [studentId]);
 
   // Load filtered questions when entering gallery
   useEffect(() => {
