@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Video, Phone, CalendarIcon, Clock, RefreshCw, Check, X, Loader2 } from 'lucide-react';
+import { Video, Phone, CalendarIcon, Clock, RefreshCw, Check, X, Loader2, Repeat } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format } from 'date-fns';
+import { format, addDays, nextDay, isAfter } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -17,10 +16,35 @@ interface Appointment {
   scheduled_at: string;
   status: string;
   created_at: string;
+  recurring: boolean;
+  recurring_day: number | null;
+  recurring_time: string | null;
+  series_ended_at: string | null;
 }
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 9); // 09:00 - 21:00
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 9);
 const MINUTES = [0, 15, 30, 45];
+const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+
+function getNextOccurrence(recurringDay: number, recurringTime: string): Date {
+  const now = new Date();
+  const [h, m] = recurringTime.split(':').map(Number);
+  const today = now.getDay();
+
+  let target: Date;
+  if (today === recurringDay) {
+    target = new Date(now);
+    target.setHours(h, m, 0, 0);
+    if (target <= now) {
+      target = addDays(target, 7);
+    }
+  } else {
+    // nextDay expects 0=Sunday as the RDN standard
+    target = nextDay(now, recurringDay as 0 | 1 | 2 | 3 | 4 | 5 | 6);
+    target.setHours(h, m, 0, 0);
+  }
+  return target;
+}
 
 export default function AppointmentBooking({ studentId }: { studentId: string }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -38,7 +62,7 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
       .select('*')
       .eq('student_id', studentId)
       .order('scheduled_at', { ascending: true });
-    setAppointments((data as Appointment[]) || []);
+    setAppointments((data as unknown as Appointment[]) || []);
     setLoading(false);
   };
 
@@ -65,15 +89,21 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
     scheduledAt.setHours(selectedHour, selectedMinute, 0, 0);
     if (scheduledAt <= new Date()) { toast.error('Geçmiş bir tarih seçemezsiniz.'); return; }
 
+    const dayOfWeek = scheduledAt.getDay();
+    const timeStr = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+
     setSubmitting(true);
     const { error } = await supabase.from('appointments').insert({
       student_id: studentId,
       type: selectedType,
       scheduled_at: scheduledAt.toISOString(),
+      recurring: true,
+      recurring_day: dayOfWeek,
+      recurring_time: timeStr,
     });
     setSubmitting(false);
     if (error) { toast.error('Randevu oluşturulamadı: ' + error.message); return; }
-    toast.success('Randevu talebin koçuna iletildi!');
+    toast.success('Haftalık randevu talebin koçuna iletildi!');
     setDialogOpen(false);
     fetchAppointments();
   };
@@ -95,9 +125,10 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
     return <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.cls}`}>{s.label}</span>;
   };
 
-  const upcomingApproved = appointments.filter(a => a.status === 'approved' && new Date(a.scheduled_at) > new Date());
+  // Active recurring (approved, not ended)
+  const activeRecurring = appointments.filter(a => a.status === 'approved' && a.recurring && !a.series_ended_at);
   const pending = appointments.filter(a => a.status === 'pending');
-  const past = appointments.filter(a => a.status !== 'pending' && (a.status !== 'approved' || new Date(a.scheduled_at) <= new Date()));
+  const ended = appointments.filter(a => a.series_ended_at || a.status === 'rejected' || a.status === 'completed');
 
   return (
     <div className="space-y-6">
@@ -134,31 +165,67 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
         </motion.button>
       </div>
 
-      {/* Upcoming approved */}
-      {upcomingApproved.length > 0 && (
+      {/* Active recurring appointments */}
+      {activeRecurring.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Yaklaşan Randevular</h3>
-          {upcomingApproved.map(a => (
-            <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-5 flex items-center gap-4 border border-emerald-500/20"
-            >
-              <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
-                {a.type === 'video' ? <Video className="h-6 w-6 text-primary" /> : <Phone className="h-6 w-6 text-emerald-400" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-display font-semibold">{a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme</p>
-                <p className="text-primary font-bold text-lg">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
-              </div>
-              {statusBadge(a.status)}
-            </motion.div>
-          ))}
+          <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+            <Repeat className="h-4 w-4" /> Haftalık Tekrarlanan Görüşmeler
+          </h3>
+          {activeRecurring.map(a => {
+            const nextOccurrence = a.recurring_day != null && a.recurring_time
+              ? getNextOccurrence(a.recurring_day, a.recurring_time)
+              : new Date(a.scheduled_at);
+
+            return (
+              <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                className="glass-card rounded-2xl p-6 border border-emerald-500/30 relative overflow-hidden"
+              >
+                {/* Recurring badge */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                  <Repeat className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-xs font-medium text-emerald-400">Haftalık Tekrar</span>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
+                    {a.type === 'video' ? <Video className="h-7 w-7 text-primary" /> : <Phone className="h-7 w-7 text-emerald-400" />}
+                  </div>
+                  <div className="flex-1 min-w-0 pt-1">
+                    <p className="font-display font-bold text-lg">
+                      {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
+                    </p>
+
+                    {/* Next occurrence - large and prominent */}
+                    <div className="mt-4 rounded-xl bg-primary/10 border border-primary/25 p-4">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bir Sonraki Görüşme</p>
+                      <p className="font-display font-black text-2xl text-primary">
+                        {format(nextOccurrence, 'dd MMMM yyyy', { locale: tr })}
+                      </p>
+                      <p className="font-display font-black text-3xl text-foreground">
+                        {format(nextOccurrence, 'HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  {statusBadge(a.status)}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
       {/* Pending */}
       {pending.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Bekleyen Talepler</h3>
+          <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-amber-400 flex items-center gap-2">
+            <Clock className="h-4 w-4" /> Bekleyen Talepler
+          </h3>
           {pending.map(a => (
             <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               className="glass-card rounded-2xl p-5 flex items-center gap-4 border border-amber-500/20"
@@ -168,7 +235,10 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-display font-semibold">{a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme</p>
-                <p className="text-amber-400 font-bold text-lg">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
+                <p className="text-sm text-muted-foreground">
+                  Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
+                </p>
+                <p className="text-amber-400 font-bold text-lg mt-1">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
               </div>
               <div className="flex items-center gap-2">
                 {statusBadge(a.status)}
@@ -181,14 +251,17 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
         </div>
       )}
 
-      {/* Past */}
-      {past.length > 0 && (
+      {/* Ended / Past */}
+      {ended.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Geçmiş Randevular</h3>
-          {past.slice(0, 5).map(a => (
+          <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Sona Eren / Geçmiş</h3>
+          {ended.slice(0, 5).map(a => (
             <div key={a.id} className="glass-card rounded-xl p-4 flex items-center gap-3 opacity-60">
               {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground" /> : <Phone className="h-5 w-5 text-muted-foreground" />}
-              <span className="text-sm flex-1">{format(new Date(a.scheduled_at), 'dd MMM yyyy HH:mm', { locale: tr })}</span>
+              <span className="text-sm flex-1">
+                {DAY_NAMES[a.recurring_day ?? 0]} — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
+              </span>
+              {a.series_ended_at && <span className="text-xs text-muted-foreground">Seri sonlandırıldı</span>}
               {statusBadge(a.status)}
             </div>
           ))}
@@ -213,6 +286,14 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
           </DialogHeader>
 
           <div className="space-y-5 pt-2">
+            {/* Recurring notice */}
+            <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 flex items-start gap-2.5">
+              <Repeat className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-300 font-medium leading-snug">
+                Bu randevu <span className="font-bold">her hafta aynı gün ve saatte</span> tekrarlanacaktır. İptal edilmediği sürece devam eder.
+              </p>
+            </div>
+
             {/* Date picker */}
             <div>
               <p className="text-sm font-medium mb-2 flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-primary" /> Tarih Seç</p>
@@ -259,12 +340,15 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="rounded-xl bg-primary/10 border border-primary/30 p-4 text-center"
               >
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Seçilen Randevu</p>
-                <p className="font-display font-bold text-xl text-primary">
-                  {format(selectedDate, 'dd MMMM yyyy', { locale: tr })}
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Haftalık Randevu</p>
+                <p className="font-display font-bold text-lg text-foreground">
+                  Her <span className="text-primary">{DAY_NAMES[selectedDate.getDay()]}</span>
                 </p>
-                <p className="font-display font-bold text-2xl text-foreground">
+                <p className="font-display font-bold text-3xl text-primary">
                   {String(selectedHour).padStart(2, '0')}:{String(selectedMinute).padStart(2, '0')}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  İlk görüşme: {format(selectedDate, 'dd MMMM yyyy', { locale: tr })}
                 </p>
               </motion.div>
             )}
@@ -275,7 +359,7 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
               className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base gap-2"
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-              {submitting ? 'Gönderiliyor...' : 'Randevu Al'}
+              {submitting ? 'Gönderiliyor...' : 'Haftalık Randevu Al'}
             </Button>
           </div>
         </DialogContent>
