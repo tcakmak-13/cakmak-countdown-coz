@@ -325,7 +325,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     toast.success(`${files.length} fotoğraf gönderildi!`);
   }, [chatPartnerId, currentUserId, currentProfileId]);
 
-
+  const renderMessageContent = (msg: Message) => {
     const isMine = msg.sender_id === currentProfileId;
     const timeStr = new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     const fileUrl = msg.file_name ? signedUrls[msg.file_name] : '';
