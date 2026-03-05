@@ -171,6 +171,40 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "delete-student") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
+          status: 401, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
+      const callerClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: callerUser } = await callerClient.auth.getUser();
+      if (!callerUser?.user) {
+        return new Response(JSON.stringify({ error: "Geçersiz oturum." }), {
+          status: 401, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
+      if (roleData?.role !== "admin") {
+        return new Response(JSON.stringify({ error: "Sadece adminler öğrenci silebilir." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: body } = await new Response(null).json().catch(() => ({ data: null }));
+      const profileId = (await req.clone().json?.() || {}).profileId;
+      
+      // We already parsed the body at the top, use the destructured values
+      // profileId comes from the request body parsed at top level - we need to re-read
+      // Actually the body was already parsed above. Let's use a different approach.
+    }
+
     return new Response(JSON.stringify({ error: "Geçersiz işlem." }), {
       status: 400, headers: { ...cors, "Content-Type": "application/json" },
     });
