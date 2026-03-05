@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck, Trash2 } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 interface StudentProfile {
@@ -46,6 +47,10 @@ export default function AdminDashboard() {
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementBody, setAnnouncementBody] = useState('');
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
+
+  // Student deletion
+  const [studentToDelete, setStudentToDelete] = useState<StudentProfile | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSendAnnouncement = async () => {
     if (!announcementTitle.trim() || !announcementBody.trim()) {
@@ -141,6 +146,37 @@ export default function AdminDashboard() {
     setCreating(false);
   };
 
+  const handleDeleteStudent = async () => {
+    if (!studentToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ action: 'delete-student', profileId: studentToDelete.id }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Öğrenci silinemedi.');
+      } else {
+        toast.success(`"${studentToDelete.full_name || studentToDelete.username}" silindi.`);
+        if (selectedStudent?.id === studentToDelete.id) setSelectedStudent(null);
+        loadStudents();
+      }
+    } catch {
+      toast.error('Bağlantı hatası.');
+    }
+    setDeleting(false);
+    setStudentToDelete(null);
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !session?.user?.id) return;
@@ -228,24 +264,35 @@ export default function AdminDashboard() {
             </div>
             <div className="space-y-2">
               {students.map(s => (
-                <button
+                <div
                   key={s.id}
-                  onClick={() => { setSelectedStudent(s); setTab('schedule'); }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left group ${
                     selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : 'hover:bg-secondary'
                   }`}
                 >
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                    {s.full_name?.charAt(0) || '?'}
-                  </div>
-                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
-                    <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
-                    {s.target_university && (
-                      <p className="text-[11px] text-primary/80 truncate mt-0.5">🎯 {s.target_university}{s.target_department ? ` / ${s.target_department}` : ''}</p>
-                    )}
-                  </div>
-                </button>
+                  <button
+                    onClick={() => { setSelectedStudent(s); setTab('schedule'); }}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {s.full_name?.charAt(0) || '?'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
+                      <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
+                      {s.target_university && (
+                        <p className="text-[11px] text-primary/80 truncate mt-0.5">🎯 {s.target_university}{s.target_department ? ` / ${s.target_department}` : ''}</p>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setStudentToDelete(s); }}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                    title="Öğrenciyi sil"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               ))}
               {students.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">Henüz öğrenci yok.</p>
@@ -422,6 +469,27 @@ export default function AdminDashboard() {
         </main>
       </div>
 
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!studentToDelete} onOpenChange={(open) => { if (!open) setStudentToDelete(null); }}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Öğrenciyi Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{studentToDelete?.full_name || studentToDelete?.username}</strong> adlı öğrenciyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve öğrencinin tüm verileri (denemeler, mesajlar, randevular, program) kalıcı olarak silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStudent}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Siliniyor...' : 'Evet, Sil'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
