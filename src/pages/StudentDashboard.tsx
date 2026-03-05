@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon } from 'lucide-react';
+import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -77,6 +78,7 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
             <NotificationBell />
+            <AvatarUpload size="sm" />
           </div>
         </div>
       </header>
@@ -126,6 +128,13 @@ export default function StudentDashboard() {
               <div className="space-y-6 pb-24">
                 <div className="glass-card rounded-2xl p-6">
                   <h2 className="font-display text-lg font-semibold mb-4">Profilim</h2>
+                  <div className="flex items-center gap-4 mb-6">
+                    <AvatarUpload size="lg" />
+                    <div>
+                      <p className="font-display font-bold text-lg">{profile.full_name}</p>
+                      <p className="text-xs text-muted-foreground">Fotoğrafı değiştirmek için tıklayın</p>
+                    </div>
+                  </div>
                   <StudentProfileForm studentId={profileId} onAreaChange={setStudentArea} />
                 </div>
                 <AlertDialog>
