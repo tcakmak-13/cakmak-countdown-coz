@@ -189,15 +189,13 @@ export default function HataKumbarasi({ studentId }: Props) {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from('error-questions').getPublicUrl(fileName);
-
     const { data: inserted, error: insertError } = await supabase
       .from('error_questions')
       .insert({
         student_id: studentId,
         exam_type: examType,
         subject: selectedSubject,
-        image_url: urlData.publicUrl,
+        image_url: fileName, // Store only the storage path
         status: 'unsolved',
       })
       .select()
@@ -208,6 +206,13 @@ export default function HataKumbarasi({ studentId }: Props) {
     } else if (inserted) {
       const q = inserted as ErrorQuestion;
       setAllQuestions(prev => [q, ...prev]);
+      // Generate signed URL for the new question
+      const { data: signedData } = await supabase.storage
+        .from('error-questions')
+        .createSignedUrl(fileName, 3600);
+      if (signedData?.signedUrl) {
+        setSignedUrls(prev => ({ ...prev, [q.id]: signedData.signedUrl }));
+      }
       toast.success('Soru eklendi!');
     }
     setUploading(false);
