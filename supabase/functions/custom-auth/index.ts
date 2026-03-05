@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
-    const { action, username, password, fullName } = await req.json();
+    const { action, username, password, fullName, profileId } = await req.json();
 
     if (action === "login") {
       if (!username || !password) {
@@ -197,12 +197,40 @@ Deno.serve(async (req) => {
         });
       }
 
-      const { data: body } = await new Response(null).json().catch(() => ({ data: null }));
-      const profileId = (await req.clone().json?.() || {}).profileId;
-      
-      // We already parsed the body at the top, use the destructured values
-      // profileId comes from the request body parsed at top level - we need to re-read
-      // Actually the body was already parsed above. Let's use a different approach.
+      if (!profileId) {
+        return new Response(JSON.stringify({ error: "Profil ID gerekli." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the user_id from the profile
+      const { data: profileData, error: profileErr } = await supabase.from("profiles").select("user_id").eq("id", profileId).single();
+      if (profileErr || !profileData) {
+        return new Response(JSON.stringify({ error: "Öğrenci bulunamadı." }), {
+          status: 404, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent deleting admin
+      const { data: targetRole } = await supabase.from("user_roles").select("role").eq("user_id", profileData.user_id).single();
+      if (targetRole?.role === "admin") {
+        return new Response(JSON.stringify({ error: "Admin hesabı silinemez." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      // Delete the auth user (CASCADE will handle profiles, user_roles, etc.)
+      const { error: deleteErr } = await supabase.auth.admin.deleteUser(profileData.user_id);
+      if (deleteErr) {
+        console.error("Delete user error:", deleteErr);
+        return new Response(JSON.stringify({ error: "Öğrenci silinemedi." }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ error: "Geçersiz işlem." }), {
