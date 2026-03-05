@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck, Trash2 } from 'lucide-react';
+import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +32,7 @@ interface StudentProfile {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { profile, role, loading, signOut, profileId, session } = useAuth();
+  const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('analytics');
@@ -192,6 +193,7 @@ export default function AdminDashboard() {
     const avatarUrl = urlData.publicUrl + '?t=' + Date.now();
     await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', profileId);
     toast.success('Profil fotoğrafı güncellendi!');
+    await refreshProfile();
   };
 
   return (
@@ -208,20 +210,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             <YKSCountdown compact />
             <NotificationBell />
-            {/* Avatar upload */}
-            <label className="relative cursor-pointer group">
-              <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange overflow-hidden ring-2 ring-primary/30">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-sm font-bold text-primary-foreground">{profile.full_name?.charAt(0)}</span>
-                )}
-              </div>
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="h-4 w-4 text-white" />
-              </div>
-              <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAvatarUpload} className="hidden" />
-            </label>
+            <AvatarUpload size="sm" />
             <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
               <LogOut className="h-5 w-5" />
             </button>
