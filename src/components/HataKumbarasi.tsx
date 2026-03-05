@@ -77,6 +77,46 @@ export default function HataKumbarasi({ studentId }: Props) {
   const [editNote, setEditNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  // Helper: extract storage path from image_url (handles both full URLs and plain paths)
+  const getStoragePath = (imageUrl: string): string => {
+    if (imageUrl.includes('/error-questions/')) {
+      const path = imageUrl.split('/object/public/error-questions/')[1] 
+        || imageUrl.split('/object/sign/error-questions/')[1]
+        || imageUrl.split('/error-questions/')[1];
+      return path ? decodeURIComponent(path.split('?')[0]) : imageUrl;
+    }
+    return imageUrl;
+  };
+
+  // Generate signed URLs for all questions
+  const generateSignedUrls = async (questions: ErrorQuestion[]) => {
+    const paths = questions.map(q => getStoragePath(q.image_url));
+    if (paths.length === 0) return;
+    
+    const { data } = await supabase.storage
+      .from('error-questions')
+      .createSignedUrls(paths, 3600); // 1 hour TTL
+    
+    if (data) {
+      const urlMap: Record<string, string> = {};
+      data.forEach((item) => {
+        if (item.signedUrl && !item.error) {
+          // Map the original question image_url to signed URL
+          const matchingQ = questions.find(q => getStoragePath(q.image_url) === item.path);
+          if (matchingQ) {
+            urlMap[matchingQ.id] = item.signedUrl;
+          }
+        }
+      });
+      setSignedUrls(prev => ({ ...prev, ...urlMap }));
+    }
+  };
+
+  const getImageUrl = (q: ErrorQuestion): string => {
+    return signedUrls[q.id] || '';
+  };
 
   // Load all questions for counts
   useEffect(() => {
@@ -86,7 +126,11 @@ export default function HataKumbarasi({ studentId }: Props) {
       .eq('student_id', studentId)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
-        if (data) setAllQuestions(data as ErrorQuestion[]);
+        if (data) {
+          const qs = data as ErrorQuestion[];
+          setAllQuestions(qs);
+          generateSignedUrls(qs);
+        }
       });
   }, [studentId]);
 
@@ -145,15 +189,13 @@ export default function HataKumbarasi({ studentId }: Props) {
       return;
     }
 
-    const { data: urlData } = supabase.storage.from('error-questions').getPublicUrl(fileName);
-
     const { data: inserted, error: insertError } = await supabase
       .from('error_questions')
       .insert({
         student_id: studentId,
         exam_type: examType,
         subject: selectedSubject,
-        image_url: urlData.publicUrl,
+        image_url: fileName, // Store only the storage path
         status: 'unsolved',
       })
       .select()
@@ -164,6 +206,13 @@ export default function HataKumbarasi({ studentId }: Props) {
     } else if (inserted) {
       const q = inserted as ErrorQuestion;
       setAllQuestions(prev => [q, ...prev]);
+      // Generate signed URL for the new question
+      const { data: signedData } = await supabase.storage
+        .from('error-questions')
+        .createSignedUrl(fileName, 3600);
+      if (signedData?.signedUrl) {
+        setSignedUrls(prev => ({ ...prev, [q.id]: signedData.signedUrl }));
+      }
       toast.success('Soru eklendi!');
     }
     setUploading(false);
@@ -208,14 +257,17 @@ export default function HataKumbarasi({ studentId }: Props) {
 
   const handleDelete = async () => {
     if (!questionToDelete) return;
-    // Extract file path from URL
-    const url = questionToDelete.image_url;
-    const bucketPath = url.split('/error-questions/')[1]?.split('?')[0];
-    if (bucketPath) {
-      await supabase.storage.from('error-questions').remove([decodeURIComponent(bucketPath)]);
+    const storagePath = getStoragePath(questionToDelete.image_url);
+    if (storagePath) {
+      await supabase.storage.from('error-questions').remove([storagePath]);
     }
     await supabase.from('error_questions').delete().eq('id', questionToDelete.id);
     setAllQuestions(prev => prev.filter(q => q.id !== questionToDelete.id));
+    setSignedUrls(prev => {
+      const next = { ...prev };
+      delete next[questionToDelete.id];
+      return next;
+    });
     setQuestionToDelete(null);
     toast.success('Soru silindi.');
   };
@@ -392,12 +444,18 @@ export default function HataKumbarasi({ studentId }: Props) {
                       onClick={() => openDetail(q)}
                       className="w-full aspect-[3/4] overflow-hidden"
                     >
-                      <img
-                        src={q.image_url}
-                        alt="Soru"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
+                      {getImageUrl(q) ? (
+                        <img
+                          src={getImageUrl(q)}
+                          alt="Soru"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-secondary">
+                          <div className="h-6 w-6 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                        </div>
+                      )}
                     </button>
 
                     {/* Learned overlay */}
@@ -418,7 +476,7 @@ export default function HataKumbarasi({ studentId }: Props) {
 
                     {/* Zoom icon */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setFullscreenImg(q.image_url); }}
+                      onClick={(e) => { e.stopPropagation(); setFullscreenImg(getImageUrl(q)); }}
                       className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ZoomIn className="h-3.5 w-3.5" />
@@ -510,11 +568,11 @@ export default function HataKumbarasi({ studentId }: Props) {
             <div className="space-y-4">
               {/* Image preview */}
               <button
-                onClick={() => { setFullscreenImg(detailQuestion.image_url); }}
+                onClick={() => { setFullscreenImg(getImageUrl(detailQuestion)); }}
                 className="w-full rounded-xl overflow-hidden border border-border relative group"
               >
                 <img
-                  src={detailQuestion.image_url}
+                  src={getImageUrl(detailQuestion)}
                   alt="Soru"
                   className="w-full max-h-[40vh] object-contain bg-secondary"
                 />
