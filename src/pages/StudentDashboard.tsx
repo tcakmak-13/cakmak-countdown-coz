@@ -12,6 +12,7 @@ import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import Denemelerim from '@/components/Denemelerim';
+import MotivationQuote from '@/components/MotivationQuote';
 
 
 
@@ -102,12 +103,7 @@ export default function StudentDashboard() {
                     <StudyPlanner studentId={profileId} />
                   </div>
                 )}
-                <div className="glass-card rounded-2xl p-6">
-                  <h2 className="font-display text-lg font-semibold mb-1">Motivasyon</h2>
-                  <p className="text-muted-foreground text-sm">
-                    "Başarı, her gün tekrarlanan küçük çabaların toplamıdır." — Robert Collier
-                  </p>
-                </div>
+                <MotivationQuote />
               </div>
             </motion.div>
           )}
