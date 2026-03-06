@@ -517,6 +517,48 @@ export type Database = {
           },
         ]
       }
+      study_timer_logs: {
+        Row: {
+          elapsed_seconds: number
+          id: string
+          log_date: string
+          student_id: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          elapsed_seconds?: number
+          id?: string
+          log_date?: string
+          student_id: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          elapsed_seconds?: number
+          id?: string
+          log_date?: string
+          student_id?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_timer_logs_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_timer_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "study_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

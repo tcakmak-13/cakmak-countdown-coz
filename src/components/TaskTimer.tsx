@@ -12,46 +12,70 @@ function formatTime(totalSeconds: number): string {
 
 interface Props {
   disabled?: boolean;
-  onElapsedChange?: (seconds: number, running: boolean) => void;
+  initialElapsed?: number;
+  onElapsedChange?: (seconds: number) => void;
+  onSave?: (seconds: number) => void;
 }
 
-export default function TaskTimer({ disabled, onElapsedChange }: Props) {
-  const [elapsed, setElapsed] = useState(0);
+export default function TaskTimer({ disabled, initialElapsed = 0, onElapsedChange, onSave }: Props) {
+  const [elapsed, setElapsed] = useState(initialElapsed);
   const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const elapsedRef = useRef(0);
+  const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedRef = useRef(initialElapsed);
+
+  // Sync if initialElapsed changes (e.g. data loaded)
+  useEffect(() => {
+    if (!isRunning) {
+      setElapsed(initialElapsed);
+      elapsedRef.current = initialElapsed;
+    }
+  }, [initialElapsed, isRunning]);
 
   const stop = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    if (saveIntervalRef.current) {
+      clearInterval(saveIntervalRef.current);
+      saveIntervalRef.current = null;
+    }
     setIsRunning(false);
-  }, []);
+    // Save on stop
+    onSave?.(elapsedRef.current);
+  }, [onSave]);
 
   const start = useCallback(() => {
     if (intervalRef.current) return;
     setIsRunning(true);
     intervalRef.current = setInterval(() => {
       setElapsed(e => {
-        elapsedRef.current = e + 1;
-        return e + 1;
+        const next = e + 1;
+        elapsedRef.current = next;
+        return next;
       });
     }, 1000);
-  }, []);
+    // Auto-save every 30 seconds
+    saveIntervalRef.current = setInterval(() => {
+      onSave?.(elapsedRef.current);
+    }, 30000);
+  }, [onSave]);
 
   const reset = useCallback(() => {
     stop();
     setElapsed(0);
     elapsedRef.current = 0;
-  }, [stop]);
+    onSave?.(0);
+  }, [stop, onSave]);
 
   useEffect(() => {
-    onElapsedChange?.(elapsed, isRunning);
-  }, [elapsed, isRunning, onElapsedChange]);
+    onElapsedChange?.(elapsed);
+  }, [elapsed, onElapsedChange]);
 
   useEffect(() => () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (saveIntervalRef.current) clearInterval(saveIntervalRef.current);
   }, []);
 
   return (

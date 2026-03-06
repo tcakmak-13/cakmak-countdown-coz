@@ -56,10 +56,20 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
   const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   const handleTimerChange = useCallback((taskId: string, seconds: number) => {
     setTimerElapsed(prev => ({ ...prev, [taskId]: seconds }));
   }, []);
+
+  const handleTimerSave = useCallback(async (taskId: string, seconds: number) => {
+    await supabase
+      .from('study_timer_logs')
+      .upsert(
+        { task_id: taskId, student_id: studentId, log_date: todayStr, elapsed_seconds: seconds, updated_at: new Date().toISOString() },
+        { onConflict: 'task_id,log_date' }
+      );
+  }, [studentId, todayStr]);
 
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
@@ -79,7 +89,22 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     if (data) setTasks(data);
   };
 
+  const fetchTimerLogs = async () => {
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('study_timer_logs')
+      .select('task_id, elapsed_seconds')
+      .eq('student_id', studentId)
+      .eq('log_date', dateStr);
+    if (data) {
+      const map: Record<string, number> = {};
+      data.forEach((d: any) => { map[d.task_id] = d.elapsed_seconds; });
+      setTimerElapsed(map);
+    }
+  };
+
   useEffect(() => { fetchTasks(); }, [studentId]);
+  useEffect(() => { fetchTimerLogs(); }, [studentId, selectedDate]);
 
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
@@ -319,7 +344,9 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               )}
               <TaskTimer
                 disabled={readOnly || isArchive}
+                initialElapsed={timerElapsed[task.id] || 0}
                 onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
+                onSave={(seconds) => handleTimerSave(task.id, seconds)}
               />
             </div>
             {!readOnly && !isArchive && (
