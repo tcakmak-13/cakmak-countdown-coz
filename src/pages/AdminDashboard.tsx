@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck, Trash2 } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
@@ -209,6 +210,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <YKSCountdown compact />
+            <ThemeToggle />
             <NotificationBell />
             <AvatarUpload size="sm" />
             <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">

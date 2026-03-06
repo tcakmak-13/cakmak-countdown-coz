@@ -17,6 +17,7 @@ import MotivationQuote from '@/components/MotivationQuote';
 import AppointmentBooking from '@/components/AppointmentBooking';
 import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
+import ThemeToggle from '@/components/ThemeToggle';
 
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
@@ -79,6 +80,7 @@ export default function StudentDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
+            <ThemeToggle />
             <NotificationBell />
             <AvatarUpload size="sm" />
           </div>
