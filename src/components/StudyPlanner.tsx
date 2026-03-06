@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, Archive } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, Archive, Timer } from 'lucide-react';
+import TaskTimer from '@/components/TaskTimer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +55,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
+
+  const handleTimerChange = useCallback((taskId: string, seconds: number) => {
+    setTimerElapsed(prev => ({ ...prev, [taskId]: seconds }));
+  }, []);
 
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
@@ -78,6 +84,8 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
   const completedMinutes = dayTasks.filter(t => t.completed).reduce((sum, t) => sum + t.estimated_minutes, 0);
+  const totalTimerSeconds = dayTasks.reduce((sum, t) => sum + (timerElapsed[t.id] || 0), 0);
+
   const progressPercent = targetMinutes > 0 ? Math.round((completedMinutes / targetMinutes) * 100) : 0;
 
   const handleSave = async () => {
@@ -250,6 +258,23 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         </div>
       )}
 
+      {/* ── Daily Timer Counter ── */}
+      {dayTasks.length > 0 && totalTimerSeconds > 0 && (
+        <div className="glass-card rounded-2xl p-4 mb-5 flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/15">
+            <Timer className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Bugün Kronometreyle Çalışılan</p>
+            <p className="text-lg font-bold text-primary font-mono">
+              {String(Math.floor(totalTimerSeconds / 3600)).padStart(2, '0')}:
+              {String(Math.floor((totalTimerSeconds % 3600) / 60)).padStart(2, '0')}:
+              {String(totalTimerSeconds % 60).padStart(2, '0')}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Task Cards ── */}
       <div className="space-y-3">
         {dayTasks.length === 0 && (
@@ -292,6 +317,10 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               {task.description && (
                 <p className="text-sm text-muted-foreground/80 mt-2 leading-relaxed">{task.description}</p>
               )}
+              <TaskTimer
+                disabled={readOnly || isArchive}
+                onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
+              />
             </div>
             {!readOnly && !isArchive && (
               <div className="flex gap-1 shrink-0">
