@@ -89,7 +89,22 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     if (data) setTasks(data);
   };
 
+  const fetchTimerLogs = async () => {
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('study_timer_logs')
+      .select('task_id, elapsed_seconds')
+      .eq('student_id', studentId)
+      .eq('log_date', dateStr);
+    if (data) {
+      const map: Record<string, number> = {};
+      data.forEach((d: any) => { map[d.task_id] = d.elapsed_seconds; });
+      setTimerElapsed(map);
+    }
+  };
+
   useEffect(() => { fetchTasks(); }, [studentId]);
+  useEffect(() => { fetchTimerLogs(); }, [studentId, selectedDate]);
 
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
