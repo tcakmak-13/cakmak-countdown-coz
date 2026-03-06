@@ -56,10 +56,20 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
   const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   const handleTimerChange = useCallback((taskId: string, seconds: number) => {
     setTimerElapsed(prev => ({ ...prev, [taskId]: seconds }));
   }, []);
+
+  const handleTimerSave = useCallback(async (taskId: string, seconds: number) => {
+    await supabase
+      .from('study_timer_logs')
+      .upsert(
+        { task_id: taskId, student_id: studentId, log_date: todayStr, elapsed_seconds: seconds, updated_at: new Date().toISOString() },
+        { onConflict: 'task_id,log_date' }
+      );
+  }, [studentId, todayStr]);
 
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
