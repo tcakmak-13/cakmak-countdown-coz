@@ -258,9 +258,25 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         </div>
       )}
 
+      {/* ── Daily Timer Counter ── */}
+      {dayTasks.length > 0 && totalTimerSeconds > 0 && (
+        <div className="glass-card rounded-2xl p-4 mb-5 flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/15">
+            <Timer className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Bugün Kronometreyle Çalışılan</p>
+            <p className="text-lg font-bold text-primary font-mono">
+              {String(Math.floor(totalTimerSeconds / 3600)).padStart(2, '0')}:
+              {String(Math.floor((totalTimerSeconds % 3600) / 60)).padStart(2, '0')}:
+              {String(totalTimerSeconds % 60).padStart(2, '0')}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Task Cards ── */}
       <div className="space-y-3">
-        {dayTasks.length === 0 && (
           <div className="text-center py-14">
             <Clock className="h-12 w-12 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-base font-semibold text-muted-foreground font-display">Bu gün için görev yok</p>
@@ -300,17 +316,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               {task.description && (
                 <p className="text-sm text-muted-foreground/80 mt-2 leading-relaxed">{task.description}</p>
               )}
+              <TaskTimer
+                disabled={readOnly || isArchive}
+                onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
+              />
             </div>
-            {!readOnly && !isArchive && (
-              <div className="flex gap-1 shrink-0">
-                <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         ))}
       </div>
