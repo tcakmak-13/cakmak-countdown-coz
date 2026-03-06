@@ -84,6 +84,8 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
   const completedMinutes = dayTasks.filter(t => t.completed).reduce((sum, t) => sum + t.estimated_minutes, 0);
+  const totalTimerSeconds = dayTasks.reduce((sum, t) => sum + (timerElapsed[t.id] || 0), 0);
+
   const progressPercent = targetMinutes > 0 ? Math.round((completedMinutes / targetMinutes) * 100) : 0;
 
   const handleSave = async () => {
