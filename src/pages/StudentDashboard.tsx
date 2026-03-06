@@ -16,6 +16,7 @@ import Denemelerim from '@/components/Denemelerim';
 import MotivationQuote from '@/components/MotivationQuote';
 import AppointmentBooking from '@/components/AppointmentBooking';
 import HataKumbarasi from '@/components/HataKumbarasi';
+import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
@@ -104,6 +105,12 @@ export default function StudentDashboard() {
                   <div className="glass-card rounded-2xl p-6">
                     <h2 className="font-display text-lg font-semibold mb-4">Haftalık Programım</h2>
                     <StudyPlanner studentId={profileId} />
+                  </div>
+                )}
+                {profileId && (
+                  <div className="glass-card rounded-2xl p-6">
+                    <h2 className="font-display text-lg font-semibold mb-4">📊 Haftalık Çalışma İstatistikleri</h2>
+                    <WeeklyStudyStats studentId={profileId} />
                   </div>
                 )}
                 {profileId && (
