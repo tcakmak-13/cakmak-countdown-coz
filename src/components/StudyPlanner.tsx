@@ -344,7 +344,9 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               )}
               <TaskTimer
                 disabled={readOnly || isArchive}
+                initialElapsed={timerElapsed[task.id] || 0}
                 onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
+                onSave={(seconds) => handleTimerSave(task.id, seconds)}
               />
             </div>
             {!readOnly && !isArchive && (
