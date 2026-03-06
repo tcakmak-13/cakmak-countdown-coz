@@ -55,6 +55,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
+
+  const handleTimerChange = useCallback((taskId: string, seconds: number) => {
+    setTimerElapsed(prev => ({ ...prev, [taskId]: seconds }));
+  }, []);
 
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
