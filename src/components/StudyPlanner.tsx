@@ -277,6 +277,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
       {/* ── Task Cards ── */}
       <div className="space-y-3">
+        {dayTasks.length === 0 && (
           <div className="text-center py-14">
             <Clock className="h-12 w-12 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-base font-semibold text-muted-foreground font-display">Bu gün için görev yok</p>
@@ -321,6 +322,16 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                 onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
               />
             </div>
+            {!readOnly && !isArchive && (
+              <div className="flex gap-1 shrink-0">
+                <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
