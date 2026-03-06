@@ -104,9 +104,9 @@
     box-shadow: 0 0 40px -10px hsl(25 95% 53% / 0.4);
   }
   .glass-card {
-    background: hsl(0 0% 7% / 0.8);
+    background: hsl(var(--card) / 0.8);
     backdrop-filter: blur(12px);
-    border: 1px solid hsl(0 0% 18%);
+    border: 1px solid hsl(var(--border));
   }
   .countdown-digit {
     font-family: 'Space Grotesk', sans-serif;
