@@ -167,57 +167,130 @@ export default function HataKumbarasi({ studentId }: Props) {
     else if (view === 'subjects') setView('home');
   };
 
+  // Compress image if too large
+  const compressImage = useCallback(async (file: File, maxSizeMB: number = 2): Promise<File> => {
+    if (file.size <= maxSizeMB * 1024 * 1024) return file;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        
+        // Scale down if very large
+        const maxDim = 1920;
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            } else {
+              resolve(file);
+            }
+          },
+          'image/jpeg',
+          0.8
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+      img.src = url;
+    });
+  }, []);
+
   const handleMultiUpload = useCallback(async (files: File[]) => {
     if (!user?.id) return;
     setUploading(true);
 
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    let successCount = 0;
+
     for (const file of files) {
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`"${file.name}" desteklenmiyor. Sadece JPG ve PNG yükleyebilirsiniz.`);
+        console.error(`Geçersiz dosya türü: ${file.type} — ${file.name}`);
+        continue;
+      }
+
+      // Check size limit (10MB hard limit)
       if (file.size > 10 * 1024 * 1024) {
         toast.error(`"${file.name}" 10MB sınırını aşıyor, atlandı.`);
         continue;
       }
 
-      const ext = file.name.split('.').pop();
-      const fileName = `${user.id}/${examType}/${selectedSubject}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+      try {
+        // Compress if larger than 2MB
+        const processedFile = await compressImage(file, 2);
 
-      const { error: uploadError } = await supabase.storage
-        .from('error-questions')
-        .upload(fileName, file, { upsert: false });
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const safeExt = ['jpg', 'jpeg', 'png'].includes(ext) ? ext : 'jpg';
+        const fileName = `${user.id}/${examType}/${selectedSubject}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${safeExt}`;
 
-      if (uploadError) {
-        toast.error(`Yükleme hatası: ${file.name}`);
-        continue;
-      }
-
-      const { data: inserted, error: insertError } = await supabase
-        .from('error_questions')
-        .insert({
-          student_id: studentId,
-          exam_type: examType,
-          subject: selectedSubject,
-          image_url: fileName,
-          status: 'unsolved',
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        toast.error('Kayıt hatası.');
-      } else if (inserted) {
-        const q = inserted as ErrorQuestion;
-        setAllQuestions(prev => [q, ...prev]);
-        const { data: signedData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('error-questions')
-          .createSignedUrl(fileName, 3600);
-        if (signedData?.signedUrl) {
-          setSignedUrls(prev => ({ ...prev, [q.id]: signedData.signedUrl }));
+          .upload(fileName, processedFile, { 
+            upsert: false,
+            contentType: processedFile.type,
+          });
+
+        if (uploadError) {
+          console.error('Storage yükleme hatası:', uploadError);
+          toast.error(`Fotoğraf yüklenemedi, lütfen tekrar deneyin. (${file.name})`);
+          continue;
         }
+
+        const { data: inserted, error: insertError } = await supabase
+          .from('error_questions')
+          .insert({
+            student_id: studentId,
+            exam_type: examType,
+            subject: selectedSubject,
+            image_url: fileName,
+            status: 'unsolved',
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Veritabanı kayıt hatası:', insertError);
+          toast.error('Fotoğraf yüklenemedi, lütfen tekrar deneyin.');
+        } else if (inserted) {
+          const q = inserted as ErrorQuestion;
+          setAllQuestions(prev => [q, ...prev]);
+          const { data: signedData } = await supabase.storage
+            .from('error-questions')
+            .createSignedUrl(fileName, 3600);
+          if (signedData?.signedUrl) {
+            setSignedUrls(prev => ({ ...prev, [q.id]: signedData.signedUrl }));
+          }
+          successCount++;
+        }
+      } catch (err) {
+        console.error('Beklenmeyen yükleme hatası:', err);
+        toast.error(`Fotoğraf yüklenemedi, lütfen tekrar deneyin.`);
       }
     }
 
-    toast.success(`${files.length} fotoğraf başarıyla eklendi!`);
+    if (successCount > 0) {
+      toast.success(`${successCount} fotoğraf başarıyla eklendi!`);
+    }
     setUploading(false);
-  }, [user?.id, examType, selectedSubject, studentId]);
+  }, [user?.id, examType, selectedSubject, studentId, compressImage]);
 
   const toggleStatus = async (question: ErrorQuestion) => {
     const newStatus = question.status === 'learned' ? 'unsolved' : 'learned';
@@ -536,8 +609,9 @@ export default function HataKumbarasi({ studentId }: Props) {
               multiple={true}
               maxFiles={10}
               maxSizeMB={10}
+              accept="image/jpeg,image/png"
               title="Hata Sorusu Ekle"
-              description="Yapamadığın soruları fotoğrafla ve arşivle"
+              description="Yapamadığın soruları fotoğrafla ve arşivle (JPG, PNG)"
               uploading={uploading}
             />
           </motion.div>
