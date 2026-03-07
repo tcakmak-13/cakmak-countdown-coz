@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck, Trash2 } from 'lucide-react';
+import { LogOut, Users, Calendar, User as UserIcon, Plus, X, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck, Trash2 } from 'lucide-react';
+import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -202,10 +203,7 @@ export default function AdminDashboard() {
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Flame className="h-6 w-6 text-primary" />
-            <span className="font-display text-lg font-bold hidden sm:inline">
-              Çakmak<span className="text-primary">Koçluk</span>
-            </span>
+            <Logo size="sm" showText={true} hideTextOnMobile={true} />
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium ml-2">Admin</span>
           </div>
           <div className="flex items-center gap-4">

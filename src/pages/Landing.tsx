@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, MessageCircle, Flame } from 'lucide-react';
+import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import YKSCountdown from '@/components/YKSCountdown';
 
@@ -11,12 +12,7 @@ export default function Landing() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <Flame className="h-7 w-7 text-primary" />
-          <span className="font-display text-xl font-bold tracking-tight">
-            Çakmak<span className="text-primary">Koçluk</span>
-          </span>
-        </div>
+        <Logo size="sm" />
         <Button
           onClick={() => navigate('/login')}
           className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90"
