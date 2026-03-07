@@ -203,7 +203,7 @@ export default function AdminDashboard() {
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Logo size="sm" showText={true} className="[&>span]:hidden sm:[&>span]:inline" />
+            <Logo size="sm" showText={true} hideTextOnMobile={true} />
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium ml-2">Admin</span>
           </div>
           <div className="flex items-center gap-4">

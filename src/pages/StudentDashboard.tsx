@@ -73,7 +73,7 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-background pb-20">
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Logo size="sm" showText={true} className="[&>span]:hidden sm:[&>span]:inline" />
+          <Logo size="sm" showText={true} hideTextOnMobile={true} />
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
             <ThemeToggle />

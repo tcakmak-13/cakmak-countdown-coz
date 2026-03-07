@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
+  hideTextOnMobile?: boolean;
   className?: string;
 }
 
@@ -13,7 +14,7 @@ const sizeMap = {
   lg: 'h-20 w-20',
 };
 
-export default function Logo({ size = 'sm', showText = true, className }: LogoProps) {
+export default function Logo({ size = 'sm', showText = true, hideTextOnMobile = false, className }: LogoProps) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <img
@@ -22,7 +23,7 @@ export default function Logo({ size = 'sm', showText = true, className }: LogoPr
         className={cn('rounded-full object-cover', sizeMap[size])}
       />
       {showText && (
-        <span className="font-display text-lg font-bold">
+        <span className={cn('font-display text-lg font-bold', hideTextOnMobile && 'hidden sm:inline')}>
           Çakmak<span className="text-primary">Koçluk</span>
         </span>
       )}
