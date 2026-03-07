@@ -9,9 +9,9 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: 'h-7 w-7',
-  md: 'h-10 w-10',
-  lg: 'h-20 w-20',
+  sm: 'h-6',
+  md: 'h-8',
+  lg: 'h-16',
 };
 
 export default function Logo({ size = 'sm', showText = true, hideTextOnMobile = false, className }: LogoProps) {
@@ -20,7 +20,13 @@ export default function Logo({ size = 'sm', showText = true, hideTextOnMobile = 
       <img
         src={logoIcon}
         alt="ÇakmakKoçluk"
-        className={cn('rounded-full object-cover', sizeMap[size])}
+        className={cn(
+          'w-auto object-contain',
+          'mix-blend-lighten dark:mix-blend-lighten',
+          'drop-shadow-[0_0_6px_hsl(25,95%,53%,0.5)]',
+          sizeMap[size]
+        )}
+        style={{ padding: 0, margin: 0, border: 'none', background: 'none' }}
       />
       {showText && (
         <span className={cn('font-display text-lg font-bold', hideTextOnMobile && 'hidden sm:inline')}>
