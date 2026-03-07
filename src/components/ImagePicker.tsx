@@ -62,7 +62,7 @@ export default function ImagePicker({
         toast.error(`"${file.name}" dosyası ${maxSizeMB}MB sınırını aşıyor.`);
         continue;
       }
-      if (!file.type.match(/^image\/(jpeg|png|gif|webp)$/)) {
+      if (!file.type.match(/^image\/(jpeg|png|jpg)$/)) {
         toast.error(`"${file.name}" desteklenmeyen dosya türü.`);
         continue;
       }
