@@ -1,8 +1,8 @@
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import YKSCountdown from "@/components/YKSCountdown";
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Flame, ArrowRight, BookOpen, Clock, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import YKSCountdown from '@/components/YKSCountdown';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -12,17 +12,13 @@ export default function Landing() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border/50">
         <div className="flex items-center gap-2">
-         <img 
-  src="https://cdn-icons-png.flaticon.com/512/732/732244.png" 
-  alt="Test Logo" 
-  className="h-8 w-auto object-contain" 
-/
+          <Flame className="h-7 w-7 text-primary" />
           <span className="font-display text-xl font-bold tracking-tight">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>
         </div>
         <Button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate('/login')}
           className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90"
         >
           Giriş Yap
@@ -46,7 +42,8 @@ export default function Landing() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
-            Hedefine <span className="text-gradient-orange">Birlikte</span>
+            Hedefine{' '}
+            <span className="text-gradient-orange">Birlikte</span>
             <br />
             Ulaşalım
           </h1>
@@ -63,9 +60,13 @@ export default function Landing() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="glass-card rounded-2xl p-6 sm:p-10 mb-12 shadow-orange relative z-10"
         >
-          <p className="text-center text-sm text-muted-foreground mb-4 uppercase tracking-widest">YKS'ye Kalan Süre</p>
+          <p className="text-center text-sm text-muted-foreground mb-4 uppercase tracking-widest">
+            YKS'ye Kalan Süre
+          </p>
           <YKSCountdown />
-          <p className="text-center text-xs text-muted-foreground mt-4">20 Haziran 2026 — 10:15</p>
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            20 Haziran 2026 — 10:15
+          </p>
         </motion.div>
 
         {/* CTA */}
@@ -77,7 +78,7 @@ export default function Landing() {
         >
           <Button
             size="lg"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate('/login')}
             className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 text-lg px-8 py-6 h-auto shadow-orange"
           >
             Hemen Başla <ArrowRight className="ml-2 h-5 w-5" />
@@ -92,9 +93,9 @@ export default function Landing() {
           className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-20 max-w-4xl w-full relative z-10"
         >
           {[
-            { icon: BookOpen, title: "Kişisel Program", desc: "Sana özel haftalık çalışma planı" },
-            { icon: Clock, title: "Canlı Takip", desc: "İlerleme ve hedef kontrolü" },
-            { icon: MessageCircle, title: "Anlık İletişim", desc: "Koçunla direkt mesajlaşma" },
+            { icon: BookOpen, title: 'Kişisel Program', desc: 'Sana özel haftalık çalışma planı' },
+            { icon: Clock, title: 'Canlı Takip', desc: 'İlerleme ve hedef kontrolü' },
+            { icon: MessageCircle, title: 'Anlık İletişim', desc: 'Koçunla direkt mesajlaşma' },
           ].map((f, i) => (
             <div key={i} className="glass-card rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
               <f.icon className="h-8 w-8 text-primary mx-auto mb-3" />
