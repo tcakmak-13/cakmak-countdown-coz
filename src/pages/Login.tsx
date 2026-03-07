@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Flame, Lock, User } from 'lucide-react';
+import { Lock, User } from 'lucide-react';
+import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,9 +114,9 @@ export default function Login() {
         className="w-full max-w-md relative z-10"
       >
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8 cursor-pointer" onClick={() => navigate('/')}>
-          <Flame className="h-8 w-8 text-primary" />
-          <span className="font-display text-2xl font-bold">
+        <div className="flex flex-col items-center mb-8 cursor-pointer" onClick={() => navigate('/')}>
+          <Logo size="lg" showText={false} />
+          <span className="font-display text-2xl font-bold mt-3">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>
         </div>
