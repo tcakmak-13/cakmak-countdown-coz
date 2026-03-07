@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText } from 'lucide-react';
-import Logo from '@/components/Logo';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,12 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-background pb-20">
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Logo size="sm" showText={true} hideTextOnMobile={true} />
+          <div className="flex items-center gap-2">
+            <Flame className="h-6 w-6 text-primary" />
+            <span className="font-display text-lg font-bold hidden sm:inline">
+              Çakmak<span className="text-primary">Koçluk</span>
+            </span>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
             <ThemeToggle />

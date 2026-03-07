@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Save } from 'lucide-react';
-import Logo from '@/components/Logo';
+import { Flame, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,7 +64,10 @@ export default function Onboarding() {
         className="w-full max-w-lg relative z-10"
       >
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Logo size="md" />
+          <Flame className="h-8 w-8 text-primary" />
+          <span className="font-display text-2xl font-bold">
+            Çakmak<span className="text-primary">Koçluk</span>
+          </span>
         </div>
 
         <motion.form
