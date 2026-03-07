@@ -12,7 +12,11 @@ export default function Landing() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
+         <img 
+  src="https://cdn-icons-png.flaticon.com/512/732/732244.png" 
+  alt="Test Logo" 
+  className="h-8 w-auto object-contain" 
+/
           <span className="font-display text-xl font-bold tracking-tight">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>
