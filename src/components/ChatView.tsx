@@ -9,7 +9,7 @@ import ImagePicker from '@/components/ImagePicker';
 interface Props {
   currentProfileId: string;
   currentName: string;
-  currentRole: 'admin' | 'student' | null;
+  currentRole: 'admin' | 'koc' | 'student' | null;
   currentUserId?: string;
 }
 
