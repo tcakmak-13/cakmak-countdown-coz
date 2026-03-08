@@ -38,7 +38,7 @@ export default function CoachDashboard() {
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-merkezi'>('analytics');
   const unreadCount = useUnreadMessages(profileId);
 
   // Announcement
