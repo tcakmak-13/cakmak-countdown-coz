@@ -216,7 +216,7 @@ export default function AdminDashboard() {
     return students.filter(s => s.coach_id === coachId).length;
   };
 
-  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management') ? 'management' : tab;
+  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management' || tab === 'coach-detail') ? 'management' : tab;
 
   return (
     <div className="min-h-screen bg-background pb-20">
