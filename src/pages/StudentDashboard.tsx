@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, Calculator } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -16,11 +16,10 @@ import Denemelerim from '@/components/Denemelerim';
 import MotivationQuote from '@/components/MotivationQuote';
 import AppointmentBooking from '@/components/AppointmentBooking';
 import HataKumbarasi from '@/components/HataKumbarasi';
-import YKSScoreCalculator from '@/components/YKSScoreCalculator';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'puan-hesapla';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Denemelerim',
@@ -29,7 +28,6 @@ const TAB_TITLES: Record<Tab, string> = {
   'randevular': 'Randevular',
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
-  'puan-hesapla': 'Puan Hesapla',
 };
 
 const tabVariants = {
@@ -147,18 +145,6 @@ export default function StudentDashboard() {
                     </div>
                   </button>
                 )}
-                <button
-                  onClick={() => setTab('puan-hesapla' as Tab)}
-                  className="w-full glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors text-left"
-                >
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shrink-0">
-                    <Calculator className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-display font-semibold">Puan Hesapla</p>
-                    <p className="text-xs text-muted-foreground">Tahmini YKS puanı ve sıralama</p>
-                  </div>
-                </button>
                 <MotivationQuote />
               </div>
             </motion.div>
@@ -167,12 +153,6 @@ export default function StudentDashboard() {
           {tab === 'randevular' && profileId && (
             <motion.div key="randevular" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <AppointmentBooking studentId={profileId} />
-            </motion.div>
-          )}
-
-          {tab === 'puan-hesapla' && (
-            <motion.div key="puan-hesapla" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <YKSScoreCalculator />
             </motion.div>
           )}
 
