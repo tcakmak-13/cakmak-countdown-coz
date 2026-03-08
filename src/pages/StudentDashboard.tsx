@@ -57,6 +57,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     setHasUsername(!!profile?.username);
+    setCurrentUsername(profile?.username || '');
   }, [profile?.username]);
 
   const handleTabChange = (newTab: Tab) => {
