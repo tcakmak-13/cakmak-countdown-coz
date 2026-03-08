@@ -99,6 +99,22 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     return imageUrl;
   };
 
+  // Fetch pending (open) questions count for badge
+  useEffect(() => {
+    const fetchPending = async () => {
+      const { count } = await supabase
+        .from('questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open');
+      setPendingCount(count || 0);
+    };
+    fetchPending();
+    const ch = supabase.channel('pending-q-count')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, () => fetchPending())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
   // Generate signed URLs for all questions
   const generateSignedUrls = async (questions: ErrorQuestion[]) => {
     const paths = questions.map(q => getStoragePath(q.image_url));
