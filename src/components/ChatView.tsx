@@ -31,6 +31,14 @@ interface StudentItem {
   grade: string | null;
 }
 
+interface ConversationPair {
+  coachId: string;
+  coachName: string;
+  studentId: string;
+  studentName: string;
+  key: string;
+}
+
 function isImage(fileName: string) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
 }
