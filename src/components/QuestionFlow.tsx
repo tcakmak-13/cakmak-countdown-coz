@@ -154,6 +154,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   const flowScrollRef = useRef<HTMLDivElement>(null);
 
   const canModerate = currentRole === 'koc' || currentRole === 'admin';
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
