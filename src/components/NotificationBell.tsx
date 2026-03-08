@@ -97,7 +97,7 @@ export default function NotificationBell() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [navigate]);
+  }, [navigate, user]);
 
   // Click outside to close
   useEffect(() => {

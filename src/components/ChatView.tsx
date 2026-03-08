@@ -271,7 +271,11 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   useEffect(() => {
     const fetchMessages = async () => {
-      const { data } = await supabase.from('chat_messages').select('*').order('created_at');
+      // Only fetch messages relevant to current user to avoid loading entire table
+      const { data } = await supabase.from('chat_messages').select('*')
+        .or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`)
+        .order('created_at')
+        .limit(500);
       if (data) {
         setMessages(data as Message[]);
         for (const msg of data) {
