@@ -590,7 +590,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         </button>
         {renderChatBubbles()}
         {renderMessageInput()}
-        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={coachName} avatarUrl={coachAvatarUrl} />
+        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={coachName} avatarUrl={coachAvatarUrl} coachProfileId={coachProfileId} />
       </div>
     );
   }

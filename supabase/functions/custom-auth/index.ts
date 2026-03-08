@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Assign student to coach (admin only)
+    // Assign student to coach (admin only) - unused, handled client-side
     if (action === "assign-coach") {
       const admin = await verifyAdmin(req, supabase, supabaseUrl);
       if (!admin) {
@@ -288,10 +288,29 @@ Deno.serve(async (req) => {
         });
       }
 
-      const { studentProfileId, coachProfileId } = await req.json().catch(() => ({}));
-      // These come from the original body parse, let me use the destructured values
-      return new Response(JSON.stringify({ error: "Geçersiz parametreler." }), {
-        status: 400, headers: { ...cors, "Content-Type": "application/json" },
+      const studentProfileId = profileId;
+      const coachProfileId = targetRole; // reuse existing destructured field
+
+      if (!studentProfileId) {
+        return new Response(JSON.stringify({ error: "Öğrenci profil ID gerekli." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const coachId = coachProfileId === "none" ? null : coachProfileId || null;
+      const { error: assignErr } = await supabase.from("profiles").update({
+        coach_id: coachId,
+        coach_selected: coachId ? true : false,
+      }).eq("id", studentProfileId);
+
+      if (assignErr) {
+        return new Response(JSON.stringify({ error: "Koç ataması başarısız: " + assignErr.message }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
