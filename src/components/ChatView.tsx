@@ -511,20 +511,122 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     );
   }
 
-  // Admin/Coach: student list
-  if ((currentRole === 'admin' || currentRole === 'koc') && !selectedStudent) {
+  // Admin spectator: conversation pair list
+  if (currentRole === 'admin' && !selectedPair) {
     return (
-    <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-          <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">
-            {currentRole === 'koc' ? 'Öğrencilerimle Mesajlar' : 'Öğrenci Mesajları'}
+          <div className="flex items-center justify-between">
+            <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Sohbet Geçmişi</p>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium">
+              <Eye className="h-3 w-3" /> İzleyici Modu
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {conversationPairs.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-12">Henüz koç-öğrenci eşleşmesi yok.</p>
+          )}
+          {conversationPairs.map(pair => {
+            const lastMsg = getLastMessageForPair(pair);
+            const msgCount = getMessageCountForPair(pair);
+            return (
+              <button key={pair.key} onClick={() => setSelectedPair(pair)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
+                <div className="flex -space-x-3 shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
+                    {pair.coachName.charAt(0)}
+                  </div>
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
+                    {pair.studentName.charAt(0)}
+                  </div>
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-sm font-medium truncate">{pair.coachName} ↔ {pair.studentName}</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
+                    {msgCount > 0 && <span className="ml-1 text-primary/60">({msgCount} mesaj)</span>}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Admin spectator: read-only chat view
+  if (currentRole === 'admin' && selectedPair) {
+    return (
+      <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+        <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSelectedPair(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div className="flex -space-x-2">
+              <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
+                {selectedPair.coachName.charAt(0)}
+              </div>
+              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
+                {selectedPair.studentName.charAt(0)}
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-display font-semibold text-sm">{selectedPair.coachName} ↔ {selectedPair.studentName}</p>
+              <p className="text-xs text-muted-foreground">Koç — Öğrenci Sohbeti</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-medium shrink-0">
+              <Eye className="h-3 w-3" /> Salt Okunur
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {filteredMessages.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-12">Bu eşleşmede henüz mesaj yok</p>
+          )}
+          {filteredMessages.map(msg => {
+            const isCoach = msg.sender_id === selectedPair.coachId;
+            return (
+              <div key={msg.id} className={`flex ${isCoach ? 'justify-end' : 'justify-start'}`}>
+                <div className="max-w-[85%]">
+                  <p className={`text-[10px] mb-1 ${isCoach ? 'text-right text-primary/60' : 'text-muted-foreground'}`}>
+                    {isCoach ? selectedPair.coachName : selectedPair.studentName}
+                  </p>
+                  <div className={`px-4 py-2.5 text-sm ${isCoach ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
+                    {renderMessageContent(msg)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* No input bar for admin - spectator mode */}
+        <div className="p-3 border-t border-border bg-card/50 text-center">
+          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+            <Eye className="h-3.5 w-3.5" /> İzleyici modundasınız — mesaj gönderemezsiniz
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Coach: student list
+  if (currentRole === 'koc' && !selectedStudent) {
+    return (
+      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+        <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+          <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Öğrencilerimle Mesajlar</p>
         </div>
         <div className="flex-1 overflow-y-auto">
           {students.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-12">
-              {currentRole === 'koc' ? 'Henüz atanmış öğrenci yok.' : 'Henüz öğrenci yok.'}
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-12">Henüz atanmış öğrenci yok.</p>
           )}
           {students.map(s => {
             const lastMsg = getLastMessage(s.id);
@@ -546,11 +648,11 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             );
           })}
         </div>
-    </div>
+      </div>
     );
   }
 
-  // Admin/Coach: chat with selected student
+  // Coach: chat with selected student
   const selectedStudentData = students.find(s => s.id === selectedStudent);
 
   return (
