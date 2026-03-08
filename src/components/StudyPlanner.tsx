@@ -57,21 +57,9 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
-  const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-  const handleTimerChange = useCallback((taskId: string, seconds: number) => {
-    setTimerElapsed(prev => ({ ...prev, [taskId]: seconds }));
-  }, []);
-
-  const handleTimerSave = useCallback(async (taskId: string, seconds: number) => {
-    await supabase
-      .from('study_timer_logs')
-      .upsert(
-        { task_id: taskId, student_id: studentId, log_date: todayStr, elapsed_seconds: seconds, updated_at: new Date().toISOString() },
-        { onConflict: 'task_id,log_date' }
-      );
-  }, [studentId, todayStr]);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
+  const [actualMinutes, setActualMinutes] = useState(30);
 
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
