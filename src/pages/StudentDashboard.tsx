@@ -251,7 +251,7 @@ export default function StudentDashboard() {
                 currentName={currentUsername || profile.full_name}
                 currentRole={role}
                 username={currentUsername}
-                usernameChangedAt={(profile as any)?.username_changed_at}
+                usernameChangedAt={profile?.username_changed_at}
                 onUsernameChanged={(newName) => setCurrentUsername(newName)}
               />
             </motion.div>
