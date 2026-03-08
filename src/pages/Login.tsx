@@ -9,6 +9,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+function getRedirectPath(role: string | null, profile: any) {
+  if (role === 'admin') return '/admin';
+  if (role === 'koc') return '/coach';
+  if (role === 'student') {
+    if (!profile?.profile_completed) return '/onboarding';
+    if (!profile?.coach_selected) return '/select-coach';
+    return '/student';
+  }
+  return '/login';
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const { user, role, profile, loading: authLoading } = useAuth();
@@ -19,17 +30,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Auto-redirect if already logged in
   useEffect(() => {
     if (authLoading) return;
     if (user && role) {
-      if (role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else if (profile && !profile.profile_completed) {
-        navigate('/onboarding', { replace: true });
-      } else if (profile?.profile_completed) {
-        navigate('/student', { replace: true });
-      }
+      navigate(getRedirectPath(role, profile), { replace: true });
     }
   }, [user, role, profile, authLoading, navigate]);
 
@@ -58,14 +62,12 @@ export default function Login() {
         return;
       }
 
-      // Save remember me preference
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       } else {
         localStorage.removeItem('rememberMe');
       }
 
-      // Set the session from the edge function response
       if (data.session) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -73,18 +75,12 @@ export default function Login() {
         });
       }
 
-      // Brief wait for auth state to propagate, then check role + profile
       setTimeout(async () => {
         const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', data.user.id).single();
-        const { data: profileData } = await supabase.from('profiles').select('profile_completed').eq('user_id', data.user.id).single();
+        const { data: profileData } = await supabase.from('profiles').select('profile_completed, coach_selected').eq('user_id', data.user.id).single();
 
-        if (roleData?.role === 'admin') {
-          navigate('/admin', { replace: true });
-        } else if (!profileData?.profile_completed) {
-          navigate('/onboarding', { replace: true });
-        } else {
-          navigate('/student', { replace: true });
-        }
+        const path = getRedirectPath(roleData?.role, profileData);
+        navigate(path, { replace: true });
         setLoading(false);
       }, 300);
     } catch {
@@ -93,7 +89,6 @@ export default function Login() {
     }
   };
 
-  // Don't render form if already authenticated and redirecting
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -113,7 +108,6 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8 cursor-pointer" onClick={() => navigate('/')}>
           <Flame className="h-8 w-8 text-primary" />
           <span className="font-display text-2xl font-bold">

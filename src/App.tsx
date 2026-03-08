@@ -8,7 +8,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
+import SelectCoach from "./pages/SelectCoach";
 import StudentDashboard from "./pages/StudentDashboard";
+import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -25,7 +27,9 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/select-coach" element={<ProtectedRoute><SelectCoach /></ProtectedRoute>} />
             <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
+            <Route path="/coach" element={<ProtectedRoute requiredRole="koc"><CoachDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
