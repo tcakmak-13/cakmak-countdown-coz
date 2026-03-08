@@ -86,9 +86,16 @@ export default function StudentDashboard() {
             <span className="font-display text-lg font-bold hidden sm:inline">
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
+            {TAB_TITLES[tab] && (
+              <span className="text-muted-foreground font-display text-sm hidden sm:inline ml-1">/ {TAB_TITLES[tab]}</span>
+            )}
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">Merhaba, {profile.full_name}</span>
+          <div className="flex items-center gap-2">
+            {tab === 'denemelerim' && profileId && (
+              <Button onClick={() => { /* trigger add from header */ document.getElementById('deneme-add-btn')?.click(); }} size="icon" className="rounded-full bg-gradient-orange border-0 hover:opacity-90 shadow-orange h-9 w-9">
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
             <ThemeToggle />
             <NotificationBell />
             <AvatarUpload size="sm" />
