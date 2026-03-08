@@ -40,7 +40,8 @@ const ERASER_SIZES: { label: string; value: EraserSize; dot: number }[] = [
 export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAnswer, showShareButton = false }: ImageCanvasProps) {
   const [scale, setScale] = useState(1);
   const [tool, setTool] = useState<Tool>('pen');
-  const [penSize, setPenSize] = useState<PenSize>(5);
+  const [penSize, setPenSize] = useState<PenSize>(8);
+  const [eraserSize, setEraserSize] = useState<EraserSize>(32);
   const [colorIndex, setColorIndex] = useState(0);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showTools, setShowTools] = useState(true);
