@@ -1,0 +1,745 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import ImagePicker from '@/components/ImagePicker';
+
+// Subject lists
+const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
+const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
+const AYT_SUBJECTS_EA = ['Matematik', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
+const AYT_SUBJECTS_SOZ = ['Edebiyat', 'Tarih-1', 'Coğrafya-1', 'Tarih-2', 'Coğrafya-2', 'Felsefe', 'Din Kültürü'];
+
+function getAYTSubjects(area?: string) {
+  if (area === 'EA') return AYT_SUBJECTS_EA;
+  if (area === 'SÖZ') return AYT_SUBJECTS_SOZ;
+  return AYT_SUBJECTS_SAY;
+}
+
+interface Question {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string | null;
+  category: string;
+  subject: string;
+  status: string;
+  best_answer_id: string | null;
+  student_id: string;
+  created_at: string;
+  student_name?: string;
+  student_avatar?: string;
+  answer_count?: number;
+}
+
+interface Answer {
+  id: string;
+  content: string;
+  image_url: string | null;
+  is_best: boolean;
+  author_id: string;
+  question_id: string;
+  created_at: string;
+  author_name?: string;
+  author_avatar?: string;
+}
+
+interface QuestionFlowProps {
+  currentProfileId: string;
+  currentName: string;
+  currentRole: string;
+}
+
+export default function QuestionFlow({ currentProfileId, currentName, currentRole }: QuestionFlowProps) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterSubject, setFilterSubject] = useState<string | null>(null);
+
+  // New question wizard
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [newImage, setNewImage] = useState<File | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [newDescription, setNewDescription] = useState('');
+  const [newCategory, setNewCategory] = useState<string>('');
+  const [newSubject, setNewSubject] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+
+  // Thread view
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [loadingAnswers, setLoadingAnswers] = useState(false);
+  const [answerText, setAnswerText] = useState('');
+  const [answerImage, setAnswerImage] = useState<File | null>(null);
+  const [answerImagePreview, setAnswerImagePreview] = useState<string | null>(null);
+  const [sendingAnswer, setSendingAnswer] = useState(false);
+  const [showAnswerImagePicker, setShowAnswerImagePicker] = useState(false);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load questions
+  const loadQuestions = useCallback(async () => {
+    setLoading(true);
+    let query = supabase
+      .from('questions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (filterCategory) query = query.eq('category', filterCategory);
+    if (filterSubject) query = query.eq('subject', filterSubject);
+
+    const { data, error } = await query;
+    if (error) { toast.error('Sorular yüklenemedi'); setLoading(false); return; }
+
+    // Fetch student names
+    const studentIds = [...new Set((data || []).map(q => q.student_id))];
+    let profileMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+    if (studentIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', studentIds);
+      if (profiles) {
+        profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url }; });
+      }
+    }
+
+    // Fetch answer counts
+    const questionIds = (data || []).map(q => q.id);
+    let answerCountMap: Record<string, number> = {};
+    if (questionIds.length > 0) {
+      const { data: answerData } = await supabase
+        .from('question_answers')
+        .select('question_id');
+      if (answerData) {
+        answerData.forEach(a => {
+          answerCountMap[a.question_id] = (answerCountMap[a.question_id] || 0) + 1;
+        });
+      }
+    }
+
+    setQuestions((data || []).map(q => ({
+      ...q,
+      student_name: profileMap[q.student_id]?.full_name || 'Anonim',
+      student_avatar: profileMap[q.student_id]?.avatar_url || null,
+      answer_count: answerCountMap[q.id] || 0,
+    })));
+    setLoading(false);
+  }, [filterCategory, filterSubject]);
+
+  useEffect(() => { loadQuestions(); }, [loadQuestions]);
+
+  // Realtime subscription for new questions
+  useEffect(() => {
+    const channel = supabase
+      .channel('questions-flow')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, () => {
+        loadQuestions();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'question_answers' }, () => {
+        loadQuestions();
+        if (selectedQuestion) loadAnswers(selectedQuestion.id);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadQuestions, selectedQuestion]);
+
+  // Load answers for thread
+  const loadAnswers = async (questionId: string) => {
+    setLoadingAnswers(true);
+    const { data, error } = await supabase
+      .from('question_answers')
+      .select('*')
+      .eq('question_id', questionId)
+      .order('created_at', { ascending: true });
+
+    if (error) { setLoadingAnswers(false); return; }
+
+    const authorIds = [...new Set((data || []).map(a => a.author_id))];
+    let profileMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+    if (authorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', authorIds);
+      if (profiles) {
+        profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url }; });
+      }
+    }
+
+    setAnswers((data || []).map(a => ({
+      ...a,
+      author_name: profileMap[a.author_id]?.full_name || 'Anonim',
+      author_avatar: profileMap[a.author_id]?.avatar_url || null,
+    })));
+    setLoadingAnswers(false);
+  };
+
+  // Open thread
+  const openThread = (q: Question) => {
+    setSelectedQuestion(q);
+    loadAnswers(q.id);
+  };
+
+  // Submit new question
+  const handleSubmitQuestion = async () => {
+    if (!newImage) { toast.error('Lütfen bir fotoğraf ekleyin'); return; }
+    if (!newCategory) { toast.error('Lütfen TYT/AYT seçin'); return; }
+    if (!newSubject) { toast.error('Lütfen branş seçin'); return; }
+
+    setSubmitting(true);
+    try {
+      const ext = newImage.name.split('.').pop() || 'jpg';
+      const filePath = `${currentProfileId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('question-images').upload(filePath, newImage, { upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(filePath);
+
+      const { error: insertErr } = await supabase.from('questions').insert({
+        student_id: currentProfileId,
+        title: newDescription.trim().slice(0, 80) || `${newCategory} - ${newSubject} Sorusu`,
+        description: newDescription.trim(),
+        image_url: urlData.publicUrl,
+        category: newCategory,
+        subject: newSubject,
+        status: 'open',
+      });
+      if (insertErr) throw insertErr;
+
+      toast.success('Soru akışa eklendi!');
+      resetWizard();
+      loadQuestions();
+    } catch (err: any) {
+      toast.error('Soru gönderilemedi: ' + (err.message || ''));
+    }
+    setSubmitting(false);
+  };
+
+  const resetWizard = () => {
+    setShowWizard(false);
+    setWizardStep(1);
+    if (newImagePreview) URL.revokeObjectURL(newImagePreview);
+    setNewImage(null);
+    setNewImagePreview(null);
+    setNewDescription('');
+    setNewCategory('');
+    setNewSubject('');
+  };
+
+  // Submit answer
+  const handleSubmitAnswer = async () => {
+    if (!selectedQuestion) return;
+    if (!answerText.trim() && !answerImage) { toast.error('Bir yanıt yazın veya fotoğraf ekleyin'); return; }
+
+    setSendingAnswer(true);
+    try {
+      let imageUrl: string | null = null;
+      if (answerImage) {
+        const ext = answerImage.name.split('.').pop() || 'jpg';
+        const filePath = `answers/${currentProfileId}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('question-images').upload(filePath, answerImage, { upsert: true });
+        if (upErr) throw upErr;
+        const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(filePath);
+        imageUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabase.from('question_answers').insert({
+        question_id: selectedQuestion.id,
+        author_id: currentProfileId,
+        content: answerText.trim(),
+        image_url: imageUrl,
+      });
+      if (error) throw error;
+
+      setAnswerText('');
+      if (answerImagePreview) URL.revokeObjectURL(answerImagePreview);
+      setAnswerImage(null);
+      setAnswerImagePreview(null);
+      loadAnswers(selectedQuestion.id);
+    } catch (err: any) {
+      toast.error('Yanıt gönderilemedi: ' + (err.message || ''));
+    }
+    setSendingAnswer(false);
+  };
+
+  // Mark best answer
+  const markBestAnswer = async (answerId: string) => {
+    if (!selectedQuestion || selectedQuestion.student_id !== currentProfileId) return;
+
+    try {
+      // Unmark previous best
+      if (selectedQuestion.best_answer_id) {
+        await supabase.from('question_answers').update({ is_best: false }).eq('id', selectedQuestion.best_answer_id);
+      }
+      // Mark new best
+      await supabase.from('question_answers').update({ is_best: true }).eq('id', answerId);
+      await supabase.from('questions').update({ best_answer_id: answerId, status: 'solved' }).eq('id', selectedQuestion.id);
+
+      setSelectedQuestion({ ...selectedQuestion, best_answer_id: answerId, status: 'solved' });
+      toast.success('En iyi çözüm işaretlendi! ✅');
+      loadAnswers(selectedQuestion.id);
+      loadQuestions();
+    } catch {
+      toast.error('İşaretlenemedi');
+    }
+  };
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Az önce';
+    if (diffMin < 60) return `${diffMin}dk`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour}sa`;
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 7) return `${diffDay}g`;
+    return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+  };
+
+  const getSubjectsForFilter = () => {
+    if (filterCategory === 'TYT') return TYT_SUBJECTS;
+    if (filterCategory === 'AYT') return getAYTSubjects();
+    return [...TYT_SUBJECTS, ...AYT_SUBJECTS_SAY];
+  };
+
+  // ====== THREAD VIEW ======
+  if (selectedQuestion) {
+    const bestAnswer = answers.find(a => a.is_best);
+    const otherAnswers = answers.filter(a => !a.is_best);
+    const sortedAnswers = bestAnswer ? [bestAnswer, ...otherAnswers] : otherAnswers;
+
+    return (
+      <div className="flex flex-col h-[calc(100vh-11rem)]">
+        {/* Thread header */}
+        <div className="flex items-center gap-3 pb-4 border-b border-border">
+          <button onClick={() => { setSelectedQuestion(null); setAnswers([]); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary">{selectedQuestion.category}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground">{selectedQuestion.subject}</span>
+              {selectedQuestion.best_answer_id && (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              )}
+            </div>
+            <p className="text-sm font-medium truncate mt-1">{selectedQuestion.student_name}</p>
+          </div>
+        </div>
+
+        {/* Question card at top */}
+        <div className="py-4 border-b border-border">
+          {selectedQuestion.image_url && (
+            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3" />
+          )}
+          {selectedQuestion.description && (
+            <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
+          )}
+        </div>
+
+        {/* Answers scroll area */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-hide">
+          {loadingAnswers ? (
+            <div className="text-center py-8">
+              <div className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
+            </div>
+          ) : sortedAnswers.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageCircleQuestion className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">Henüz yanıt yok. İlk çözümü sen gönder!</p>
+            </div>
+          ) : (
+            sortedAnswers.map(a => (
+              <motion.div
+                key={a.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : 'bg-secondary/50 border border-border'}`}
+              >
+                {a.is_best && (
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Crown className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[11px] font-bold text-primary">En İyi Çözüm</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shrink-0 overflow-hidden">
+                    {a.author_avatar ? <img src={a.author_avatar} className="h-full w-full object-cover" /> : a.author_name?.charAt(0)}
+                  </div>
+                  <span className="text-xs font-medium">{a.author_name}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">{formatTime(a.created_at)}</span>
+                </div>
+                {a.image_url && (
+                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2" />
+                )}
+                {a.content && <p className="text-sm leading-relaxed">{a.content}</p>}
+
+                {/* Mark best button - only for question owner */}
+                {selectedQuestion.student_id === currentProfileId && !a.is_best && (
+                  <button
+                    onClick={() => markBestAnswer(a.id)}
+                    className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    En İyi Çözüm Olarak İşaretle
+                  </button>
+                )}
+              </motion.div>
+            ))
+          )}
+        </div>
+
+        {/* Answer input */}
+        <div className="border-t border-border pt-3 space-y-2">
+          {answerImagePreview && (
+            <div className="relative inline-block">
+              <img src={answerImagePreview} className="h-16 w-16 rounded-lg object-cover border border-border" />
+              <button onClick={() => { if (answerImagePreview) URL.revokeObjectURL(answerImagePreview); setAnswerImage(null); setAnswerImagePreview(null); }} className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive flex items-center justify-center">
+                <X className="h-3 w-3 text-destructive-foreground" />
+              </button>
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <button onClick={() => setShowAnswerImagePicker(true)} className="p-2.5 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors shrink-0">
+              <Camera className="h-5 w-5 text-muted-foreground" />
+            </button>
+            <Textarea
+              value={answerText}
+              onChange={e => setAnswerText(e.target.value)}
+              placeholder="Çözümünü yaz..."
+              className="min-h-[44px] max-h-24 resize-none bg-secondary border-border text-sm"
+              rows={1}
+            />
+            <Button
+              onClick={handleSubmitAnswer}
+              disabled={sendingAnswer || (!answerText.trim() && !answerImage)}
+              size="icon"
+              className="rounded-xl bg-gradient-orange border-0 hover:opacity-90 h-11 w-11 shrink-0"
+            >
+              {sendingAnswer ? <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Answer image picker */}
+        <ImagePicker
+          open={showAnswerImagePicker}
+          onOpenChange={setShowAnswerImagePicker}
+          multiple={false}
+          maxFiles={1}
+          title="Çözüm Fotoğrafı"
+          description="Çözüm fotoğrafını ekle"
+          onUpload={async (files) => {
+            if (files[0]) {
+              setAnswerImage(files[0]);
+              setAnswerImagePreview(URL.createObjectURL(files[0]));
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ====== MAIN FLOW VIEW ======
+  return (
+    <div className="space-y-4">
+      {/* Header with filter + ask */}
+      <div className="flex items-center gap-2">
+        <h2 className="font-display text-xl font-semibold flex-1 flex items-center gap-2">
+          <MessageCircleQuestion className="h-5 w-5 text-primary" />
+          Soru Akışı
+        </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilter(!showFilter)}
+          className={`gap-1.5 text-xs ${filterCategory || filterSubject ? 'border-primary text-primary' : ''}`}
+        >
+          <Filter className="h-3.5 w-3.5" />
+          Filtrele
+        </Button>
+        {currentRole === 'student' && (
+          <Button
+            size="sm"
+            onClick={() => setShowWizard(true)}
+            className="bg-gradient-orange border-0 hover:opacity-90 gap-1.5 text-xs"
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+            Soru Sor
+          </Button>
+        )}
+      </div>
+
+      {/* Filter panel */}
+      <AnimatePresence>
+        {showFilter && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="glass-card rounded-xl p-4 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Kategori</p>
+                <div className="flex gap-2">
+                  {['TYT', 'AYT'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { setFilterCategory(filterCategory === cat ? null : cat); setFilterSubject(null); }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filterCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                  {(filterCategory || filterSubject) && (
+                    <button onClick={() => { setFilterCategory(null); setFilterSubject(null); }} className="px-3 py-2 text-xs text-destructive hover:underline">
+                      Temizle
+                    </button>
+                  )}
+                </div>
+              </div>
+              {filterCategory && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Branş</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {getSubjectsForFilter().map(sub => (
+                      <button
+                        key={sub}
+                        onClick={() => setFilterSubject(filterSubject === sub ? null : sub)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterSubject === sub ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+                      >
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Questions chat flow */}
+      <div className="space-y-3">
+        {loading ? (
+          <div className="text-center py-16">
+            <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-muted-foreground mt-3">Sorular yükleniyor...</p>
+          </div>
+        ) : questions.length === 0 ? (
+          <div className="text-center py-16">
+            <MessageCircleQuestion className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">
+              {filterCategory || filterSubject ? 'Bu filtreye uygun soru bulunamadı.' : 'Henüz soru sorulmamış. İlk soruyu sen sor!'}
+            </p>
+          </div>
+        ) : (
+          questions.map((q, i) => (
+            <motion.button
+              key={q.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+              onClick={() => openThread(q)}
+              className="w-full text-left glass-card rounded-2xl p-4 hover:bg-primary/5 transition-all group"
+            >
+              <div className="flex items-start gap-3">
+                {/* Avatar */}
+                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary shrink-0 overflow-hidden mt-0.5">
+                  {q.student_avatar ? <img src={q.student_avatar} className="h-full w-full object-cover" /> : q.student_name?.charAt(0)}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {/* Name + time + solved badge */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-semibold truncate">{q.student_name}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(q.created_at)}</span>
+                    {q.best_answer_id && (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 ml-auto" />
+                    )}
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary">{q.category}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground">{q.subject}</span>
+                  </div>
+
+                  {/* Image thumbnail */}
+                  {q.image_url && (
+                    <div className="rounded-xl overflow-hidden mb-2 max-h-44">
+                      <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary" />
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {q.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">{q.description}</p>
+                  )}
+
+                  {/* Answer count */}
+                  <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+                    <MessageCircleQuestion className="h-3.5 w-3.5" />
+                    {q.answer_count || 0} yanıt
+                  </div>
+                </div>
+              </div>
+            </motion.button>
+          ))
+        )}
+      </div>
+
+      {/* ====== NEW QUESTION WIZARD ====== */}
+      <Dialog open={showWizard} onOpenChange={(open) => { if (!open) resetWizard(); }}>
+        <DialogContent className="bg-card border-border max-w-md p-0 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="p-5 pb-3">
+            <DialogTitle className="font-display flex items-center gap-2">
+              <MessageCircleQuestion className="h-5 w-5 text-primary" />
+              Soru Sor
+              <span className="ml-auto text-xs text-muted-foreground font-normal">{wizardStep}/3</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Progress bar */}
+          <div className="px-5">
+            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-orange rounded-full"
+                animate={{ width: `${(wizardStep / 3) * 100}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+          </div>
+
+          <div className="p-5 pt-4">
+            <AnimatePresence mode="wait">
+              {/* Step 1: Image + Description */}
+              {wizardStep === 1 && (
+                <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                  <p className="text-sm font-medium">📷 Soru fotoğrafını ekle ve açıklama yaz</p>
+
+                  {newImagePreview ? (
+                    <div className="relative">
+                      <img src={newImagePreview} className="w-full max-h-48 object-contain rounded-xl bg-secondary" />
+                      <button onClick={() => { if (newImagePreview) URL.revokeObjectURL(newImagePreview); setNewImage(null); setNewImagePreview(null); }} className="absolute top-2 right-2 h-7 w-7 rounded-full bg-destructive/90 flex items-center justify-center">
+                        <X className="h-4 w-4 text-destructive-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowImagePicker(true)}
+                      className="w-full h-32 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all"
+                    >
+                      <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">Fotoğraf Ekle</span>
+                    </button>
+                  )}
+
+                  <Textarea
+                    value={newDescription}
+                    onChange={e => setNewDescription(e.target.value)}
+                    placeholder="Sorun hakkında kısa bir açıklama (opsiyonel)"
+                    className="min-h-[80px] resize-none bg-secondary border-border"
+                    maxLength={300}
+                  />
+
+                  <Button
+                    onClick={() => { if (!newImage) { toast.error('Lütfen bir fotoğraf ekleyin'); return; } setWizardStep(2); }}
+                    className="w-full bg-gradient-orange border-0 hover:opacity-90"
+                  >
+                    Devam →
+                  </Button>
+                </motion.div>
+              )}
+
+              {/* Step 2: Category */}
+              {wizardStep === 2 && (
+                <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                  <p className="text-sm font-medium">📚 Sınav türünü seç</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['TYT', 'AYT'].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => { setNewCategory(cat); setNewSubject(''); setWizardStep(3); }}
+                        className={`rounded-xl p-6 text-center border-2 transition-all ${newCategory === cat ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40 hover:bg-primary/5'}`}
+                      >
+                        <span className="text-2xl font-display font-bold">{cat}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setWizardStep(1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Geri</button>
+                </motion.div>
+              )}
+
+              {/* Step 3: Subject */}
+              {wizardStep === 3 && (
+                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                  <p className="text-sm font-medium">🎯 Branşı seç</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(newCategory === 'TYT' ? TYT_SUBJECTS : getAYTSubjects()).map(sub => (
+                      <button
+                        key={sub}
+                        onClick={() => setNewSubject(sub)}
+                        className={`rounded-xl p-3 text-sm font-medium border transition-all ${newSubject === sub ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'}`}
+                      >
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Button
+                    onClick={handleSubmitQuestion}
+                    disabled={!newSubject || submitting}
+                    className="w-full bg-gradient-orange border-0 hover:opacity-90 gap-2"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Gönderiliyor...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Soruyu Gönder
+                      </>
+                    )}
+                  </Button>
+                  <button onClick={() => setWizardStep(2)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Geri</button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image picker for new question */}
+      <ImagePicker
+        open={showImagePicker}
+        onOpenChange={setShowImagePicker}
+        multiple={false}
+        maxFiles={1}
+        title="Soru Fotoğrafı"
+        description="Soru fotoğrafını çek veya galerinden seç"
+        onUpload={async (files) => {
+          if (files[0]) {
+            setNewImage(files[0]);
+            setNewImagePreview(URL.createObjectURL(files[0]));
+          }
+        }}
+      />
+    </div>
+  );
+}

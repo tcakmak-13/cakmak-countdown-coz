@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -13,6 +13,7 @@ import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
 import CoachAppointments from '@/components/CoachAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
+import QuestionFlow from '@/components/QuestionFlow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +37,7 @@ export default function CoachDashboard() {
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi'>('analytics');
   const unreadCount = useUnreadMessages(profileId);
 
   // Announcement
@@ -135,7 +136,7 @@ export default function CoachDashboard() {
   };
 
   // Bottom nav active tab (map sub-tabs to main nav)
-  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'list') ? 'list' : tab;
+  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'list' || tab === 'appointments') ? 'list' : tab;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -195,6 +196,8 @@ export default function CoachDashboard() {
           <AdminAnalytics students={students} adminProfileId={profileId} />
         ) : tab === 'appointments' && profileId ? (
           <CoachAppointments coachProfileId={profileId} />
+        ) : tab === 'soru-akisi' && profileId ? (
+          <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
         ) : tab === 'coach-edit' ? (
           <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} coachProfileId={profileId} />
         ) : tab === 'messages' && profileId ? (
@@ -285,7 +288,7 @@ export default function CoachDashboard() {
         <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
-            { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
+            { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
             { key: 'list', icon: Users, label: 'Öğrenciler' },
             { key: 'messages', icon: MessageCircle, label: 'Mesajlar', badge: unreadCount },
             { key: 'coach-edit', icon: Settings, label: 'Profilim' },

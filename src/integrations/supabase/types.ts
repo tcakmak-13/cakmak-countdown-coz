@@ -500,6 +500,105 @@ export type Database = {
           },
         ]
       }
+      question_answers: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_best: boolean
+          question_id: string
+        }
+        Insert: {
+          author_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_best?: boolean
+          question_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_best?: boolean
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_answers_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          best_answer_id: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          status: string
+          student_id: string
+          subject: string
+          title: string
+        }
+        Insert: {
+          best_answer_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          status?: string
+          student_id: string
+          subject: string
+          title: string
+        }
+        Update: {
+          best_answer_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          status?: string
+          student_id?: string
+          subject?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_best_answer_id_fkey"
+            columns: ["best_answer_id"]
+            isOneToOne: false
+            referencedRelation: "question_answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_tasks: {
         Row: {
           completed: boolean
