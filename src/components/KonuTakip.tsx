@@ -41,13 +41,16 @@ const iconMap: Record<string, typeof BookOpen> = {
   'pen-tool': PenTool,
 };
 
-export default function KonuTakip({ studentId }: { studentId: string }) {
+export default function KonuTakip({ studentId, studentArea }: { studentId: string; studentArea?: string | null }) {
+  const navigate = useNavigate();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [progress, setProgress] = useState<Map<string, boolean>>(new Map());
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [examFilter, setExamFilter] = useState<'TYT' | 'AYT'>('TYT');
   const [loading, setLoading] = useState(true);
+
+  const hasArea = !!studentArea;
 
   // Fetch all data
   useEffect(() => {
@@ -70,7 +73,20 @@ export default function KonuTakip({ studentId }: { studentId: string }) {
     load();
   }, [studentId]);
 
-  const filteredSubjects = useMemo(() => subjects.filter(s => s.exam_type === examFilter), [subjects, examFilter]);
+  // Filter subjects by exam type AND student area
+  const filteredSubjects = useMemo(() => {
+    return subjects.filter(s => {
+      if (s.exam_type !== examFilter) return false;
+      // TYT subjects are always shown (allowed_areas is empty)
+      if (s.exam_type === 'TYT') return true;
+      // AYT: if no area selected, show all
+      if (!hasArea) return true;
+      // AYT: if allowed_areas is empty, show to all
+      if (!s.allowed_areas || s.allowed_areas.length === 0) return true;
+      // AYT: filter by student area
+      return s.allowed_areas.includes(studentArea!);
+    });
+  }, [subjects, examFilter, studentArea, hasArea]);
 
   const topicsBySubject = useMemo(() => {
     const map = new Map<string, Topic[]>();
