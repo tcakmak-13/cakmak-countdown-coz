@@ -10,6 +10,8 @@ import { Slider } from '@/components/ui/slider';
 interface Props {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  onClick?: () => void;
+  disableUpload?: boolean;
 }
 
 const sizeClasses = {
