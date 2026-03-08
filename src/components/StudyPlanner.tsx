@@ -379,10 +379,31 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               <DialogTitle className="font-display text-lg">{editingTask ? 'Görevi Düzenle' : 'Yeni Görev'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
+              {/* Exam Type Toggle */}
+              <div className="space-y-2">
+                <Label className="font-semibold">Sınav Tipi</Label>
+                <div className="flex gap-2">
+                  {(['TYT', 'AYT'] as const).map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, examType: type, subject: '', topic: '' }))}
+                      className={cn(
+                        'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
+                        form.examType === type
+                          ? 'bg-primary text-primary-foreground shadow-lg'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label className="font-semibold">Ders</Label>
                 <SearchableCombobox
-                  options={tytMufredat.mufredat.map(d => d.ders)}
+                  options={(form.examType === 'AYT' ? aytMufredat : tytMufredat).mufredat.map(d => d.ders)}
                   value={form.subject}
                   onChange={(val) => setForm(f => ({ ...f, subject: val, topic: '' }))}
                   placeholder="Ders seçin..."
@@ -392,7 +413,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               <div className="space-y-2">
                 <Label className="font-semibold">Konu</Label>
                 <SearchableCombobox
-                  options={tytMufredat.mufredat.find(d => d.ders === form.subject)?.konular ?? []}
+                  options={(form.examType === 'AYT' ? aytMufredat : tytMufredat).mufredat.find(d => d.ders === form.subject)?.konular ?? []}
                   value={form.topic}
                   onChange={(val) => setForm(f => ({ ...f, topic: val }))}
                   placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}
