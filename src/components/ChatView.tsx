@@ -194,16 +194,16 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   };
 
   useEffect(() => {
-    if (currentRole === 'student') {
-      supabase.rpc('get_admin_profile_info').then(({ data }) => {
-        if (data && Array.isArray(data) && data.length > 0) {
-          setAdminProfileId(data[0].id);
-          setAdminName(data[0].full_name || 'Talha Çakmak');
-          setAdminAvatarUrl(data[0].avatar_url || null);
+    if (currentRole === 'student' && coachId) {
+      setCoachProfileId(coachId);
+      supabase.from('profiles').select('id, full_name, avatar_url').eq('id', coachId).single().then(({ data }) => {
+        if (data) {
+          setCoachName(data.full_name || 'Koçum');
+          setCoachAvatarUrl(data.avatar_url || null);
         }
       });
     }
-  }, [currentRole]);
+  }, [currentRole, coachId]);
 
   useEffect(() => {
     if (currentRole === 'admin') {
