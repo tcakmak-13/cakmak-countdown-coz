@@ -258,6 +258,7 @@ export default function CoachDashboard() {
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
+          </button>
 
           {/* Appointments */}
           <button
