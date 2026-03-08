@@ -65,9 +65,10 @@ interface Props {
   currentProfileId?: string;
   currentName?: string;
   currentRole?: string;
+  onOpenSoruMeclisi?: () => void;
 }
 
-export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole }: Props) {
+export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi }: Props) {
   const { user } = useAuth();
   const [view, setView] = useState<View>('home');
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
