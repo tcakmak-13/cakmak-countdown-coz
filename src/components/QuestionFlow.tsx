@@ -564,19 +564,12 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                 key={a.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : a.is_coach ? 'bg-accent/60 border-2 border-accent-foreground/10 shadow-sm' : 'bg-secondary/50 border border-border'}`}
+                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : a.is_coach ? 'border-l-[3px] border-l-primary bg-secondary/50 border-t border-r border-b border-t-border border-r-border border-b-border' : 'bg-secondary/50 border border-border'}`}
               >
-                {a.is_coach && !a.is_best && (
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Crown className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-[11px] font-bold text-primary">Koç Yanıtı</span>
-                  </div>
-                )}
                 {a.is_best && (
                   <div className="flex items-center gap-1.5 mb-2">
                     <Crown className="h-3.5 w-3.5 text-primary" />
                     <span className="text-[11px] font-bold text-primary">En İyi Çözüm</span>
-                    {/* Unmark button - only for question owner */}
                     {selectedQuestion.student_id === currentProfileId && (
                       <button
                         onClick={unmarkBestAnswer}
@@ -589,10 +582,15 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden ${a.is_coach ? 'bg-primary/30 text-primary ring-2 ring-primary/40' : 'bg-primary/20 text-primary'}`}>
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden bg-primary/20 text-primary`}>
                     {a.author_avatar ? <img src={a.author_avatar} className="h-full w-full object-cover" /> : a.author_name?.charAt(0)}
                   </div>
-                  <span className={`text-xs font-medium ${a.is_coach ? 'font-bold text-primary' : ''}`}>{a.author_name}</span>
+                  <span className={`text-xs font-medium ${a.is_coach ? 'text-primary font-semibold' : ''}`}>
+                    {a.author_name}
+                  </span>
+                  {a.is_coach && (
+                    <span className="text-[9px] font-semibold text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded-md">Koç</span>
+                  )}
                   <span className="text-[10px] text-muted-foreground ml-auto">{formatTime(a.created_at)}</span>
                   {/* Delete answer */}
                   {canDeleteAnswer(a) && (
