@@ -446,21 +446,21 @@ export default function AdminDashboard() {
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
+        <div className="max-w-7xl mx-auto flex items-center justify-around h-14 sm:h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesajlar' },
-            { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
               <button
                 key={item.key}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
-                className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors relative"
+                className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 flex-1 min-h-[48px] transition-colors relative"
               >
                 <div className="relative">
                   <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
