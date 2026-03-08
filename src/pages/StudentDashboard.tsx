@@ -19,8 +19,10 @@ import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import QuestionCenter from '@/components/QuestionCenter';
+import { HelpCircle } from 'lucide-react';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-merkezi';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Denemelerim',
@@ -29,6 +31,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'randevular': 'Randevular',
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
+  'soru-merkezi': 'Soru Merkezi',
 };
 
 const tabVariants = {
@@ -73,7 +76,7 @@ export default function StudentDashboard() {
 
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
-    { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
+    { key: 'soru-merkezi', label: 'Sorular', icon: HelpCircle },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
@@ -157,6 +160,12 @@ export default function StudentDashboard() {
           {tab === 'randevular' && profileId && (
             <motion.div key="randevular" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <AppointmentBooking studentId={profileId} coachId={profile?.coach_id} />
+            </motion.div>
+          )}
+
+          {tab === 'soru-merkezi' && profileId && (
+            <motion.div key="soru-merkezi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <QuestionCenter currentProfileId={profileId} currentRole={role} currentUserId={user?.id} />
             </motion.div>
           )}
 
