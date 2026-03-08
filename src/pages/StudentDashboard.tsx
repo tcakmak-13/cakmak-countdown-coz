@@ -137,20 +137,18 @@ export default function StudentDashboard() {
                   </div>
                 )}
                 {profileId && (
-                  <div className="flex justify-center">
-                    <button
-                      onClick={() => setTab('randevular' as Tab)}
-                      className="glass-card rounded-2xl p-5 flex flex-col items-center gap-3 hover:bg-secondary/50 transition-colors text-center w-full max-w-xs"
-                    >
-                      <div className="h-12 w-12 rounded-xl bg-gradient-orange flex items-center justify-center shadow-orange shrink-0">
-                        <CalendarIcon className="h-6 w-6 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-display font-semibold text-sm">Randevu Al</p>
-                        <p className="text-[11px] text-muted-foreground">Koçunla görüşme planla</p>
-                      </div>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setTab('randevular' as Tab)}
+                    className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors w-full"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-gradient-orange flex items-center justify-center shadow-orange shrink-0">
+                      <CalendarIcon className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-display font-semibold text-sm">Randevu Al</p>
+                      <p className="text-[11px] text-muted-foreground">Koçunla görüşme planla</p>
+                    </div>
+                  </button>
                 )}
                 <MotivationQuote />
               </div>
