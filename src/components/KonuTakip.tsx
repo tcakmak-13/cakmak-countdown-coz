@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ChevronDown, ChevronRight, BookOpen, Calculator, Triangle, Atom, FlaskConical, Leaf, Landmark, Globe, Brain, Book, PenTool } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronRight, BookOpen, Calculator, Triangle, Atom, FlaskConical, Leaf, Landmark, Globe, Brain, Book, PenTool, AlertTriangle, UserCog } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
