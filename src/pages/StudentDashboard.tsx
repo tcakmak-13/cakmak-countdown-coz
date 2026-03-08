@@ -98,7 +98,7 @@ export default function StudentDashboard() {
             )}
             <ThemeToggle />
             <NotificationBell />
-            <AvatarUpload size="sm" />
+            <AvatarUpload size="sm" disableUpload onClick={() => setTab('profilim')} />
           </div>
         </div>
       </header>
