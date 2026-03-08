@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import ImagePicker from '@/components/ImagePicker';
-import ImageLightbox from '@/components/ImageLightbox';
+import ImageCanvas from '@/components/ImageCanvas';
 
 const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
 const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
@@ -155,6 +155,44 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   const canModerate = currentRole === 'koc' || currentRole === 'admin';
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxQuestionId, setLightboxQuestionId] = useState<string | null>(null);
+
+  const openCanvas = useCallback((src: string, questionId?: string) => {
+    setLightboxSrc(src);
+    setLightboxQuestionId(questionId || null);
+  }, []);
+
+  const loadQuestionsRef = useRef<(() => void) | null>(null);
+  const loadAnswersRef = useRef<((id: string) => void) | null>(null);
+
+  const handleCanvasShareAsAnswer = useCallback(async (blob: Blob) => {
+    const targetQuestionId = lightboxQuestionId || selectedQuestion?.id;
+    if (!targetQuestionId) { toast.error('Soru bulunamadı'); return; }
+
+    try {
+      const filePath = `answers/${currentProfileId}/${Date.now()}_canvas.png`;
+      const file = new File([blob], 'canvas_solution.png', { type: 'image/png' });
+      const { error: upErr } = await supabase.storage.from('question-images').upload(filePath, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(filePath);
+
+      const { error } = await supabase.from('question_answers').insert({
+        question_id: targetQuestionId,
+        author_id: currentProfileId,
+        content: '🎨 Çizimli çözüm',
+        image_url: urlData.publicUrl,
+      });
+      if (error) throw error;
+
+      toast.success('Çizimli çözümün gönderildi! ✅');
+      setLightboxSrc(null);
+      setLightboxQuestionId(null);
+      if (selectedQuestion) loadAnswersRef.current?.(selectedQuestion.id);
+      loadQuestionsRef.current?.();
+    } catch (err: any) {
+      toast.error('Gönderim hatası: ' + (err.message || ''));
+    }
+  }, [lightboxQuestionId, selectedQuestion, currentProfileId]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
@@ -210,6 +248,9 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     })));
     setLoading(false);
   }, [filterCategory, filterSubject]);
+
+  // Keep refs in sync for canvas share callback
+  loadQuestionsRef.current = loadQuestions;
 
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
@@ -286,8 +327,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     }));
     setLoadingAnswers(false);
   };
+  loadAnswersRef.current = loadAnswers;
 
-  // Scroll thread to bottom after answers load
   useEffect(() => {
     if (!loadingAnswers && answers.length > 0 && selectedQuestion) {
       scrollToBottom(scrollRef);
@@ -513,7 +554,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     return (
       <div className="flex flex-col h-[calc(100vh-11rem)]">
         {deleteDialog}
-        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+        <ImageCanvas src={lightboxSrc} onClose={() => { setLightboxSrc(null); setLightboxQuestionId(null); }} onShareAsAnswer={handleCanvasShareAsAnswer} showShareButton={!!lightboxQuestionId || !!selectedQuestion} />
         <div className="flex items-center gap-3 pb-4 border-b border-border">
           <button onClick={() => { setSelectedQuestion(null); setAnswers([]); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ChevronLeft className="h-5 w-5" />
@@ -542,7 +583,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         {/* Question card at top */}
         <div className="py-4 border-b border-border">
           {selectedQuestion.image_url && (
-            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setLightboxSrc(selectedQuestion.image_url)} />
+            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => openCanvas(selectedQuestion.image_url!, selectedQuestion.id)} />
           )}
           {selectedQuestion.description && (
             <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
@@ -608,7 +649,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   )}
                 </div>
                 {a.image_url && (
-                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setLightboxSrc(a.image_url)} />
+                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => openCanvas(a.image_url!)} />
                 )}
                 {a.content && <p className="text-sm leading-relaxed">{a.content}</p>}
 
@@ -681,7 +722,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   return (
     <div className="space-y-4">
       {deleteDialog}
-      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      <ImageCanvas src={lightboxSrc} onClose={() => { setLightboxSrc(null); setLightboxQuestionId(null); }} onShareAsAnswer={handleCanvasShareAsAnswer} showShareButton={!!lightboxQuestionId} />
 
       {/* Nickname bar */}
       {username && (
@@ -855,7 +896,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                     </div>
 
                     {q.image_url && (
-                      <div className="rounded-xl overflow-hidden mb-2 max-h-44" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLightboxSrc(q.image_url); }}>
+                      <div className="rounded-xl overflow-hidden mb-2 max-h-44" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openCanvas(q.image_url!, q.id); }}>
                         <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary cursor-zoom-in hover:opacity-90 transition-opacity" />
                       </div>
                     )}
