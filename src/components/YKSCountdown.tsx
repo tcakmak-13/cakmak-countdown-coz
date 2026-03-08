@@ -9,7 +9,7 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="countdown-digit text-5xl sm:text-7xl md:text-8xl font-bold text-gradient-orange"
+        className="countdown-digit text-4xl sm:text-7xl md:text-8xl font-bold text-gradient-orange"
       >
         {String(value).padStart(2, '0')}
       </motion.div>
@@ -56,13 +56,13 @@ export default function YKSCountdown({ compact = false }: { compact?: boolean })
   }
 
   return (
-    <div className="flex items-center justify-center gap-4 sm:gap-8 md:gap-12">
+    <div className="flex items-center justify-center gap-2 sm:gap-8 md:gap-12">
       <CountdownUnit value={days} label="Gün" />
-      <div className="text-4xl sm:text-6xl text-primary font-light">:</div>
+      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={hours} label="Saat" />
-      <div className="text-4xl sm:text-6xl text-primary font-light">:</div>
+      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={minutes} label="Dakika" />
-      <div className="text-4xl sm:text-6xl text-primary font-light">:</div>
+      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={seconds} label="Saniye" />
     </div>
   );

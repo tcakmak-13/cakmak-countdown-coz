@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, forwardRef } from 'react';
 
 type Theme = 'dark' | 'light';
 
@@ -9,26 +9,28 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType>({ theme: 'dark', toggleTheme: () => {} });
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('cakmak-theme');
-    return (stored === 'light' || stored === 'dark') ? stored : 'dark';
-  });
+export const ThemeProvider = forwardRef<HTMLDivElement, { children: ReactNode }>(
+  function ThemeProvider({ children }, _ref) {
+    const [theme, setTheme] = useState<Theme>(() => {
+      const stored = localStorage.getItem('cakmak-theme');
+      return (stored === 'light' || stored === 'dark') ? stored : 'dark';
+    });
 
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('cakmak-theme', theme);
-  }, [theme]);
+    useEffect(() => {
+      const root = document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(theme);
+      localStorage.setItem('cakmak-theme', theme);
+    }, [theme]);
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+    const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
+    return (
+      <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
+);
 
 export const useTheme = () => useContext(ThemeContext);
