@@ -455,16 +455,20 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     );
   }
 
-  // Admin: student list
-  if (currentRole === 'admin' && !selectedStudent) {
+  // Admin/Coach: student list
+  if ((currentRole === 'admin' || currentRole === 'koc') && !selectedStudent) {
     return (
     <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-          <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Öğrenci Mesajları</p>
+          <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">
+            {currentRole === 'koc' ? 'Öğrencilerimle Mesajlar' : 'Öğrenci Mesajları'}
+          </p>
         </div>
         <div className="flex-1 overflow-y-auto">
           {students.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-12">Henüz öğrenci yok.</p>
+            <p className="text-sm text-muted-foreground text-center py-12">
+              {currentRole === 'koc' ? 'Henüz atanmış öğrenci yok.' : 'Henüz öğrenci yok.'}
+            </p>
           )}
           {students.map(s => {
             const lastMsg = getLastMessage(s.id);
@@ -490,7 +494,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     );
   }
 
-  // Admin: chat with selected student
+  // Admin/Coach: chat with selected student
   const selectedStudentData = students.find(s => s.id === selectedStudent);
 
   return (
