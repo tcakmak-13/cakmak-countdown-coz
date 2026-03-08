@@ -207,12 +207,6 @@ export default function StudentDashboard() {
                   </div>
                 )}
                 {profileId && (
-                  <div className="glass-card rounded-2xl p-6">
-                    <h2 className="font-display text-lg font-semibold mb-4">📊 Haftalık Çalışma İstatistikleri</h2>
-                    <WeeklyStudyStats studentId={profileId} />
-                  </div>
-                )}
-                {profileId && (
                   <button
                     onClick={() => setTab('randevular' as Tab)}
                     className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors w-full"
