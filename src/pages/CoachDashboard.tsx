@@ -11,7 +11,7 @@ import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
-import AdminAppointments from '@/components/AdminAppointments';
+import CoachAppointments from '@/components/CoachAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -298,8 +298,8 @@ export default function CoachDashboard() {
         <main className="flex-1 min-w-0">
           {tab === 'analytics' ? (
             <AdminAnalytics students={students} adminProfileId={profileId} />
-          ) : tab === 'appointments' ? (
-            <AdminAppointments />
+          ) : tab === 'appointments' && profileId ? (
+            <CoachAppointments coachProfileId={profileId} />
           ) : tab === 'coach-edit' ? (
             <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
           ) : tab === 'messages' && profileId ? (

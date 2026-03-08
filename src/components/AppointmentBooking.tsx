@@ -46,7 +46,7 @@ function getNextOccurrence(recurringDay: number, recurringTime: string): Date {
   return target;
 }
 
-export default function AppointmentBooking({ studentId }: { studentId: string }) {
+export default function AppointmentBooking({ studentId, coachId }: { studentId: string; coachId?: string | null }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -95,6 +95,7 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
     setSubmitting(true);
     const { error } = await supabase.from('appointments').insert({
       student_id: studentId,
+      coach_id: coachId || null,
       type: selectedType,
       scheduled_at: scheduledAt.toISOString(),
       recurring: true,
