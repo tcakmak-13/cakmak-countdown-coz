@@ -339,26 +339,26 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
           <h3 className="text-sm text-muted-foreground uppercase tracking-widest">Son Sonuçlar</h3>
           {filteredResults.slice(-5).reverse().map(r => (
             <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-4 flex items-center justify-between border border-border group relative">
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{r.exam_type}</span>
                 <span className="text-xs text-muted-foreground ml-2">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-display text-lg font-bold text-primary">{Number(r.total_net).toFixed(2)} Net</span>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="font-display text-base sm:text-lg font-bold text-primary">{Number(r.total_net).toFixed(2)} Net</span>
+                <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleEdit(r)}
-                    className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    className="p-2 sm:p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
                     title="Düzenle"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                   </button>
                   <button
                     onClick={() => setDeleteId(r.id)}
-                    className="p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                    className="p-2 sm:p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
                     title="Sil"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                   </button>
                 </div>
               </div>

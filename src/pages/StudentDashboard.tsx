@@ -301,13 +301,13 @@ export default function StudentDashboard() {
         </AnimatePresence>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-primary/20 bg-card/90 backdrop-blur-xl">
+      <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-primary/20 bg-card/90 backdrop-blur-xl pb-safe">
         <div className="max-w-5xl mx-auto flex">
           {tabs.map(t => (
             <button
               key={t.key}
               onClick={() => handleTabChange(t.key)}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
+              className={`flex-1 flex flex-col items-center gap-1 py-3 min-h-[56px] transition-colors ${
                 (tab === t.key || (t.key === 'hata-kumbarasi' && tab === 'soru-meclisi')) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >

@@ -245,46 +245,48 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
       )}
 
       {/* Heatmap */}
-      <div className="glass-card rounded-2xl p-5">
+      <div className="glass-card rounded-2xl p-4 sm:p-5">
         <h3 className="font-display font-bold text-base mb-4 flex items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
           Çalışma Karnesi (Son 7 Gün)
         </h3>
 
-        {/* Day labels */}
-        <div className="flex items-center gap-2 mb-3 pl-[140px]">
-          {dayLabels.map((d, i) => (
-            <span key={i} className="w-7 text-center text-[10px] font-medium text-muted-foreground uppercase">
-              {d}
-            </span>
-          ))}
-        </div>
-
-        <div className="space-y-1.5">
-          {heatmapData.map(({ student, days }) => (
-            <div key={student.id} className="flex items-center gap-2">
-              <span className="w-[132px] text-xs font-medium text-foreground truncate text-right">
-                {student.full_name || student.username || '?'}
+        <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+          {/* Day labels */}
+          <div className="flex items-center gap-2 mb-3 pl-[80px] sm:pl-[140px]">
+            {dayLabels.map((d, i) => (
+              <span key={i} className="w-7 text-center text-[10px] font-medium text-muted-foreground uppercase">
+                {d}
               </span>
-              <div className="flex gap-1">
-                {days.map((status, i) => (
-                  <div
-                    key={i}
-                    className={`w-7 h-7 rounded-md ${HEATMAP_COLORS[status]} transition-colors`}
-                    title={`${dayLabels[i]}: ${
-                      status === 'active' ? 'Tamamlandı' :
-                      status === 'partial' ? 'Kısmen' :
-                      status === 'inactive' ? 'Boş' : 'Veri yok'
-                    }`}
-                  />
-                ))}
+            ))}
+          </div>
+
+          <div className="space-y-1.5">
+            {heatmapData.map(({ student, days }) => (
+              <div key={student.id} className="flex items-center gap-2">
+                <span className="w-[72px] sm:w-[132px] text-[11px] sm:text-xs font-medium text-foreground truncate text-right shrink-0">
+                  {student.full_name || student.username || '?'}
+                </span>
+                <div className="flex gap-1">
+                  {days.map((status, i) => (
+                    <div
+                      key={i}
+                      className={`w-7 h-7 rounded-md ${HEATMAP_COLORS[status]} transition-colors`}
+                      title={`${dayLabels[i]}: ${
+                        status === 'active' ? 'Tamamlandı' :
+                        status === 'partial' ? 'Kısmen' :
+                        status === 'inactive' ? 'Boş' : 'Veri yok'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 mt-4 pl-[140px]">
+        <div className="flex items-center gap-3 sm:gap-4 mt-4 flex-wrap">
           {[
             { color: HEATMAP_COLORS.active, label: 'Tamamlandı' },
             { color: HEATMAP_COLORS.partial, label: 'Kısmen' },

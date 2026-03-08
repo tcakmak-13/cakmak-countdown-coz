@@ -263,8 +263,8 @@ export default function AdminDashboard() {
         {tab === 'overview' ? (
           <div className="space-y-6">
             <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="glass-card rounded-2xl p-6 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
                 <p className="text-3xl font-bold text-primary">{coaches.length}</p>
                 <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
               </div>
