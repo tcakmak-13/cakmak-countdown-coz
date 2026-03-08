@@ -11,6 +11,7 @@ interface Props {
   currentName: string;
   currentRole: 'admin' | 'koc' | 'student' | null;
   currentUserId?: string;
+  coachId?: string | null;
 }
 
 interface Message {
