@@ -20,6 +20,7 @@ interface AppointmentRow {
   recurring_day: number | null;
   recurring_time: string | null;
   series_ended_at: string | null;
+  duration_minutes: number;
   profiles: { full_name: string; username: string | null } | null;
 }
 
