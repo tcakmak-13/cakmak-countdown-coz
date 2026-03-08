@@ -616,6 +616,8 @@ export type Database = {
           id: string
         }[]
       }
+      get_my_profile_id: { Args: never; Returns: string }
+      get_my_student_ids: { Args: never; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -623,6 +625,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_coach_profile: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "student" | "koc"
