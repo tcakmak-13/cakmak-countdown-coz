@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn, ZoomOut, RotateCcw, Undo2, Eraser, Trash2, Pen, Send, Minus, Circle } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, RotateCcw, Undo2, Eraser, Trash2, Pen, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImageCanvasProps {
@@ -23,10 +23,10 @@ const COLORS = [
   { name: 'Fosforlu', value: '#FACC15', alpha: 0.5 },
 ];
 
-const PEN_SIZES: { label: string; value: PenSize; icon: 'sm' | 'md' | 'lg' }[] = [
-  { label: 'İnce', value: 2, icon: 'sm' },
-  { label: 'Orta', value: 5, icon: 'md' },
-  { label: 'Kalın', value: 10, icon: 'lg' },
+const PEN_SIZES: { label: string; value: PenSize }[] = [
+  { label: 'İnce', value: 2 },
+  { label: 'Orta', value: 5 },
+  { label: 'Kalın', value: 10 },
 ];
 
 export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAnswer, showShareButton = false }: ImageCanvasProps) {
@@ -38,19 +38,49 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const [showTools, setShowTools] = useState(true);
   const [sharing, setSharing] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Two-canvas approach: bgCanvas = image only, drawCanvas = drawing overlay
+  const drawCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasSizeRef = useRef({ w: 0, h: 0 });
+  // History stores drawing layer ImageData snapshots only
   const historyRef = useRef<ImageData[]>([]);
   const imageLoadedRef = useRef(false);
 
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 5;
 
-  // Load image and setup canvas
+  const setupCanvas = useCallback(() => {
+    const drawCanvas = drawCanvasRef.current;
+    const img = imageRef.current;
+    if (!drawCanvas || !img) return;
+
+    const maxW = window.innerWidth * 0.92;
+    const maxH = window.innerHeight * 0.78;
+    const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+    const w = Math.round(img.naturalWidth * ratio);
+    const h = Math.round(img.naturalHeight * ratio);
+
+    canvasSizeRef.current = { w, h };
+
+    drawCanvas.width = w;
+    drawCanvas.height = h;
+    drawCanvas.style.width = `${w}px`;
+    drawCanvas.style.height = `${h}px`;
+
+    // Clear drawing layer
+    const ctx = drawCanvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, w, h);
+      historyRef.current = [ctx.getImageData(0, 0, w, h)];
+    }
+  }, []);
+
+  // Load image
   useEffect(() => {
     if (!src) return;
     imageLoadedRef.current = false;
+    setScale(1);
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -59,49 +89,22 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       setupCanvas();
     };
     img.src = src;
-  }, [src]);
-
-  const setupCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    const img = imageRef.current;
-    if (!canvas || !img) return;
-
-    // Size canvas to fit screen while maintaining aspect ratio
-    const maxW = window.innerWidth * 0.92;
-    const maxH = window.innerHeight * 0.78;
-    const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
-    const w = Math.round(img.naturalWidth * ratio);
-    const h = Math.round(img.naturalHeight * ratio);
-
-    canvas.width = w;
-    canvas.height = h;
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.drawImage(img, 0, 0, w, h);
-    historyRef.current = [ctx.getImageData(0, 0, w, h)];
-  }, []);
+  }, [src, setupCanvas]);
 
   // Resize handler
   useEffect(() => {
     if (!src) return;
-    const handler = () => {
-      if (imageLoadedRef.current) setupCanvas();
-    };
+    const handler = () => { if (imageLoadedRef.current) setupCanvas(); };
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, [src, setupCanvas]);
 
   const saveHistory = useCallback(() => {
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    historyRef.current.push(data);
-    // Keep max 30 history entries
+    historyRef.current.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
     if (historyRef.current.length > 30) historyRef.current.shift();
   }, []);
 
@@ -109,27 +112,24 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     if (historyRef.current.length <= 1) return;
     historyRef.current.pop();
     const prev = historyRef.current[historyRef.current.length - 1];
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.putImageData(prev, 0, 0);
   }, []);
 
-  const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    const img = imageRef.current;
-    if (!canvas || !img) return;
+  const clearDrawing = useCallback(() => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     saveHistory();
   }, [saveHistory]);
 
-  // Get canvas-relative coordinates
   const getCanvasPos = useCallback((clientX: number, clientY: number) => {
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     return {
@@ -139,7 +139,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   }, []);
 
   const startDraw = useCallback((x: number, y: number) => {
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -149,8 +149,10 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     ctx.moveTo(x, y);
 
     if (tool === 'eraser') {
+      // Eraser clears the drawing layer only (reveals image underneath)
       ctx.globalCompositeOperation = 'destination-out';
       ctx.lineWidth = penSize * 3;
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
       ctx.globalAlpha = 1;
     } else {
       ctx.globalCompositeOperation = 'source-over';
@@ -165,7 +167,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
   const draw = useCallback((x: number, y: number) => {
     if (!isDrawing) return;
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -176,7 +178,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const endDraw = useCallback(() => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const canvas = canvasRef.current;
+    const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -188,7 +190,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
   // Mouse events
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scale > 1) return; // Disable drawing when zoomed
+    if (scale > 1) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     startDraw(pos.x, pos.y);
   }, [scale, getCanvasPos, startDraw]);
@@ -201,12 +203,11 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
   const handleMouseUp = useCallback(() => endDraw(), [endDraw]);
 
-  // Touch events (single finger = draw, two fingers = zoom)
+  // Touch events
   const lastTouchDist = useRef<number | null>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
-      // Pinch zoom
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
@@ -240,14 +241,13 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     endDraw();
   }, [endDraw]);
 
-  // Mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.2 : 0.2;
     setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
   }, []);
 
-  // Close on Escape
+  // Keyboard shortcuts
   useEffect(() => {
     if (!src) return;
     const handler = (e: KeyboardEvent) => {
@@ -258,31 +258,23 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     return () => window.removeEventListener('keydown', handler);
   }, [src, onClose, undo]);
 
-  // Eraser needs to composite back the image underneath
-  // When erasing, we redraw image first then apply drawing strokes
-  // Actually for simplicity, eraser will just paint the image back at that spot
-  // Let's use a two-canvas approach: background (image) and foreground (drawing)
-  // But for simplicity and performance, let's handle eraser as painting image pixels back
-
-  // Share as answer - merge canvas into blob
+  // Share: merge image + drawing into one blob
   const handleShare = useCallback(async () => {
-    const canvas = canvasRef.current;
+    const drawCanvas = drawCanvasRef.current;
     const img = imageRef.current;
-    if (!canvas || !img || !onShareAsAnswer) return;
+    if (!drawCanvas || !img || !onShareAsAnswer) return;
 
     setSharing(true);
     try {
-      // Create a high-res export canvas
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = img.naturalWidth;
       exportCanvas.height = img.naturalHeight;
       const ctx = exportCanvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context error');
 
-      // Draw original image
       ctx.drawImage(img, 0, 0);
-      // Draw drawing layer scaled up
-      ctx.drawImage(canvas, 0, 0, img.naturalWidth, img.naturalHeight);
+      // Scale drawing layer up to full resolution
+      ctx.drawImage(drawCanvas, 0, 0, img.naturalWidth, img.naturalHeight);
 
       const blob = await new Promise<Blob>((resolve, reject) => {
         exportCanvas.toBlob(b => b ? resolve(b) : reject(new Error('Blob oluşturulamadı')), 'image/png', 1);
@@ -297,9 +289,9 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
   const resetView = useCallback(() => setScale(1), []);
 
-  const selectedColor = COLORS[colorIndex];
-
   if (!src) return null;
+
+  const { w, h } = canvasSizeRef.current;
 
   return (
     <AnimatePresence>
@@ -336,16 +328,27 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           </div>
         )}
 
-        {/* Canvas area */}
+        {/* Two-layer canvas area: image underneath, drawing on top */}
         <div
           ref={containerRef}
           className="relative z-10 flex items-center justify-center overflow-hidden"
           onWheel={handleWheel}
-          style={{ cursor: scale > 1 ? 'grab' : (tool === 'eraser' ? 'crosshair' : 'crosshair') }}
+          style={{ cursor: scale > 1 ? 'grab' : 'crosshair' }}
         >
-          <div style={{ transform: `scale(${scale})`, transition: 'transform 0.15s ease-out' }}>
+          <div style={{ transform: `scale(${scale})`, transition: 'transform 0.15s ease-out', position: 'relative' }}>
+            {/* Background image */}
+            {imageRef.current && (
+              <img
+                src={src}
+                alt={alt}
+                className="rounded-lg shadow-2xl block select-none pointer-events-none"
+                draggable={false}
+                style={{ width: w || 'auto', height: h || 'auto' }}
+              />
+            )}
+            {/* Drawing overlay canvas - positioned exactly on top of image */}
             <canvas
-              ref={canvasRef}
+              ref={drawCanvasRef}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -353,8 +356,8 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              className="rounded-lg shadow-2xl touch-none"
-              style={{ display: 'block' }}
+              className="absolute top-0 left-0 rounded-lg touch-none"
+              style={{ display: 'block', width: w || 0, height: h || 0 }}
             />
           </div>
         </div>
@@ -369,7 +372,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               transition={{ duration: 0.2 }}
               className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-2xl px-3 py-2 shadow-2xl max-w-[95vw] overflow-x-auto scrollbar-hide"
             >
-              {/* Tool: Pen */}
+              {/* Pen */}
               <button
                 onClick={() => setTool('pen')}
                 className={`p-2 rounded-xl transition-all ${tool === 'pen' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
@@ -378,7 +381,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
                 <Pen className="h-4 w-4" />
               </button>
 
-              {/* Tool: Eraser */}
+              {/* Eraser */}
               <button
                 onClick={() => setTool('eraser')}
                 className={`p-2 rounded-xl transition-all ${tool === 'eraser' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
@@ -419,10 +422,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
                 >
                   <div
                     className="w-6 h-6 rounded-lg border border-white/20"
-                    style={{
-                      backgroundColor: c.value,
-                      opacity: c.alpha,
-                    }}
+                    style={{ backgroundColor: c.value, opacity: c.alpha }}
                   />
                 </button>
               ))}
@@ -430,20 +430,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               <div className="w-px h-6 bg-border mx-0.5" />
 
               {/* Undo */}
-              <button
-                onClick={undo}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
-                title="Geri Al (Ctrl+Z)"
-              >
+              <button onClick={undo} className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all" title="Geri Al (Ctrl+Z)">
                 <Undo2 className="h-4 w-4" />
               </button>
 
               {/* Clear */}
-              <button
-                onClick={clearCanvas}
-                className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                title="Tümünü Temizle"
-              >
+              <button onClick={clearDrawing} className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all" title="Tümünü Temizle">
                 <Trash2 className="h-4 w-4" />
               </button>
 
@@ -470,7 +462,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           )}
         </AnimatePresence>
 
-        {/* Toggle tools visibility on mobile */}
+        {/* Toggle tools on mobile */}
         <button
           onClick={() => setShowTools(!showTools)}
           className="absolute bottom-3 right-3 z-20 sm:hidden p-2 rounded-full bg-white/10 text-white backdrop-blur-sm"
