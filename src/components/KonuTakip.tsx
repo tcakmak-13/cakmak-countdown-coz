@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ChevronDown, ChevronRight, BookOpen, Calculator, Triangle, Atom, FlaskConical, Leaf, Landmark, Globe, Brain, Book, PenTool } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronRight, BookOpen, Calculator, Triangle, Atom, FlaskConical, Leaf, Landmark, Globe, Brain, Book, PenTool, AlertTriangle, UserCog } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 
@@ -11,6 +12,7 @@ interface Subject {
   name: string;
   sort_order: number;
   icon: string;
+  allowed_areas: string[];
 }
 
 interface Topic {
@@ -39,13 +41,16 @@ const iconMap: Record<string, typeof BookOpen> = {
   'pen-tool': PenTool,
 };
 
-export default function KonuTakip({ studentId }: { studentId: string }) {
+export default function KonuTakip({ studentId, studentArea }: { studentId: string; studentArea?: string | null }) {
+  const navigate = useNavigate();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [progress, setProgress] = useState<Map<string, boolean>>(new Map());
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [examFilter, setExamFilter] = useState<'TYT' | 'AYT'>('TYT');
   const [loading, setLoading] = useState(true);
+
+  const hasArea = !!studentArea;
 
   // Fetch all data
   useEffect(() => {
@@ -68,7 +73,20 @@ export default function KonuTakip({ studentId }: { studentId: string }) {
     load();
   }, [studentId]);
 
-  const filteredSubjects = useMemo(() => subjects.filter(s => s.exam_type === examFilter), [subjects, examFilter]);
+  // Filter subjects by exam type AND student area
+  const filteredSubjects = useMemo(() => {
+    return subjects.filter(s => {
+      if (s.exam_type !== examFilter) return false;
+      // TYT subjects are always shown (allowed_areas is empty)
+      if (s.exam_type === 'TYT') return true;
+      // AYT: if no area selected, show all
+      if (!hasArea) return true;
+      // AYT: if allowed_areas is empty, show to all
+      if (!s.allowed_areas || s.allowed_areas.length === 0) return true;
+      // AYT: filter by student area
+      return s.allowed_areas.includes(studentArea!);
+    });
+  }, [subjects, examFilter, studentArea, hasArea]);
 
   const topicsBySubject = useMemo(() => {
     const map = new Map<string, Topic[]>();
@@ -165,6 +183,32 @@ export default function KonuTakip({ studentId }: { studentId: string }) {
           </button>
         ))}
       </div>
+
+      {/* Area Warning Banner */}
+      {!hasArea && examFilter === 'AYT' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30"
+        >
+          <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-300">Bölümünüz seçili değil</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Müfredatınızı kişiselleştirmek için profilinizden bölüm seçin.</p>
+          </div>
+          <button
+            onClick={() => {
+              // Navigate to profile tab - dispatch custom event
+              const event = new CustomEvent('navigate-tab', { detail: 'profilim' });
+              window.dispatchEvent(event);
+            }}
+            className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition-colors flex items-center gap-1"
+          >
+            <UserCog className="w-3.5 h-3.5" />
+            Profil
+          </button>
+        </motion.div>
+      )}
 
       {/* Overall Progress Circle */}
       <motion.div
