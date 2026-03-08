@@ -245,22 +245,43 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     if (error) { setLoadingAnswers(false); return; }
 
     const authorIds = [...new Set((data || []).map(a => a.author_id))];
-    let profileMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+    let profileMap: Record<string, { full_name: string; avatar_url: string | null; user_id: string }> = {};
+    let coachSet = new Set<string>();
+
     if (authorIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select('id, full_name, avatar_url, user_id')
         .in('id', authorIds);
       if (profiles) {
-        profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url }; });
+        const userIds = profiles.map(p => p.user_id);
+        profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url, user_id: p.user_id }; });
+
+        // Check which authors are coaches
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds)
+          .eq('role', 'koc');
+        if (roles) {
+          const coachUserIds = new Set(roles.map(r => r.user_id));
+          profiles.forEach(p => {
+            if (coachUserIds.has(p.user_id)) coachSet.add(p.id);
+          });
+        }
       }
     }
 
-    setAnswers((data || []).map(a => ({
-      ...a,
-      author_name: profileMap[a.author_id]?.full_name || 'Anonim',
-      author_avatar: profileMap[a.author_id]?.avatar_url || null,
-    })));
+    setAnswers((data || []).map(a => {
+      const isCoach = coachSet.has(a.author_id);
+      const profile = profileMap[a.author_id];
+      return {
+        ...a,
+        author_name: isCoach ? `Koç ${profile?.full_name || ''}` : (profile?.full_name || 'Anonim'),
+        author_avatar: profile?.avatar_url || null,
+        is_coach: isCoach,
+      };
+    }));
     setLoadingAnswers(false);
   };
 
