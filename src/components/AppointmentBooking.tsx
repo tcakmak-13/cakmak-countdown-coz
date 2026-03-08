@@ -340,16 +340,10 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
-            {/* Duration + recurring info */}
-            <div className="flex gap-2">
-              <div className="flex-1 rounded-xl bg-secondary/50 border border-border p-2.5 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary shrink-0" />
-                <p className="text-xs font-medium">Süre: <span className="text-primary font-bold">{durationLabel}</span></p>
-              </div>
-              <div className="flex-1 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 flex items-center gap-2">
-                <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
-                <p className="text-xs text-amber-300 font-medium">Her hafta tekrar</p>
-              </div>
+            {/* Recurring info */}
+            <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
+              <p className="text-xs text-amber-300 font-medium">Her hafta tekrar</p>
             </div>
 
             {availability.length === 0 ? (
