@@ -236,7 +236,7 @@ export default function StudentDashboard() {
               }`}
             >
               <div className="relative">
-                <t.icon className={`h-5 w-5 ${tab === t.key ? 'drop-shadow-[0_0_8px_hsl(25,95%,53%)]' : ''}`} />
+                <t.icon className={`h-5 w-5 ${(tab === t.key || (t.key === 'hata-kumbarasi' && tab === 'soru-meclisi')) ? 'drop-shadow-[0_0_8px_hsl(25,95%,53%)]' : ''}`} />
                 {t.key === 'mesajlar' && unreadCount > 0 && tab !== 'mesajlar' && (
                   <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground text-[8px] font-bold flex items-center justify-center shadow-orange">
                     {unreadCount > 9 ? '9+' : unreadCount}
