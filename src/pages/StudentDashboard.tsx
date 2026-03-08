@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,10 @@ import AppointmentBooking from '@/components/AppointmentBooking';
 import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
-
+import QuestionFlow from '@/components/QuestionFlow';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Denemelerim',
@@ -30,6 +30,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'randevular': 'Randevular',
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
+  'soru-meclisi': 'Soru Meclisi',
 };
 
 const tabVariants = {
@@ -163,7 +164,20 @@ export default function StudentDashboard() {
 
           {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => setTab('soru-meclisi')} />
+            </motion.div>
+          )}
+
+          {tab === 'soru-meclisi' && profileId && (
+            <motion.div key="soru-meclisi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="flex items-center gap-3 mb-4">
+                <button onClick={() => setTab('hata-kumbarasi')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Geri</span>
+                </button>
+                <h1 className="font-display font-bold text-lg text-foreground">Soru Meclisi</h1>
+              </div>
+              <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
             </motion.div>
           )}
 
@@ -218,11 +232,11 @@ export default function StudentDashboard() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
-                tab === t.key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                (tab === t.key || (t.key === 'hata-kumbarasi' && tab === 'soru-meclisi')) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <div className="relative">
-                <t.icon className={`h-5 w-5 ${tab === t.key ? 'drop-shadow-[0_0_8px_hsl(25,95%,53%)]' : ''}`} />
+                <t.icon className={`h-5 w-5 ${(tab === t.key || (t.key === 'hata-kumbarasi' && tab === 'soru-meclisi')) ? 'drop-shadow-[0_0_8px_hsl(25,95%,53%)]' : ''}`} />
                 {t.key === 'mesajlar' && unreadCount > 0 && tab !== 'mesajlar' && (
                   <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground text-[8px] font-bold flex items-center justify-center shadow-orange">
                     {unreadCount > 9 ? '9+' : unreadCount}

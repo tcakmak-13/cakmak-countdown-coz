@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import QuestionFlow from '@/components/QuestionFlow';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -8,7 +7,7 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save, Users, ChevronDown
+  Triangle, Clock, StickyNote, Save, Users, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -66,9 +65,10 @@ interface Props {
   currentProfileId?: string;
   currentName?: string;
   currentRole?: string;
+  onOpenSoruMeclisi?: () => void;
 }
 
-export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole }: Props) {
+export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi }: Props) {
   const { user } = useAuth();
   const [view, setView] = useState<View>('home');
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
@@ -82,22 +82,9 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const [editNote, setEditNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [qflowOpen, setQflowOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-  const qflowRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
-
-  // Helper: extract storage path from image_url (handles both full URLs and plain paths)
-  const getStoragePath = (imageUrl: string): string => {
-    if (imageUrl.includes('/error-questions/')) {
-      const path = imageUrl.split('/object/public/error-questions/')[1] 
-        || imageUrl.split('/object/sign/error-questions/')[1]
-        || imageUrl.split('/error-questions/')[1];
-      return path ? decodeURIComponent(path.split('?')[0]) : imageUrl;
-    }
-    return imageUrl;
-  };
+  const [pendingCount, setPendingCount] = useState(0);
 
   // Fetch pending (open) questions count for badge
   useEffect(() => {
@@ -114,6 +101,17 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
+
+  // Helper: extract storage path from image_url (handles both full URLs and plain paths)
+  const getStoragePath = (imageUrl: string): string => {
+    if (imageUrl.includes('/error-questions/')) {
+      const path = imageUrl.split('/object/public/error-questions/')[1] 
+        || imageUrl.split('/object/sign/error-questions/')[1]
+        || imageUrl.split('/error-questions/')[1];
+      return path ? decodeURIComponent(path.split('?')[0]) : imageUrl;
+    }
+    return imageUrl;
+  };
 
   // Generate signed URLs for all questions
   const generateSignedUrls = async (questions: ErrorQuestion[]) => {
@@ -767,17 +765,11 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Soru Meclisi - full-width collapsible card */}
-      {currentProfileId && currentName && currentRole && (
-        <div className="mt-8" ref={qflowRef}>
+      {/* Soru Meclisi - navigation card */}
+      {onOpenSoruMeclisi && (
+        <div className="mt-8">
           <button
-            onClick={() => {
-              const willOpen = !qflowOpen;
-              setQflowOpen(willOpen);
-              if (willOpen) {
-                setTimeout(() => qflowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
-              }
-            }}
+            onClick={onOpenSoruMeclisi}
             className="relative w-full flex items-center justify-between px-5 py-4 rounded-xl bg-card border border-primary/20 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.12)] transition-all duration-300 group"
           >
             <div className="flex items-center gap-3">
@@ -790,30 +782,14 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {pendingCount > 0 && !qflowOpen && (
+              {pendingCount > 0 && (
                 <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-orange animate-scale-in">
                   {pendingCount > 99 ? '99+' : pendingCount}
                 </span>
               )}
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${qflowOpen ? 'rotate-180' : ''}`} />
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
             </div>
           </button>
-
-          <AnimatePresence initial={false}>
-            {qflowOpen && (
-              <motion.div
-                key="qflow"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1, transition: { height: { duration: 0.35, ease: 'easeOut' }, opacity: { duration: 0.25, delay: 0.1 } } }}
-                exit={{ height: 0, opacity: 0, transition: { opacity: { duration: 0.15 }, height: { duration: 0.3, ease: 'easeIn' } } }}
-                className="overflow-hidden"
-              >
-                <div className="pt-4">
-                  <QuestionFlow currentProfileId={currentProfileId} currentName={currentName} currentRole={currentRole} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       )}
     </div>
