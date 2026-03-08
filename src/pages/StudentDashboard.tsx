@@ -19,8 +19,10 @@ import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import QuestionCenter from '@/components/QuestionCenter';
+import { HelpCircle } from 'lucide-react';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-merkezi';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Denemelerim',
