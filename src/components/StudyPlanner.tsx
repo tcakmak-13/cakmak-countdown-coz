@@ -442,6 +442,43 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ── Complete Task Dialog ── */}
+      <Dialog open={completeDialogOpen} onOpenChange={(o) => { setCompleteDialogOpen(o); if (!o) setCompletingTask(null); }}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Görevi Tamamla 🎉</DialogTitle>
+          </DialogHeader>
+          {completingTask && (
+            <div className="space-y-4 mt-2">
+              <div className="glass-card rounded-xl p-3">
+                <p className="font-bold text-foreground">{completingTask.subject}</p>
+                <p className="text-sm text-muted-foreground">{completingTask.topic}</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold">Planlanan Süre</Label>
+                <p className="text-sm text-muted-foreground font-medium">{formatDuration(completingTask.estimated_minutes)}</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold">Gerçekleşen Süre (dakika)</Label>
+                <Input
+                  type="number"
+                  value={actualMinutes}
+                  onChange={e => setActualMinutes(Math.max(0, Number(e.target.value)))}
+                  className="bg-secondary border-border h-11"
+                  min={0}
+                />
+                {actualMinutes > 0 && (
+                  <p className="text-xs text-primary font-medium">{formatDuration(actualMinutes)}</p>
+                )}
+              </div>
+              <Button onClick={handleComplete} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white border-0 h-12 text-base font-bold rounded-2xl">
+                <CheckCircle2 className="h-5 w-5 mr-2" /> Tamamla
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
