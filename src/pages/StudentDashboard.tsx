@@ -143,7 +143,7 @@ export default function StudentDashboard() {
   const handleLogout = async () => { await signOut(); navigate('/'); };
 
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
-    { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
+    { key: 'denemelerim', label: 'Analizlerim', icon: BarChart3 },
     { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
