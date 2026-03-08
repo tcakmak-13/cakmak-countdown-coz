@@ -284,22 +284,22 @@ export default function CoachDashboard() {
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
+        <div className="max-w-7xl mx-auto flex items-center justify-around h-14 sm:h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
-            { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
-            { key: 'list', icon: Users, label: 'Öğrenciler' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesajlar', badge: unreadCount },
-            { key: 'coach-edit', icon: Settings, label: 'Profilim' },
+            { key: 'list', icon: Users, label: 'Öğrenci' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },
+            { key: 'coach-edit', icon: Settings, label: 'Profil' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
               <button
                 key={item.key}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
-                className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors relative"
+                className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 flex-1 min-h-[48px] transition-colors relative"
               >
                 <div className="relative">
                   <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -309,7 +309,7 @@ export default function CoachDashboard() {
                     </span>
                   )}
                 </div>
-                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                <span className={`text-[9px] sm:text-[10px] font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
                   {item.label}
                 </span>
                 {isActive && (

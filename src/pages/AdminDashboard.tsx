@@ -263,18 +263,18 @@ export default function AdminDashboard() {
         {tab === 'overview' ? (
           <div className="space-y-6">
             <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="glass-card rounded-2xl p-6 text-center">
-                <p className="text-3xl font-bold text-primary">{coaches.length}</p>
-                <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{coaches.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Koç</p>
               </div>
-              <div className="glass-card rounded-2xl p-6 text-center">
-                <p className="text-3xl font-bold text-primary">{students.length}</p>
-                <p className="text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
+              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{students.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
               </div>
-              <div className="glass-card rounded-2xl p-6 text-center">
-                <p className="text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
-                <p className="text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
+              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center col-span-2 sm:col-span-1">
+                <p className="text-2xl sm:text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
               </div>
             </div>
             <div className="glass-card rounded-2xl p-6">
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {students.map(s => (
                   <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''}`}>
-                    <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0">
+                    <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0 min-h-[44px]">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                         {s.full_name?.charAt(0) || '?'}
                       </div>
@@ -352,11 +352,11 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                     </button>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                      <button onClick={() => { setAssignDialogStudent(s); setAssignCoachId(s.coach_id || 'none'); }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10" title="Koç ata">
+                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
+                      <button onClick={() => { setAssignDialogStudent(s); setAssignCoachId(s.coach_id || 'none'); }} className="h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10" title="Koç ata">
                         <UserPlus className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setUserToDelete({ id: s.id, name: s.full_name || s.username || 'Öğrenci', type: 'student' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Sil">
+                      <button onClick={() => setUserToDelete({ id: s.id, name: s.full_name || s.username || 'Öğrenci', type: 'student' })} className="h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Sil">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -446,21 +446,21 @@ export default function AdminDashboard() {
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
+        <div className="max-w-7xl mx-auto flex items-center justify-around h-14 sm:h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesajlar' },
-            { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
               <button
                 key={item.key}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
-                className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors relative"
+                className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 flex-1 min-h-[48px] transition-colors relative"
               >
                 <div className="relative">
                   <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />

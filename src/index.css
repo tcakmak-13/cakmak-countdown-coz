@@ -113,4 +113,14 @@
     font-family: 'Space Grotesk', sans-serif;
     font-variant-numeric: tabular-nums;
   }
+  /* Mobile touch-friendly: show hover actions on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    .group-hover\:opacity-100 {
+      opacity: 1 !important;
+    }
+  }
+  /* Safe area padding for notched devices */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+  }
 }
