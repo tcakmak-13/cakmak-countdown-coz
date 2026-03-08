@@ -301,7 +301,7 @@ export default function CoachDashboard() {
           ) : tab === 'appointments' && profileId ? (
             <CoachAppointments coachProfileId={profileId} />
           ) : tab === 'coach-edit' ? (
-            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
+            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} coachProfileId={profileId} />
           ) : tab === 'messages' && profileId ? (
             <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
           ) : !selectedStudent ? (
