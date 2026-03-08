@@ -62,9 +62,12 @@ type View = 'home' | 'subjects' | 'gallery';
 
 interface Props {
   studentId: string;
+  currentProfileId?: string;
+  currentName?: string;
+  currentRole?: string;
 }
 
-export default function HataKumbarasi({ studentId }: Props) {
+export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole }: Props) {
   const { user } = useAuth();
   const [view, setView] = useState<View>('home');
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
