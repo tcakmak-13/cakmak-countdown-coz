@@ -327,8 +327,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     }));
     setLoadingAnswers(false);
   };
+  loadAnswersRef.current = loadAnswers;
 
-  // Scroll thread to bottom after answers load
   useEffect(() => {
     if (!loadingAnswers && answers.length > 0 && selectedQuestion) {
       scrollToBottom(scrollRef);
