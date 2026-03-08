@@ -49,22 +49,18 @@ export type ScoreType = 'TYT' | 'SAYISAL' | 'SOZEL' | 'ESIT_AGIRLIK' | 'DIL';
 export function interpolateRanking(score: number, type: ScoreType): number | null {
   const data = osymData2024;
 
-  // Tablodaki en yüksek puandan büyükse
   if (score >= data[0].puan) return data[0][type];
-  // Tablodaki en düşük puandan küçükse
   if (score <= data[data.length - 1].puan) return data[data.length - 1][type];
 
-  // İki veri noktası arası doğrusal enterpolasyon
   for (let i = 0; i < data.length - 1; i++) {
     const upper = data[i];
     const lower = data[i + 1];
     if (score <= upper.puan && score >= lower.puan) {
-      const pDiff = upper.puan - lower.puan;
-      const rUpper = upper[type];
-      const rLower = lower[type];
-      const ratio = (upper.puan - score) / pDiff;
-      const ranking = Math.round(rUpper + ratio * (rLower - rUpper));
-      return ranking;
+      const pointDiff = upper.puan - lower.puan;
+      const rankDiff = lower[type] - upper[type];
+      const scoreOffset = score - lower.puan;
+      const exactRank = lower[type] - (rankDiff * (scoreOffset / pointDiff));
+      return Math.round(exactRank);
     }
   }
   return null;
