@@ -62,7 +62,7 @@ export default function YKSCountdown({ compact = false }: { compact?: boolean })
       <CountdownUnit value={hours} label="Saat" />
       <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={minutes} label="Dakika" />
-      <div className="text-4xl sm:text-6xl text-primary font-light">:</div>
+      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={seconds} label="Saniye" />
     </div>
   );
