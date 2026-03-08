@@ -221,13 +221,13 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button onClick={() => { setSelectedStudent(null); setTab('overview'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Flame className="h-6 w-6 text-primary" />
             <span className="font-display text-lg font-bold hidden sm:inline">
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
             <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">Admin</span>
-          </div>
+          </button>
           <div className="flex items-center gap-2">
             <YKSCountdown compact />
             <ThemeToggle />

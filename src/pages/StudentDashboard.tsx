@@ -84,10 +84,12 @@ export default function StudentDashboard() {
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Flame className="h-6 w-6 text-primary" />
-            <span className="font-display text-lg font-bold hidden sm:inline">
-              Çakmak<span className="text-primary">Koçluk</span>
-            </span>
+            <button onClick={() => setTab('ana-menu')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <Flame className="h-6 w-6 text-primary" />
+              <span className="font-display text-lg font-bold hidden sm:inline">
+                Çakmak<span className="text-primary">Koçluk</span>
+              </span>
+            </button>
             {TAB_TITLES[tab] && (
               <span className="text-muted-foreground font-display text-sm hidden sm:inline ml-1">/ {TAB_TITLES[tab]}</span>
             )}
