@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Video, Phone, Check, X, Clock, CalendarIcon, Loader2, Repeat, StopCircle, Pencil } from 'lucide-react';
+import CoachAvailability from '@/components/CoachAvailability';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -20,12 +21,21 @@ interface AppointmentRow {
   recurring_day: number | null;
   recurring_time: string | null;
   series_ended_at: string | null;
+  duration_minutes: number;
   profiles: { full_name: string; username: string | null } | null;
 }
 
 const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 9);
 const MINUTES = [0, 15, 30, 45];
+
+function endTimeStr(startTime: string, durationMinutes: number): string {
+  const [h, m] = startTime.split(':').map(Number);
+  const totalMin = h * 60 + m + (durationMinutes || 60);
+  const eh = Math.floor(totalMin / 60) % 24;
+  const em = totalMin % 60;
+  return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+}
 
 function getNextOccurrence(recurringDay: number, recurringTime: string): Date {
   const now = new Date();
@@ -151,6 +161,11 @@ export default function CoachAppointments({ coachProfileId }: Props) {
         </div>
       </div>
 
+      {/* Coach Availability Management */}
+      <CoachAvailability coachProfileId={coachProfileId} />
+
+      <div className="border-t border-border pt-6" />
+
       {/* Pending */}
       {pending.length > 0 && (
         <div className="space-y-3">
@@ -168,7 +183,8 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-semibold text-lg">{a.profiles?.full_name || a.profiles?.username || 'Öğrenci'}</p>
                   <p className="text-sm text-muted-foreground">
-                    {a.type === 'video' ? 'Görüntülü' : 'Sesli'} — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
+                    {a.type === 'video' ? 'Görüntülü' : 'Sesli'} ({a.duration_minutes || 60} dk) — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
+                    {a.recurring_time ? ` → ${endTimeStr(a.recurring_time, a.duration_minutes)}` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -209,6 +225,8 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                     <p className="font-display font-bold text-lg">{a.profiles?.full_name || 'Öğrenci'}</p>
                     <p className="text-sm text-muted-foreground">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
+                      {a.recurring_time ? ` → ${endTimeStr(a.recurring_time, a.duration_minutes)}` : ''}
+                      <span className="ml-1.5 text-xs">({a.duration_minutes || 60} dk)</span>
                     </p>
                     <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 inline-block">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sonraki</p>

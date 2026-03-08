@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           coach_id: string | null
           created_at: string
+          duration_minutes: number
           id: string
           note: string | null
           recurring: boolean
@@ -33,6 +34,7 @@ export type Database = {
         Insert: {
           coach_id?: string | null
           created_at?: string
+          duration_minutes?: number
           id?: string
           note?: string | null
           recurring?: boolean
@@ -48,6 +50,7 @@ export type Database = {
         Update: {
           coach_id?: string | null
           created_at?: string
+          duration_minutes?: number
           id?: string
           note?: string | null
           recurring?: boolean
@@ -119,6 +122,41 @@ export type Database = {
           {
             foreignKeyName: "chat_messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_availability: {
+        Row: {
+          coach_id: string
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          start_time: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          start_time: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_availability_coach_id_fkey"
+            columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
