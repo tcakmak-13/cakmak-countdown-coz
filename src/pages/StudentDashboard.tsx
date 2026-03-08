@@ -27,7 +27,7 @@ import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi';
 
 const TAB_TITLES: Record<Tab, string> = {
-  'denemelerim': 'Denemelerim',
+  'denemelerim': 'Analizlerim',
   'hata-kumbarasi': 'Hatalarım',
   'ana-menu': '',
   'randevular': 'Randevular',
@@ -143,7 +143,7 @@ export default function StudentDashboard() {
   const handleLogout = async () => { await signOut(); navigate('/'); };
 
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
-    { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
+    { key: 'denemelerim', label: 'Analizlerim', icon: BarChart3 },
     { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
@@ -182,7 +182,13 @@ export default function StudentDashboard() {
         <AnimatePresence mode="wait">
           {tab === 'denemelerim' && profileId && (
             <motion.div key="denemelerim" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <Denemelerim studentId={profileId} studentArea={studentArea} />
+              <div className="space-y-8">
+                <Denemelerim studentId={profileId} studentArea={studentArea} />
+                <div className="glass-card rounded-2xl p-6">
+                  <h2 className="font-display text-lg font-semibold mb-4">📊 Haftalık Çalışma İstatistikleri</h2>
+                  <WeeklyStudyStats studentId={profileId} />
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -198,12 +204,6 @@ export default function StudentDashboard() {
                   <div className="glass-card rounded-2xl p-6">
                     <h2 className="font-display text-lg font-semibold mb-4">Haftalık Programım</h2>
                     <StudyPlanner studentId={profileId} />
-                  </div>
-                )}
-                {profileId && (
-                  <div className="glass-card rounded-2xl p-6">
-                    <h2 className="font-display text-lg font-semibold mb-4">📊 Haftalık Çalışma İstatistikleri</h2>
-                    <WeeklyStudyStats studentId={profileId} />
                   </div>
                 )}
                 {profileId && (
