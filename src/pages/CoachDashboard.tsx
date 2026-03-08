@@ -195,6 +195,8 @@ export default function CoachDashboard() {
           <AdminAnalytics students={students} adminProfileId={profileId} />
         ) : tab === 'appointments' && profileId ? (
           <CoachAppointments coachProfileId={profileId} />
+        ) : tab === 'soru-akisi' && profileId ? (
+          <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
         ) : tab === 'coach-edit' ? (
           <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} coachProfileId={profileId} />
         ) : tab === 'messages' && profileId ? (
