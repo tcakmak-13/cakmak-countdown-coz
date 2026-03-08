@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, HelpCircle } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -14,7 +14,6 @@ import AdminAnalytics from '@/components/AdminAnalytics';
 import AdminAppointments from '@/components/AdminAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import CoachDetailView from '@/components/CoachDetailView';
-import QuestionCenter from '@/components/QuestionCenter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,7 +47,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [coaches, setCoaches] = useState<CoachProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments' | 'coach-detail' | 'soru-merkezi'>('overview');
+  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments' | 'coach-detail'>('overview');
   const [selectedCoach, setSelectedCoach] = useState<CoachProfile | null>(null);
 
   // Student creation
@@ -304,8 +303,6 @@ export default function AdminDashboard() {
           </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
-        ) : tab === 'soru-merkezi' && profileId ? (
-          <QuestionCenter currentProfileId={profileId} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'appointments' ? (
           <AdminAppointments />
         ) : tab === 'coach-detail' && selectedCoach ? (
@@ -455,7 +452,6 @@ export default function AdminDashboard() {
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
-            { key: 'soru-merkezi', icon: HelpCircle, label: 'Sorular' },
             { key: 'messages', icon: MessageCircle, label: 'Mesajlar' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
           ].map(item => {

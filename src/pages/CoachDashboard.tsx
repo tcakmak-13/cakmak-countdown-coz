@@ -20,8 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
-import QuestionCenter from '@/components/QuestionCenter';
-import { HelpCircle } from 'lucide-react';
 
 interface StudentProfile {
   id: string;
@@ -38,7 +36,7 @@ export default function CoachDashboard() {
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-merkezi'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments'>('analytics');
   const unreadCount = useUnreadMessages(profileId);
 
   // Announcement
@@ -195,8 +193,6 @@ export default function CoachDashboard() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
-        ) : tab === 'soru-merkezi' && profileId ? (
-          <QuestionCenter currentProfileId={profileId} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'appointments' && profileId ? (
           <CoachAppointments coachProfileId={profileId} />
         ) : tab === 'coach-edit' ? (
@@ -289,7 +285,7 @@ export default function CoachDashboard() {
         <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
-            { key: 'soru-merkezi', icon: HelpCircle, label: 'Sorular' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
             { key: 'list', icon: Users, label: 'Öğrenciler' },
             { key: 'messages', icon: MessageCircle, label: 'Mesajlar', badge: unreadCount },
             { key: 'coach-edit', icon: Settings, label: 'Profilim' },
