@@ -152,7 +152,7 @@ export default function StudentDashboard() {
 
           {tab === 'randevular' && profileId && (
             <motion.div key="randevular" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <AppointmentBooking studentId={profileId} />
+              <AppointmentBooking studentId={profileId} coachId={profile?.coach_id} />
             </motion.div>
           )}
 
