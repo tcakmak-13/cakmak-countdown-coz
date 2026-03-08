@@ -166,7 +166,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     }
   };
 
-  const backToToday = () => setSelectedDate(new Date());
+  
 
   return (
     <div>
