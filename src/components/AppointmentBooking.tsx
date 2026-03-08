@@ -95,6 +95,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
     setSubmitting(true);
     const { error } = await supabase.from('appointments').insert({
       student_id: studentId,
+      coach_id: coachId || null,
       type: selectedType,
       scheduled_at: scheduledAt.toISOString(),
       recurring: true,
