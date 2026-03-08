@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { interpolateRanking, formatRanking, formatRankingShort, type ScoreType } from '@/lib/yksRankingEngine';
+import { osymData2024, formatRanking, formatRankingShort, type ScoreType } from '@/lib/yksRankingEngine';
 
 // ─── ÖSYM Katsayılar ────────────────────────────────────────────────────
 const TYT_COEFFICIENTS = { turkce: 3.3, matematik: 3.3, fen: 3.4, sosyal: 3.4 };
