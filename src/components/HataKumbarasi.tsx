@@ -8,7 +8,7 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save
+  Triangle, Clock, StickyNote, Save, MessagesSquare, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -82,6 +82,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const [editNote, setEditNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [qflowOpen, setQflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
@@ -748,16 +749,38 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Topluluk Soru Akışı - embedded section */}
+      {/* Topluluk Soru Akışı - collapsible section */}
       {currentProfileId && currentName && currentRole && (
-        <>
-          <div className="mt-10 mb-6 flex items-center gap-3">
+        <div className="mt-8">
+          <div className="flex items-center gap-3 mb-2">
             <div className="h-px flex-1 bg-border" />
-            <h2 className="font-display text-lg font-semibold text-foreground whitespace-nowrap">💬 Topluluk Soru Akışı</h2>
+            <button
+              onClick={() => setQflowOpen(prev => !prev)}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card hover:bg-secondary/50 transition-all group"
+            >
+              <MessagesSquare className="h-5 w-5 text-primary" />
+              <span className="font-display font-semibold text-sm text-foreground">Topluluk Soru Akışı</span>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${qflowOpen ? 'rotate-180' : ''}`} />
+            </button>
             <div className="h-px flex-1 bg-border" />
           </div>
-          <QuestionFlow currentProfileId={currentProfileId} currentName={currentName} currentRole={currentRole} />
-        </>
+
+          <AnimatePresence initial={false}>
+            {qflowOpen && (
+              <motion.div
+                key="qflow"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1, transition: { height: { duration: 0.35, ease: 'easeOut' }, opacity: { duration: 0.25, delay: 0.1 } } }}
+                exit={{ height: 0, opacity: 0, transition: { opacity: { duration: 0.15 }, height: { duration: 0.3, ease: 'easeIn' } } }}
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  <QuestionFlow currentProfileId={currentProfileId} currentName={currentName} currentRole={currentRole} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
     </div>
   );
