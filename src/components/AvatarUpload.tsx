@@ -32,7 +32,7 @@ const textSizes = {
   lg: 'text-2xl',
 };
 
-export default function AvatarUpload({ size = 'md', className = '' }: Props) {
+export default function AvatarUpload({ size = 'md', className = '', onClick, disableUpload = false }: Props) {
   const { user, profile, profileId, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
