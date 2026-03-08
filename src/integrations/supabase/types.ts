@@ -571,30 +571,36 @@ export type Database = {
       question_answers: {
         Row: {
           author_id: string
+          best_answer_xp_awarded: boolean | null
           content: string
           created_at: string
           id: string
           image_url: string | null
           is_best: boolean
           question_id: string
+          xp_awarded: boolean | null
         }
         Insert: {
           author_id: string
+          best_answer_xp_awarded?: boolean | null
           content?: string
           created_at?: string
           id?: string
           image_url?: string | null
           is_best?: boolean
           question_id: string
+          xp_awarded?: boolean | null
         }
         Update: {
           author_id?: string
+          best_answer_xp_awarded?: boolean | null
           content?: string
           created_at?: string
           id?: string
           image_url?: string | null
           is_best?: boolean
           question_id?: string
+          xp_awarded?: boolean | null
         }
         Relationships: [
           {
@@ -625,6 +631,7 @@ export type Database = {
           student_id: string
           subject: string
           title: string
+          xp_awarded: boolean | null
         }
         Insert: {
           best_answer_id?: string | null
@@ -637,6 +644,7 @@ export type Database = {
           student_id: string
           subject: string
           title: string
+          xp_awarded?: boolean | null
         }
         Update: {
           best_answer_id?: string | null
@@ -649,6 +657,7 @@ export type Database = {
           student_id?: string
           subject?: string
           title?: string
+          xp_awarded?: boolean | null
         }
         Relationships: [
           {
@@ -812,6 +821,38 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_type: string
+          earned_at: string
+          id: string
+          profile_id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type: string
+          earned_at?: string
+          id?: string
+          profile_id: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          profile_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -829,6 +870,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_stats: {
+        Row: {
+          answers_written: number
+          best_answers_count: number
+          created_at: string
+          id: string
+          profile_id: string
+          questions_asked: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers_written?: number
+          best_answers_count?: number
+          created_at?: string
+          id?: string
+          profile_id: string
+          questions_asked?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers_written?: number
+          best_answers_count?: number
+          created_at?: string
+          id?: string
+          profile_id?: string
+          questions_asked?: number
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stats_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_topic_progress: {
         Row: {
@@ -872,11 +957,63 @@ export type Database = {
           },
         ]
       }
+      xp_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          profile_id: string
+          reason: string
+          reference_id: string | null
+          reference_table: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          profile_id: string
+          reason: string
+          reference_id?: string | null
+          reference_table?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          profile_id?: string
+          reason?: string
+          reference_id?: string | null
+          reference_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xp_transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      award_xp: {
+        Args: {
+          _amount: number
+          _profile_id: string
+          _reason: string
+          _reference_id?: string
+          _reference_table?: string
+        }
+        Returns: undefined
+      }
+      check_and_award_badges: {
+        Args: { _profile_id: string }
+        Returns: string[]
+      }
       create_notification: {
         Args: {
           _icon?: string
