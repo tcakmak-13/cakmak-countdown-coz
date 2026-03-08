@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Video, Phone, Check, X, Clock, CalendarIcon, Loader2, Repeat, StopCircle, Pencil } from 'lucide-react';
+import CoachAvailability from '@/components/CoachAvailability';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
