@@ -57,7 +57,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
   const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
