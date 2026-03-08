@@ -184,6 +184,32 @@ export default function KonuTakip({ studentId, studentArea }: { studentId: strin
         ))}
       </div>
 
+      {/* Area Warning Banner */}
+      {!hasArea && examFilter === 'AYT' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30"
+        >
+          <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-300">Bölümünüz seçili değil</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Müfredatınızı kişiselleştirmek için profilinizden bölüm seçin.</p>
+          </div>
+          <button
+            onClick={() => {
+              // Navigate to profile tab - dispatch custom event
+              const event = new CustomEvent('navigate-tab', { detail: 'profilim' });
+              window.dispatchEvent(event);
+            }}
+            className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition-colors flex items-center gap-1"
+          >
+            <UserCog className="w-3.5 h-3.5" />
+            Profil
+          </button>
+        </motion.div>
+      )}
+
       {/* Overall Progress Circle */}
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
