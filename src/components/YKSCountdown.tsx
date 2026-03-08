@@ -58,7 +58,7 @@ export default function YKSCountdown({ compact = false }: { compact?: boolean })
   return (
     <div className="flex items-center justify-center gap-2 sm:gap-8 md:gap-12">
       <CountdownUnit value={days} label="Gün" />
-      <div className="text-4xl sm:text-6xl text-primary font-light">:</div>
+      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={hours} label="Saat" />
       <div className="text-4xl sm:text-6xl text-primary font-light">:</div>
       <CountdownUnit value={minutes} label="Dakika" />
