@@ -381,7 +381,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               <div className="space-y-2">
                 <Label className="font-semibold">Ders</Label>
                 <SearchableCombobox
-                  options={tytMufredat.mudredat.map(d => d.ders)}
+                  options={tytMufredat.mufredat.map(d => d.ders)}
                   value={form.subject}
                   onChange={(val) => setForm(f => ({ ...f, subject: val, topic: '' }))}
                   placeholder="Ders seçin..."
@@ -391,7 +391,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               <div className="space-y-2">
                 <Label className="font-semibold">Konu</Label>
                 <SearchableCombobox
-                  options={tytMufredat.mudredat.find(d => d.ders === form.subject)?.konular ?? []}
+                  options={tytMufredat.mufredat.find(d => d.ders === form.subject)?.konular ?? []}
                   value={form.topic}
                   onChange={(val) => setForm(f => ({ ...f, topic: val }))}
                   placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}
