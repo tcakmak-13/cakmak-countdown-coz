@@ -77,13 +77,17 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
 
-  // Week dates (Mon-Sun) for the strip
+  // Week dates derived from selectedDate
   const weekDates = useMemo(() => {
-    const now = new Date();
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
+    const monday = startOfWeek(selectedDate, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId]);
+  }, [selectedDate]);
+
+  const isCurrentWeek = isSameWeek(selectedDate, new Date(), { weekStartsOn: 1 });
+
+  const goToPrevWeek = () => setSelectedDate(prev => addWeeks(prev, -1));
+  const goToNextWeek = () => setSelectedDate(prev => addWeeks(prev, 1));
+  const goToThisWeek = () => setSelectedDate(new Date());
 
   const fetchTasks = async () => {
     const { data } = await supabase
