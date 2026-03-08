@@ -162,6 +162,9 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setLightboxQuestionId(questionId || null);
   }, []);
 
+  const loadQuestionsRef = useRef<(() => void) | null>(null);
+  const loadAnswersRef = useRef<((id: string) => void) | null>(null);
+
   const handleCanvasShareAsAnswer = useCallback(async (blob: Blob) => {
     const targetQuestionId = lightboxQuestionId || selectedQuestion?.id;
     if (!targetQuestionId) { toast.error('Soru bulunamadı'); return; }
@@ -184,12 +187,12 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       toast.success('Çizimli çözümün gönderildi! ✅');
       setLightboxSrc(null);
       setLightboxQuestionId(null);
-      if (selectedQuestion) loadAnswers(selectedQuestion.id);
-      loadQuestions();
+      if (selectedQuestion) loadAnswersRef.current?.(selectedQuestion.id);
+      loadQuestionsRef.current?.();
     } catch (err: any) {
       toast.error('Gönderim hatası: ' + (err.message || ''));
     }
-  }, [lightboxQuestionId, selectedQuestion, currentProfileId, loadQuestions]);
+  }, [lightboxQuestionId, selectedQuestion, currentProfileId]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
