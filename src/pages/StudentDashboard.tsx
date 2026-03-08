@@ -53,6 +53,7 @@ export default function StudentDashboard() {
   const [usernameError, setUsernameError] = useState('');
   const [usernameSaving, setUsernameSaving] = useState(false);
   const [hasUsername, setHasUsername] = useState<boolean>(!!profile?.username);
+  const [currentUsername, setCurrentUsername] = useState<string>(profile?.username || '');
 
   useEffect(() => {
     setHasUsername(!!profile?.username);
