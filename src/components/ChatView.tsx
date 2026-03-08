@@ -254,7 +254,22 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     };
     fetchMessages();
     const channel = supabase.channel('chat-realtime-view')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => fetchMessages())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+        const newMsg = payload.new as Message;
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
+        if (newMsg.file_name) getSignedUrl(newMsg.file_name);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
+        const updated = payload.new as Message;
+        setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
+        const deleted = payload.old as { id: string };
+        setMessages(prev => prev.filter(m => m.id !== deleted.id));
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
