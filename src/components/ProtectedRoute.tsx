@@ -38,15 +38,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     }
   }
 
-  // Coach-specific redirects
-  if (role === 'koc' && profile) {
-    if (!profile.profile_completed && location.pathname !== '/coach-onboarding') {
-      return <Navigate to="/coach-onboarding" replace />;
-    }
-    if (profile.profile_completed && location.pathname === '/coach-onboarding') {
-      return <Navigate to="/coach" replace />;
-    }
-  }
+  // Coach-specific redirects: handled inside CoachDashboard and CoachOnboarding
 
   return <>{children}</>;
 }
