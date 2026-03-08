@@ -48,6 +48,7 @@ interface Answer {
   created_at: string;
   author_name?: string;
   author_avatar?: string;
+  is_coach?: boolean;
 }
 
 interface QuestionFlowProps {
