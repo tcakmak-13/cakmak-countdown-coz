@@ -577,7 +577,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         {/* Question card at top */}
         <div className="py-4 border-b border-border">
           {selectedQuestion.image_url && (
-            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setLightboxSrc(selectedQuestion.image_url)} />
+            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => openCanvas(selectedQuestion.image_url!, selectedQuestion.id)} />
           )}
           {selectedQuestion.description && (
             <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
