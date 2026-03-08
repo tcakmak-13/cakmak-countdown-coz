@@ -1,6 +1,6 @@
 {
   "sinav_tipi": "TYT",
-  "mudredat": [
+  "mufredat": [
     {
       "ders": "Türkçe",
       "konular": ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Ses Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri", "Sözcükte Yapı", "Sözcük Türleri", "Cümlenin Ögeleri", "Fiilimsiler ve Çatı", "Anlatım Bozuklukları"]
@@ -26,8 +26,20 @@
       "konular": ["Canlıların Ortak Özellikleri", "Temel Bileşenler", "Hücre ve Organeller", "Canlıların Sınıflandırılması", "Hücre Bölünmeleri", "Kalıtım", "Ekosistem Ekolojisi"]
     },
     {
-      "ders": "Sosyal Bilimler",
-      "konular": ["Tarih ve Zaman", "İlk Türk Devletleri", "Osmanlı Tarihi", "İnkılap Tarihi", "Doğa ve İnsan", "İklim Bilgisi", "Yerleşme ve Nüfus", "Bölgeler ve Ulaşım", "Felsefeyi Tanıma", "Bilgi ve İnanç", "Ahlak ve Değerler"]
+      "ders": "Tarih",
+      "konular": ["Tarih ve Zaman", "İnsanlığın İlk Dönemleri", "İlk ve Orta Çağlarda Türk Dünyası", "İslam Medeniyetinin Doğuşu", "Türklerin İslamiyet'i Kabulü ve İlk Türk İslam Devletleri", "Beylikten Devlete Osmanlı Siyaseti", "Dünya Gücü Osmanlı", "Değişim Çağında Avrupa ve Osmanlı", "Uluslararası İlişkilerde Denge Stratejisi", "XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya", "Milli Mücadele", "Atatürkçülük ve Türk İnkılabı"]
+    },
+    {
+      "ders": "Coğrafya",
+      "konular": ["Doğa ve İnsan", "Dünya'nın Şekli ve Hareketleri", "Coğrafi Konum", "Harita Bilgisi", "Atmosfer ve İklim", "Yer'in Yapısı ve Oluşum Süreci", "Su, Toprak ve Bitki Varlığı", "Nüfus", "Göç", "Yerleşme", "Türkiye'nin Yeryüzü Şekilleri", "Ekonomik Faaliyetler", "Bölgeler ve Ülkeler", "Uluslararası Ulaşım Hatları", "Çevre ve Toplum", "Doğal Afetler"]
+    },
+    {
+      "ders": "Felsefe",
+      "konular": ["Felsefeyi Tanıma", "Felsefeyle Düşünme", "Varlık Felsefesi", "Bilgi Felsefesi", "Bilim Felsefesi", "Ahlak Felsefesi", "Din Felsefesi", "Siyaset Felsefesi", "Sanat Felsefesi"]
+    },
+    {
+      "ders": "Din Kültürü",
+      "konular": ["Bilgi ve İnanç", "Din ve İslam", "İslam ve İbadet", "Gençlik ve Değerler", "Allah İnsan İlişkisi", "Hz. Muhammed'in Hayatı", "Vahiy ve Akıl", "İslam Düşüncesinde Yorumlar, Mezhepler", "Dinler ve İnançlar"]
     }
   ]
 }
