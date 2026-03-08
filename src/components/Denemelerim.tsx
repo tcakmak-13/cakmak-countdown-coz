@@ -250,7 +250,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       </div>
 
       {mainTab === 'konu' ? (
-        <KonuTakip studentId={studentId} />
+        <KonuTakip studentId={studentId} studentArea={studentArea} />
       ) : (
       <>
       {/* Exam Type Filter */}
