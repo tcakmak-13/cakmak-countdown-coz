@@ -302,6 +302,20 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const getUnreadForStudent = (studentId: string) =>
     messages.filter(m => m.sender_id === studentId && m.receiver_id === currentProfileId && !m.read).length;
 
+  const getLastMessageForPair = (pair: ConversationPair) => {
+    const pairMsgs = messages.filter(m =>
+      (m.sender_id === pair.coachId && m.receiver_id === pair.studentId) ||
+      (m.sender_id === pair.studentId && m.receiver_id === pair.coachId)
+    );
+    return pairMsgs[pairMsgs.length - 1];
+  };
+
+  const getMessageCountForPair = (pair: ConversationPair) =>
+    messages.filter(m =>
+      (m.sender_id === pair.coachId && m.receiver_id === pair.studentId) ||
+      (m.sender_id === pair.studentId && m.receiver_id === pair.coachId)
+    ).length;
+
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || !chatPartnerId) return;
