@@ -56,16 +56,16 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
-function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; onOpenChange: (v: boolean) => void; name: string; avatarUrl: string | null }) {
+function CoachDrawer({ open, onOpenChange, name, avatarUrl, coachProfileId }: { open: boolean; onOpenChange: (v: boolean) => void; name: string; avatarUrl: string | null; coachProfileId?: string | null }) {
   const [info, setInfo] = useState<any>(null);
 
   useEffect(() => {
-    if (open && !info) {
-      supabase.from('coach_info').select('*').limit(1).single().then(({ data }) => {
+    if (open && !info && coachProfileId) {
+      supabase.from('coach_info').select('*').eq('id', coachProfileId).maybeSingle().then(({ data }) => {
         if (data) setInfo(data);
       });
     }
-  }, [open]);
+  }, [open, coachProfileId]);
 
   const title = info?.title || 'YKS Koçu • Mentor';
   const bio = info?.bio || '';
