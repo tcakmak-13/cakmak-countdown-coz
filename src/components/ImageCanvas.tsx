@@ -401,21 +401,24 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
               <div className="w-px h-6 bg-border mx-0.5" />
 
-              {/* Pen sizes */}
-              {PEN_SIZES.map(ps => (
+              {/* Sizes - show pen sizes or eraser sizes based on active tool */}
+              {tool === 'pen' ? PEN_SIZES.map(ps => (
                 <button
                   key={ps.value}
                   onClick={() => setPenSize(ps.value)}
-                  className={`p-2 rounded-xl transition-all flex items-center justify-center ${penSize === ps.value ? 'bg-secondary ring-1 ring-primary/50' : 'text-muted-foreground hover:bg-secondary'}`}
+                  className={`p-2 rounded-xl transition-all flex items-center justify-center ${penSize === ps.value ? 'bg-primary/20 ring-2 ring-primary' : 'text-muted-foreground hover:bg-secondary'}`}
                   title={ps.label}
                 >
-                  <div
-                    className="rounded-full bg-current"
-                    style={{
-                      width: ps.value === 2 ? 6 : ps.value === 5 ? 10 : 16,
-                      height: ps.value === 2 ? 6 : ps.value === 5 ? 10 : 16,
-                    }}
-                  />
+                  <div className="rounded-full bg-current" style={{ width: ps.dot, height: ps.dot }} />
+                </button>
+              )) : ERASER_SIZES.map(es => (
+                <button
+                  key={es.value}
+                  onClick={() => setEraserSize(es.value)}
+                  className={`p-2 rounded-xl transition-all flex items-center justify-center ${eraserSize === es.value ? 'bg-primary/20 ring-2 ring-primary' : 'text-muted-foreground hover:bg-secondary'}`}
+                  title={es.label}
+                >
+                  <div className="rounded-full border-2 border-current" style={{ width: es.dot, height: es.dot }} />
                 </button>
               ))}
 
