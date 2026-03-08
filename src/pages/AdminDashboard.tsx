@@ -228,7 +228,6 @@ export default function AdminDashboard() {
             </span>
             <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">Admin</span>
           </button>
-          </div>
           <div className="flex items-center gap-2">
             <YKSCountdown compact />
             <ThemeToggle />
