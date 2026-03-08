@@ -268,13 +268,13 @@ export default function AdminDashboard() {
                 <p className="text-3xl font-bold text-primary">{coaches.length}</p>
                 <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
               </div>
-              <div className="glass-card rounded-2xl p-6 text-center">
-                <p className="text-3xl font-bold text-primary">{students.length}</p>
-                <p className="text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
+              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{students.length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
               </div>
-              <div className="glass-card rounded-2xl p-6 text-center">
-                <p className="text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
-                <p className="text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
+              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center col-span-2 sm:col-span-1">
+                <p className="text-2xl sm:text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
               </div>
             </div>
             <div className="glass-card rounded-2xl p-6">
