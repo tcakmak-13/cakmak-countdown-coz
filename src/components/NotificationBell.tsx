@@ -52,10 +52,12 @@ export default function NotificationBell() {
 
   // Fetch notifications
   useEffect(() => {
+    if (!user) return;
     const load = async () => {
       const { data } = await supabase
         .from('notifications')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(30);
       if (data) setNotifications(data as Notification[]);
