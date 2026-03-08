@@ -246,7 +246,14 @@ export default function StudentDashboard() {
                 </button>
                 <h1 className="font-display font-bold text-lg text-foreground">Soru Meclisi</h1>
               </div>
-              <QuestionFlow currentProfileId={profileId} currentName={profile?.username || profile.full_name} currentRole={role} />
+              <QuestionFlow
+                currentProfileId={profileId}
+                currentName={currentUsername || profile.full_name}
+                currentRole={role}
+                username={currentUsername}
+                usernameChangedAt={(profile as any)?.username_changed_at}
+                onUsernameChanged={(newName) => setCurrentUsername(newName)}
+              />
             </motion.div>
           )}
 
