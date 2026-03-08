@@ -20,6 +20,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import QuestionCenter from '@/components/QuestionCenter';
+import { HelpCircle } from 'lucide-react';
 
 interface StudentProfile {
   id: string;
