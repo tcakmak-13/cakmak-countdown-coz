@@ -28,17 +28,11 @@ export default function SelectCoach() {
 
     // Fetch all coaches
     const loadCoaches = async () => {
-      const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
-      if (!coachRoles || coachRoles.length === 0) {
-        setLoading(false);
-        return;
+      const { data, error } = await supabase.rpc('get_coach_profiles');
+      if (data && data.length > 0) {
+        setCoaches(data as CoachProfile[]);
       }
-      const coachUserIds = coachRoles.map(r => r.user_id);
-      const { data: coachProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, username')
-        .in('user_id', coachUserIds);
-      if (coachProfiles) setCoaches(coachProfiles);
+      if (error) console.error('Coach load error:', error.message);
       setLoading(false);
     };
     loadCoaches();
