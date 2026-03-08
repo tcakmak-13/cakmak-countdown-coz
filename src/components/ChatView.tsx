@@ -166,7 +166,7 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
   );
 }
 
-export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId }: Props) {
+export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId, coachId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [students, setStudents] = useState<StudentItem[]>([]);
