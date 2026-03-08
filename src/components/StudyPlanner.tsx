@@ -16,6 +16,7 @@ import { tr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SearchableCombobox from '@/components/SearchableCombobox';
 import tytMufredat from '@/data/tyt_mufredat.json';
+import aytMufredat from '@/data/ayt_mufredat.json';
 
 const DAY_LABELS_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
@@ -56,7 +57,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [form, setForm] = useState({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
   const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -128,7 +129,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         estimated_minutes: form.estimatedMinutes, description: form.description,
       });
     }
-    setForm({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
+    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
     setEditingTask(null);
     setDialogOpen(false);
     fetchTasks();
@@ -148,7 +149,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   const openEdit = (task: Task) => {
     setEditingTask(task);
-    setForm({ subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
+    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
     setDialogOpen(true);
   };
 
@@ -367,7 +368,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
       {/* ── Add Task Button + Dialog ── */}
       {!readOnly && !isArchive && (
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ subject: '', topic: '', estimatedMinutes: 30, description: '' }); } }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' }); } }}>
           <DialogTrigger asChild>
             <Button className="w-full mt-5 bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl">
               <Plus className="h-5 w-5 mr-2" /> Görev Ekle
@@ -378,10 +379,31 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               <DialogTitle className="font-display text-lg">{editingTask ? 'Görevi Düzenle' : 'Yeni Görev'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
+              {/* Exam Type Toggle */}
+              <div className="space-y-2">
+                <Label className="font-semibold">Sınav Tipi</Label>
+                <div className="flex gap-2">
+                  {(['TYT', 'AYT'] as const).map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, examType: type, subject: '', topic: '' }))}
+                      className={cn(
+                        'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
+                        form.examType === type
+                          ? 'bg-primary text-primary-foreground shadow-lg'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label className="font-semibold">Ders</Label>
                 <SearchableCombobox
-                  options={tytMufredat.mufredat.map(d => d.ders)}
+                  options={(form.examType === 'AYT' ? aytMufredat : tytMufredat).mufredat.map(d => d.ders)}
                   value={form.subject}
                   onChange={(val) => setForm(f => ({ ...f, subject: val, topic: '' }))}
                   placeholder="Ders seçin..."
@@ -391,7 +413,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               <div className="space-y-2">
                 <Label className="font-semibold">Konu</Label>
                 <SearchableCombobox
-                  options={tytMufredat.mufredat.find(d => d.ders === form.subject)?.konular ?? []}
+                  options={(form.examType === 'AYT' ? aytMufredat : tytMufredat).mufredat.find(d => d.ders === form.subject)?.konular ?? []}
                   value={form.topic}
                   onChange={(val) => setForm(f => ({ ...f, topic: val }))}
                   placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}

@@ -1,0 +1,45 @@
+{
+  "sinav_tipi": "AYT",
+  "mufredat": [
+    {
+      "ders": "Edebiyat",
+      "konular": ["Şiir Bilgisi", "Söz Sanatları", "İslamiyet Öncesi ve Geçiş Dönemi", "Halk Edebiyatı", "Divan Edebiyatı", "Tanzimat Edebiyatı", "Servetifünun ve Fecriati Edebiyatı", "Milli Edebiyat", "Cumhuriyet Dönemi Edebiyatı", "Edebi Akımlar"]
+    },
+    {
+      "ders": "Matematik",
+      "konular": ["Polinomlar", "İkinci Dereceden Denklemler", "Eşitsizlikler", "Parabol", "Trigonometri", "Logaritma", "Diziler", "Limit ve Süreklilik", "Türev", "İntegral", "Sayma ve Olasılık"]
+    },
+    {
+      "ders": "Geometri",
+      "konular": ["Çember ve Daire", "Noktanın Analitiği", "Doğrunun Analitiği", "Çemberin Analitiği", "Katı Cisimler", "Dönüşüm Geometrisi"]
+    },
+    {
+      "ders": "Fizik",
+      "konular": ["Vektörler ve Bağıl Hareket", "Newton'un Hareket Yasaları", "Atışlar", "Enerji ve Hareket", "İtme ve Çizgisel Momentum", "Tork, Denge ve Kütle Merkezi", "Basit Makineler", "Elektriksel Kuvvet, Potansiyel ve İş", "Paralel Levhalar ve Sığa", "Manyetizma ve Elektromanyetik İndüklenme", "Alternatif Akım ve Transformatörler", "Çembersel Hareket", "Basit Harmonik Hareket", "Dalga Mekaniği", "Atom Fiziğine Giriş ve Radyoaktivite", "Modern Fizik ve Teknolojideki Uygulamaları"]
+    },
+    {
+      "ders": "Kimya",
+      "konular": ["Modern Atom Teorisi", "Gazlar", "Sıvı Çözeltiler ve Çözünürlük", "Kimyasal Tepkimelerde Enerji", "Kimyasal Tepkimelerde Hız", "Kimyasal Tepkimelerde Denge", "Kimya ve Elektrik (Elektrokimya)", "Karbon Kimyasına Giriş", "Organik Bileşikler"]
+    },
+    {
+      "ders": "Biyoloji",
+      "konular": ["Sinir Sistemi", "Endokrin Sistem", "Duyu Organları", "Destek ve Hareket Sistemi", "Sindirim Sistemi", "Dolaşım ve Bağışıklık Sistemi", "Solunum Sistemi", "Üriner Sistem", "Üreme Sistemi ve Embriyonik Gelişim", "Komünite ve Popülasyon Ekolojisi", "Nükleik Asitler", "Genden Proteine", "Canlılarda Enerji Dönüşümleri (Fotosentez-Solunum)", "Bitki Biyolojisi", "Canlılar ve Çevre"]
+    },
+    {
+      "ders": "Tarih",
+      "konular": ["Tarih ve Zaman", "İnsanlığın İlk Dönemleri", "İlk ve Orta Çağlarda Türk Dünyası", "İslam Medeniyetinin Doğuşu", "Türklerin İslamiyet'i Kabulü ve İlk Türk İslam Devletleri", "Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi", "Beylikten Devlete Osmanlı Siyaseti", "Dünya Gücü Osmanlı", "Klasik Çağda Osmanlı Toplum Düzeni", "Değişim Çağında Avrupa ve Osmanlı", "Uluslararası İlişkilerde Denge Stratejisi", "XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya", "Milli Mücadele", "Atatürkçülük ve Türk İnkılabı", "İki Küresel Savaş Arasında Dünya", "II. Dünya Savaşı ve Sonrasında Türkiye ve Dünya", "Toplumsal Devrim Çağında Dünya ve Türkiye"]
+    },
+    {
+      "ders": "Coğrafya",
+      "konular": ["Ekosistemlerin Özellikleri ve İşleyişi", "Nüfus Politikaları", "Türkiye'de Nüfus ve Yerleşme", "Şehirler ve Etki Alanları", "Ekonomik Faaliyetler ve Doğal Kaynaklar", "Türkiye'nin Ekonomisi", "Küresel Ortam: Bölgeler ve Ülkeler", "Çevre ve Toplum"]
+    },
+    {
+      "ders": "Felsefe Grubu (Psikoloji-Sosyoloji-Mantık)",
+      "konular": ["Psikoloji Bilimini Tanıyalım", "Psikolojinin Temel Süreçleri", "Öğrenme, Bellek, Düşünme", "Ruh Sağlığının Temelleri", "Sosyolojiye Giriş", "Birey ve Toplum", "Toplumsal Yapı", "Toplumsal Değişme ve Gelişme", "Toplum ve Kültür", "Toplumsal Kurumlar", "Mantığa Giriş", "Klasik Mantık", "Mantık ve Dil", "Sembolik Mantık"]
+    },
+    {
+      "ders": "Din Kültürü",
+      "konular": ["Dünya ve Ahiret", "Kur'an'a Göre Hz. Muhammed", "Kur'an'da Bazı Kavramlar", "Kur'an'dan Mesajlar", "İnançla İlgili Meseleler", "Yahudilik ve Hıristiyanlık", "İslam ve Bilim", "Anadolu'da İslam", "İslam Düşüncesinde Tasavvufi Yorumlar", "Güncel Dini Meseleler", "Hint ve Çin Dinleri"]
+    }
+  ]
+}
