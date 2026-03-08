@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, Archive, Timer } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, ChevronRight, Archive, Timer, RotateCcw } from 'lucide-react';
 import TaskTimer from '@/components/TaskTimer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
