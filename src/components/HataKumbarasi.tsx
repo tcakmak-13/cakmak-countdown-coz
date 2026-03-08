@@ -747,6 +747,18 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Topluluk Soru Akışı - embedded section */}
+      {currentProfileId && currentName && currentRole && (
+        <>
+          <div className="mt-10 mb-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <h2 className="font-display text-lg font-semibold text-foreground whitespace-nowrap">💬 Topluluk Soru Akışı</h2>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <QuestionFlow currentProfileId={currentProfileId} currentName={currentName} currentRole={currentRole} />
+        </>
+      )}
     </div>
   );
 }
