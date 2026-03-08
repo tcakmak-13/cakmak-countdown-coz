@@ -109,6 +109,7 @@ export default function StudentDashboard() {
     }
 
     setHasUsername(true);
+    setCurrentUsername(trimmed);
     setUsernameModalOpen(false);
     setUsernameSaving(false);
     setTab('soru-meclisi');
