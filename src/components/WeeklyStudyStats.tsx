@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Timer, TrendingUp, Trophy, Flame } from 'lucide-react';
-import { format, startOfWeek, addDays, isToday } from 'date-fns';
+import { Timer, TrendingUp, Trophy, Flame, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { format, startOfWeek, addDays, addWeeks, isToday, isSameWeek } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -21,15 +21,17 @@ function formatHM(seconds: number): string {
 }
 
 export default function WeeklyStudyStats({ studentId }: Props) {
+  const [weekOffset, setWeekOffset] = useState(0);
   const [weekData, setWeekData] = useState<{ day: string; seconds: number; date: string; isToday: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
   const weekDates = useMemo(() => {
-    const now = new Date();
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
+    const base = addWeeks(new Date(), weekOffset);
+    const monday = startOfWeek(base, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId]);
+  }, [weekOffset]);
+
+  const isCurrentWeek = weekOffset === 0;
 
   useEffect(() => {
     const fetchWeekStats = async () => {
@@ -90,6 +92,26 @@ export default function WeeklyStudyStats({ studentId }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* Week Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setWeekOffset(o => o - 1)} className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-bold font-display text-foreground min-w-[140px] text-center">
+            {format(weekDates[0], 'd MMM', { locale: tr })} – {format(weekDates[6], 'd MMM', { locale: tr })}
+          </span>
+          <button onClick={() => setWeekOffset(o => o + 1)} className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+        {!isCurrentWeek && (
+          <button onClick={() => setWeekOffset(0)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25 transition-colors">
+            <RotateCcw className="h-3.5 w-3.5" /> Bu Hafta
+          </button>
+        )}
+      </div>
+
       {/* Stats cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="glass-card rounded-2xl p-4 text-center">
@@ -144,9 +166,7 @@ export default function WeeklyStudyStats({ studentId }: Props) {
                 tickLine={false}
                 tick={{ fill: 'hsl(0,0%,55%)', fontSize: 12, fontWeight: 600 }}
               />
-              <YAxis
-                hide
-              />
+              <YAxis hide />
               <Tooltip content={<CustomTooltip />} cursor={false} />
               <Bar dataKey="seconds" radius={[8, 8, 0, 0]} maxBarSize={40}>
                 {weekData.map((entry, index) => (

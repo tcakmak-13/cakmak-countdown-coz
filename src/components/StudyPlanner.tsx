@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, Archive, Timer } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, ChevronRight, Archive, Timer, RotateCcw } from 'lucide-react';
 import TaskTimer from '@/components/TaskTimer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-import { format, startOfWeek, addDays, isToday, isBefore, startOfDay, isSameDay } from 'date-fns';
+import { format, startOfWeek, addDays, addWeeks, isToday, isBefore, startOfDay, isSameDay, isSameWeek } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SearchableCombobox from '@/components/SearchableCombobox';
@@ -77,13 +77,17 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
 
-  // Week dates (Mon-Sun) for the strip
+  // Week dates derived from selectedDate
   const weekDates = useMemo(() => {
-    const now = new Date();
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
+    const monday = startOfWeek(selectedDate, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId]);
+  }, [selectedDate]);
+
+  const isCurrentWeek = isSameWeek(selectedDate, new Date(), { weekStartsOn: 1 });
+
+  const goToPrevWeek = () => setSelectedDate(prev => addWeeks(prev, -1));
+  const goToNextWeek = () => setSelectedDate(prev => addWeeks(prev, 1));
+  const goToThisWeek = () => setSelectedDate(new Date());
 
   const fetchTasks = async () => {
     const { data } = await supabase
@@ -162,76 +166,91 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     }
   };
 
-  const backToToday = () => setSelectedDate(new Date());
+  
 
   return (
     <div>
-      {/* ── Weekly Strip + Calendar Icon ── */}
-      <div className="flex items-center gap-2 mb-5">
-        <div className="flex-1 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1.5 w-max px-0.5">
-          {weekDates.map((date, i) => {
-            const dayIdx = jsDayToIndex(date);
-            const isActive = isSameDay(date, selectedDate);
-            const today = isToday(date);
-            const dayTaskCount = tasks.filter(t => t.day_of_week === dayIdx).length;
-            const dayCompleted = tasks.filter(t => t.day_of_week === dayIdx && t.completed).length;
-
-            return (
-              <button
-                key={i}
-                onClick={() => setSelectedDate(date)}
-                className={cn(
-                  'relative flex flex-col items-center gap-0.5 rounded-2xl px-3 py-2.5 transition-all min-w-[52px] shrink-0',
-                  isActive
-                    ? 'bg-[hsl(45,100%,50%)] text-[hsl(0,0%,4%)] shadow-[0_0_20px_hsl(45,100%,50%,0.4)] scale-110 font-black'
-                    : today
-                      ? 'bg-primary/20 text-primary font-bold'
-                      : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 font-medium'
-                )}
-              >
-                <span className="text-[10px] uppercase tracking-wider">{DAY_LABELS_SHORT[i]}</span>
-                <span className={cn('text-lg font-display', isActive ? 'text-[hsl(0,0%,4%)]' : '')}>{format(date, 'd')}</span>
-                {/* Today dot / active underline */}
-                {(isActive || today) && (
-                  <span className={cn(
-                    'mt-0.5 rounded-full transition-all',
-                    isActive
-                      ? 'w-5 h-[3px] bg-[hsl(0,0%,4%)]'
-                      : 'w-1.5 h-1.5 bg-primary'
-                  )} />
-                )}
-                {dayTaskCount > 0 && (
-                  <span className={cn(
-                    'absolute -top-1 -right-1 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center',
-                    dayCompleted === dayTaskCount ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
-                  )}>
-                    {dayTaskCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-          </div>
+      {/* ── Week Navigation Header ── */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <button onClick={goToPrevWeek} className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-bold font-display text-foreground min-w-[140px] text-center">
+            {format(weekDates[0], 'd MMM', { locale: tr })} – {format(weekDates[6], 'd MMM', { locale: tr })}
+          </span>
+          <button onClick={goToNextWeek} className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
-
-        {/* Calendar icon */}
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <button className="shrink-0 p-2.5 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
-              <CalendarDays className="h-5 w-5" />
+        <div className="flex items-center gap-2">
+          {!isCurrentWeek && (
+            <button onClick={goToThisWeek} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25 transition-colors">
+              <RotateCcw className="h-3.5 w-3.5" /> Bu Hafta
             </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-card border-border" align="end">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleCalendarSelect}
-              locale={tr}
-              className={cn("p-3 pointer-events-auto")}
-            />
-          </PopoverContent>
-        </Popover>
+          )}
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <button className="shrink-0 p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
+                <CalendarDays className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-card border-border" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleCalendarSelect}
+                locale={tr}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {/* ── Weekly Day Strip ── */}
+      <div className="flex gap-1.5 mb-5 overflow-x-auto scrollbar-hide px-0.5">
+        {weekDates.map((date, i) => {
+          const dayIdx = jsDayToIndex(date);
+          const isActive = isSameDay(date, selectedDate);
+          const today = isToday(date);
+          const dayTaskCount = tasks.filter(t => t.day_of_week === dayIdx).length;
+          const dayCompleted = tasks.filter(t => t.day_of_week === dayIdx && t.completed).length;
+
+          return (
+            <button
+              key={i}
+              onClick={() => setSelectedDate(date)}
+              className={cn(
+                'relative flex flex-col items-center gap-0.5 rounded-2xl px-3 py-2.5 transition-all min-w-[52px] shrink-0 flex-1',
+                isActive
+                  ? 'bg-[hsl(45,100%,50%)] text-[hsl(0,0%,4%)] shadow-[0_0_20px_hsl(45,100%,50%,0.4)] scale-110 font-black'
+                  : today
+                    ? 'bg-primary/20 text-primary font-bold'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 font-medium'
+              )}
+            >
+              <span className="text-[10px] uppercase tracking-wider">{DAY_LABELS_SHORT[i]}</span>
+              <span className={cn('text-lg font-display', isActive ? 'text-[hsl(0,0%,4%)]' : '')}>{format(date, 'd')}</span>
+              {(isActive || today) && (
+                <span className={cn(
+                  'mt-0.5 rounded-full transition-all',
+                  isActive
+                    ? 'w-5 h-[3px] bg-[hsl(0,0%,4%)]'
+                    : 'w-1.5 h-1.5 bg-primary'
+                )} />
+              )}
+              {dayTaskCount > 0 && (
+                <span className={cn(
+                  'absolute -top-1 -right-1 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center',
+                  dayCompleted === dayTaskCount ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
+                )}>
+                  {dayTaskCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Archive Banner ── */}
@@ -244,7 +263,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               {format(selectedDate, 'd MMMM yyyy, EEEE', { locale: tr })} — Bu gün geçmişte, sadece görüntüleyebilirsiniz.
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={backToToday} className="shrink-0 text-xs gap-1">
+          <Button variant="ghost" size="sm" onClick={goToThisWeek} className="shrink-0 text-xs gap-1">
             <ChevronLeft className="h-3.5 w-3.5" /> Bugüne Dön
           </Button>
         </div>
