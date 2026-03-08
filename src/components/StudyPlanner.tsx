@@ -428,7 +428,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                   value={form.subject}
                   onChange={(val) => setForm(f => ({ ...f, subject: val, topic: '' }))}
                   placeholder="Ders seçin..."
-                  allowCustom={false}
+                  allowCustom
                 />
               </div>
               <div className="space-y-2">
@@ -439,7 +439,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                   onChange={(val) => setForm(f => ({ ...f, topic: val }))}
                   placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}
                   readOnly={!form.subject}
-                  allowCustom={false}
+                  allowCustom
                 />
               </div>
               <div className="space-y-2">
