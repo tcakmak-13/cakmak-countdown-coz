@@ -1,0 +1,1 @@
+ALTER TABLE public.study_tasks ADD COLUMN actual_minutes integer DEFAULT NULL;

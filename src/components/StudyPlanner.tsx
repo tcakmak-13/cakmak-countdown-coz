@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, ChevronRight, Archive, Timer, RotateCcw } from 'lucide-react';
-import TaskTimer from '@/components/TaskTimer';
+import { Plus, Trash2, Pencil, Clock, Target, CheckCircle2, CalendarDays, ChevronLeft, ChevronRight, Archive, RotateCcw, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -27,6 +25,7 @@ interface Task {
   subject: string;
   topic: string;
   estimated_minutes: number;
+  actual_minutes: number | null;
   description: string | null;
   completed: boolean;
   created_at: string;
@@ -58,21 +57,9 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
-  const [timerElapsed, setTimerElapsed] = useState<Record<string, number>>({});
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-  const handleTimerChange = useCallback((taskId: string, seconds: number) => {
-    setTimerElapsed(prev => ({ ...prev, [taskId]: seconds }));
-  }, []);
-
-  const handleTimerSave = useCallback(async (taskId: string, seconds: number) => {
-    await supabase
-      .from('study_timer_logs')
-      .upsert(
-        { task_id: taskId, student_id: studentId, log_date: todayStr, elapsed_seconds: seconds, updated_at: new Date().toISOString() },
-        { onConflict: 'task_id,log_date' }
-      );
-  }, [studentId, todayStr]);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [completingTask, setCompletingTask] = useState<Task | null>(null);
+  const [actualMinutes, setActualMinutes] = useState(30);
 
   const isArchive = isBefore(startOfDay(selectedDate), startOfDay(new Date())) && !isToday(selectedDate);
   const selectedDayIndex = jsDayToIndex(selectedDate);
@@ -98,27 +85,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     if (data) setTasks(data);
   };
 
-  const fetchTimerLogs = async () => {
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const { data } = await supabase
-      .from('study_timer_logs')
-      .select('task_id, elapsed_seconds')
-      .eq('student_id', studentId)
-      .eq('log_date', dateStr);
-    if (data) {
-      const map: Record<string, number> = {};
-      data.forEach((d: any) => { map[d.task_id] = d.elapsed_seconds; });
-      setTimerElapsed(map);
-    }
-  };
-
   useEffect(() => { fetchTasks(); }, [studentId]);
-  useEffect(() => { fetchTimerLogs(); }, [studentId, selectedDate]);
 
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
-  const completedMinutes = dayTasks.filter(t => t.completed).reduce((sum, t) => sum + t.estimated_minutes, 0);
-  const totalTimerSeconds = dayTasks.reduce((sum, t) => sum + (timerElapsed[t.id] || 0), 0);
+  const completedMinutes = dayTasks.filter(t => t.completed).reduce((sum, t) => sum + (t.actual_minutes ?? t.estimated_minutes), 0);
 
   const progressPercent = targetMinutes > 0 ? Math.round((completedMinutes / targetMinutes) * 100) : 0;
 
@@ -148,8 +119,23 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     toast.success('Görev silindi.');
   };
 
-  const toggleComplete = async (taskId: string, current: boolean) => {
-    await supabase.from('study_tasks').update({ completed: !current }).eq('id', taskId);
+  const openCompleteDialog = (task: Task) => {
+    setCompletingTask(task);
+    setActualMinutes(task.estimated_minutes);
+    setCompleteDialogOpen(true);
+  };
+
+  const handleComplete = async () => {
+    if (!completingTask) return;
+    await supabase.from('study_tasks').update({ completed: true, actual_minutes: actualMinutes }).eq('id', completingTask.id);
+    setCompleteDialogOpen(false);
+    setCompletingTask(null);
+    fetchTasks();
+    toast.success('Görev tamamlandı! 🎉');
+  };
+
+  const handleUncomplete = async (taskId: string) => {
+    await supabase.from('study_tasks').update({ completed: false, actual_minutes: null }).eq('id', taskId);
     fetchTasks();
   };
 
@@ -307,23 +293,6 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         </div>
       )}
 
-      {/* ── Daily Timer Counter ── */}
-      {dayTasks.length > 0 && totalTimerSeconds > 0 && (
-        <div className="glass-card rounded-2xl p-4 mb-5 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/15">
-            <Timer className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Bugün Kronometreyle Çalışılan</p>
-            <p className="text-lg font-bold text-primary font-mono">
-              {String(Math.floor(totalTimerSeconds / 3600)).padStart(2, '0')}:
-              {String(Math.floor((totalTimerSeconds % 3600) / 60)).padStart(2, '0')}:
-              {String(totalTimerSeconds % 60).padStart(2, '0')}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Task Cards ── */}
       <div className="space-y-3">
         {dayTasks.length === 0 && (
@@ -337,52 +306,65 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
           <div
             key={task.id}
             className={cn(
-              'glass-card rounded-2xl p-5 flex items-start gap-4 transition-all duration-300',
-              task.completed && 'opacity-50'
+              'glass-card rounded-2xl p-5 transition-all duration-300',
+              task.completed && 'opacity-60'
             )}
           >
-            <Checkbox
-              checked={task.completed}
-              onCheckedChange={() => toggleComplete(task.id, task.completed)}
-              disabled={readOnly || isArchive}
-              className="mt-1 h-6 w-6 rounded-lg border-2 border-primary data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className={cn(
-                  'text-lg font-bold font-display',
-                  task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                )}>
-                  {task.subject}
-                </span>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/15 text-primary">
-                  {task.topic}
-                </span>
+            <div className="flex items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className={cn(
+                    'text-lg font-bold font-display',
+                    task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                  )}>
+                    {task.subject}
+                  </span>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/15 text-primary">
+                    {task.topic}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Hedef: {formatDuration(task.estimated_minutes)}</span>
+                  </div>
+                  {task.completed && task.actual_minutes != null && (
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <span className="text-sm font-medium text-emerald-400">Gerçekleşen: {formatDuration(task.actual_minutes)}</span>
+                    </div>
+                  )}
+                </div>
+                {task.description && (
+                  <p className="text-sm text-muted-foreground/80 mt-2 leading-relaxed">{task.description}</p>
+                )}
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">{formatDuration(task.estimated_minutes)}</span>
-              </div>
-              {task.description && (
-                <p className="text-sm text-muted-foreground/80 mt-2 leading-relaxed">{task.description}</p>
+              {!readOnly && !isArchive && (
+                <div className="flex gap-1 shrink-0">
+                  {!task.completed ? (
+                    <button
+                      onClick={() => openCompleteDialog(task)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-xs font-bold hover:bg-emerald-500/25 transition-colors"
+                    >
+                      <Check className="h-4 w-4" /> Bitirdim
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleUncomplete(task.id)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-muted-foreground text-xs font-bold hover:bg-secondary/80 transition-colors"
+                    >
+                      Geri Al
+                    </button>
+                  )}
+                  <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               )}
-              <TaskTimer
-                disabled={readOnly || isArchive}
-                initialElapsed={timerElapsed[task.id] || 0}
-                onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
-                onSave={(seconds) => handleTimerSave(task.id, seconds)}
-              />
             </div>
-            {!readOnly && !isArchive && (
-              <div className="flex gap-1 shrink-0">
-                <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -460,6 +442,43 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ── Complete Task Dialog ── */}
+      <Dialog open={completeDialogOpen} onOpenChange={(o) => { setCompleteDialogOpen(o); if (!o) setCompletingTask(null); }}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Görevi Tamamla 🎉</DialogTitle>
+          </DialogHeader>
+          {completingTask && (
+            <div className="space-y-4 mt-2">
+              <div className="glass-card rounded-xl p-3">
+                <p className="font-bold text-foreground">{completingTask.subject}</p>
+                <p className="text-sm text-muted-foreground">{completingTask.topic}</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold">Planlanan Süre</Label>
+                <p className="text-sm text-muted-foreground font-medium">{formatDuration(completingTask.estimated_minutes)}</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold">Gerçekleşen Süre (dakika)</Label>
+                <Input
+                  type="number"
+                  value={actualMinutes}
+                  onChange={e => setActualMinutes(Math.max(0, Number(e.target.value)))}
+                  className="bg-secondary border-border h-11"
+                  min={0}
+                />
+                {actualMinutes > 0 && (
+                  <p className="text-xs text-primary font-medium">{formatDuration(actualMinutes)}</p>
+                )}
+              </div>
+              <Button onClick={handleComplete} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white border-0 h-12 text-base font-bold rounded-2xl">
+                <CheckCircle2 className="h-5 w-5 mr-2" /> Tamamla
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
