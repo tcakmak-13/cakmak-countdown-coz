@@ -1,0 +1,33 @@
+{
+  "sinav_tipi": "TYT",
+  "mudredat": [
+    {
+      "ders": "Türkçe",
+      "konular": ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Ses Bilgisi", "Yazım Kuralları", "Noktalama İşaretleri", "Sözcükte Yapı", "Sözcük Türleri", "Cümlenin Ögeleri", "Fiilimsiler ve Çatı", "Anlatım Bozuklukları"]
+    },
+    {
+      "ders": "Matematik",
+      "konular": ["Temel Kavramlar", "Sayı Basamakları", "Bölme-Bölünebilme", "EBOB-EKOK", "Rasyonel Sayılar", "Basit Eşitsizlikler", "Mutlak Değer", "Üslü Sayılar", "Köklü Sayılar", "Çarpanlara Ayırma", "Oran-Orantı", "Problemler", "Kümeler", "Fonksiyonlar", "Veri-İstatistik", "Permütasyon-Kombinasyon", "Olasılık", "Polinomlar"]
+    },
+    {
+      "ders": "Geometri",
+      "konular": ["Doğruda ve Üçgende Açılar", "Dik Üçgen", "İkizkenar ve Eşkenar Üçgen", "Üçgende Benzerlik", "Üçgende Alan", "Çokgenler ve Dörtgenler", "Çember ve Daire", "Katı Cisimler", "Analitik Geometri"]
+    },
+    {
+      "ders": "Fizik",
+      "konular": ["Fizik Bilimine Giriş", "Madde ve Özellikleri", "Hareket ve Kuvvet", "İş-Güç-Enerji", "Isı-Sıcaklık ve Genleşme", "Elektrostatik", "Elektrik ve Manyetizma", "Basınç ve Kaldırma Kuvveti", "Dalgalar", "Optik"]
+    },
+    {
+      "ders": "Kimya",
+      "konular": ["Kimya Bilimi", "Atom ve Periyodik Sistem", "Türler Arası Etkileşimler", "Maddenin Halleri", "Kimyasal Hesaplamalar", "Karışımlar", "Asit-Baz-Tuz", "Kimya Her Yerde"]
+    },
+    {
+      "ders": "Biyoloji",
+      "konular": ["Canlıların Ortak Özellikleri", "Temel Bileşenler", "Hücre ve Organeller", "Canlıların Sınıflandırılması", "Hücre Bölünmeleri", "Kalıtım", "Ekosistem Ekolojisi"]
+    },
+    {
+      "ders": "Sosyal Bilimler",
+      "konular": ["Tarih ve Zaman", "İlk Türk Devletleri", "Osmanlı Tarihi", "İnkılap Tarihi", "Doğa ve İnsan", "İklim Bilgisi", "Yerleşme ve Nüfus", "Bölgeler ve Ulaşım", "Felsefeyi Tanıma", "Bilgi ve İnanç", "Ahlak ve Değerler"]
+    }
+  ]
+}
