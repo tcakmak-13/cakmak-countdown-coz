@@ -380,11 +380,24 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
             <div className="space-y-4 mt-2">
               <div className="space-y-2">
                 <Label className="font-semibold">Ders</Label>
-                <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Matematik" className="bg-secondary border-border h-11" />
+                <SearchableCombobox
+                  options={tytMufredat.mudredat.map(d => d.ders)}
+                  value={form.subject}
+                  onChange={(val) => setForm(f => ({ ...f, subject: val, topic: '' }))}
+                  placeholder="Ders seçin..."
+                  allowCustom={false}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold">Konu</Label>
-                <Input value={form.topic} onChange={e => setForm(f => ({ ...f, topic: e.target.value }))} placeholder="Türev" className="bg-secondary border-border h-11" />
+                <SearchableCombobox
+                  options={tytMufredat.mudredat.find(d => d.ders === form.subject)?.konular ?? []}
+                  value={form.topic}
+                  onChange={(val) => setForm(f => ({ ...f, topic: val }))}
+                  placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}
+                  readOnly={!form.subject}
+                  allowCustom={false}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold">Tahmini Süre (dakika)</Label>
