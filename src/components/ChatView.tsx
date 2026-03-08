@@ -452,7 +452,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // Admin: student list
   if (currentRole === 'admin' && !selectedStudent) {
     return (
-      <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+    <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
           <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Öğrenci Mesajları</p>
         </div>
