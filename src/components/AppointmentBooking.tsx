@@ -34,6 +34,8 @@ interface ApprovedSlot {
 }
 
 const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const DAY_NAMES_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+const DAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon-Sun
 const DURATION = { video: 60, voice: 20 };
 
 function timeToMinutes(t: string): number {
