@@ -131,7 +131,7 @@ export default function AppointmentBooking({ studentId }: { studentId: string })
   const ended = appointments.filter(a => a.series_ended_at || a.status === 'rejected' || a.status === 'completed');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       {/* Booking buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <motion.button
