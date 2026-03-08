@@ -38,6 +38,16 @@ export default function AdminDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('analytics');
 
+  const TAB_TITLES: Record<string, string> = {
+    analytics: 'Analiz Merkezi',
+    list: 'Öğrenciler',
+    schedule: selectedStudent ? selectedStudent.full_name || 'Program' : 'Program',
+    profile: selectedStudent ? selectedStudent.full_name || 'Profil' : 'Profil',
+    messages: 'Mesajlar',
+    'coach-edit': 'Koç Profilim',
+    appointments: 'Randevular',
+  };
+
   // Student creation
   const [showCreate, setShowCreate] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -206,9 +216,11 @@ export default function AdminDashboard() {
             <span className="font-display text-lg font-bold hidden sm:inline">
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium ml-2">Admin</span>
+            {TAB_TITLES[tab] && (
+              <span className="text-muted-foreground font-display text-sm hidden sm:inline ml-1">/ {TAB_TITLES[tab]}</span>
+            )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <YKSCountdown compact />
             <ThemeToggle />
             <NotificationBell />
