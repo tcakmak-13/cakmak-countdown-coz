@@ -86,6 +86,10 @@ export default function NotificationBell() {
             },
           } : undefined,
         });
+        // Native browser notification when tab is not focused
+        if (document.hidden) {
+          showNotifRef.current({ id: n.id, title: n.title, message: n.message, link: n.link });
+        }
       })
       .subscribe();
 
