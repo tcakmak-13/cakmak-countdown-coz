@@ -155,6 +155,41 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   const canModerate = currentRole === 'koc' || currentRole === 'admin';
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxQuestionId, setLightboxQuestionId] = useState<string | null>(null);
+
+  const openCanvas = useCallback((src: string, questionId?: string) => {
+    setLightboxSrc(src);
+    setLightboxQuestionId(questionId || null);
+  }, []);
+
+  const handleCanvasShareAsAnswer = useCallback(async (blob: Blob) => {
+    const targetQuestionId = lightboxQuestionId || selectedQuestion?.id;
+    if (!targetQuestionId) { toast.error('Soru bulunamadı'); return; }
+
+    try {
+      const filePath = `answers/${currentProfileId}/${Date.now()}_canvas.png`;
+      const file = new File([blob], 'canvas_solution.png', { type: 'image/png' });
+      const { error: upErr } = await supabase.storage.from('question-images').upload(filePath, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(filePath);
+
+      const { error } = await supabase.from('question_answers').insert({
+        question_id: targetQuestionId,
+        author_id: currentProfileId,
+        content: '🎨 Çizimli çözüm',
+        image_url: urlData.publicUrl,
+      });
+      if (error) throw error;
+
+      toast.success('Çizimli çözümün gönderildi! ✅');
+      setLightboxSrc(null);
+      setLightboxQuestionId(null);
+      if (selectedQuestion) loadAnswers(selectedQuestion.id);
+      loadQuestions();
+    } catch (err: any) {
+      toast.error('Gönderim hatası: ' + (err.message || ''));
+    }
+  }, [lightboxQuestionId, selectedQuestion, currentProfileId, loadQuestions]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
