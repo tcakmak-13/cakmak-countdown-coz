@@ -99,7 +99,7 @@ export default function StudentDashboard() {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ username: trimmed })
+      .update({ username: trimmed, username_changed_at: new Date().toISOString() })
       .eq('id', profileId!);
 
     if (error) {
