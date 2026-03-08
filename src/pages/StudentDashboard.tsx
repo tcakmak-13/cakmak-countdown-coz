@@ -4,6 +4,9 @@ import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCir
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +48,69 @@ export default function StudentDashboard() {
   const [tab, setTab] = useState<Tab>('ana-menu');
   const [studentArea, setStudentArea] = useState<string>('SAY');
   const unreadCount = useUnreadMessages(profileId);
+  const [usernameModalOpen, setUsernameModalOpen] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameSaving, setUsernameSaving] = useState(false);
+  const [hasUsername, setHasUsername] = useState<boolean>(!!profile?.username);
+
+  useEffect(() => {
+    setHasUsername(!!profile?.username);
+  }, [profile?.username]);
+
+  const handleTabChange = (newTab: Tab) => {
+    if (newTab === 'soru-meclisi' && !hasUsername) {
+      setUsernameInput('');
+      setUsernameError('');
+      setUsernameModalOpen(true);
+      return;
+    }
+    setTab(newTab);
+  };
+
+  const handleUsernameSave = async () => {
+    const trimmed = usernameInput.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameError('Takma ad en az 3 karakter olmalıdır.');
+      return;
+    }
+    if (trimmed.length > 20) {
+      setUsernameError('Takma ad en fazla 20 karakter olabilir.');
+      return;
+    }
+    setUsernameSaving(true);
+    setUsernameError('');
+
+    // Check uniqueness
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', trimmed)
+      .neq('id', profileId!)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      setUsernameError('Bu takma ad zaten alınmış. Başka bir tane deneyin.');
+      setUsernameSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username: trimmed })
+      .eq('id', profileId!);
+
+    if (error) {
+      setUsernameError(error.message.includes('unique') ? 'Bu takma ad zaten alınmış.' : 'Bir hata oluştu, tekrar deneyin.');
+      setUsernameSaving(false);
+      return;
+    }
+
+    setHasUsername(true);
+    setUsernameModalOpen(false);
+    setUsernameSaving(false);
+    setTab('soru-meclisi');
+  };
 
   // Sync area from profile and listen for realtime changes
   useEffect(() => {
@@ -164,7 +230,7 @@ export default function StudentDashboard() {
 
           {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => setTab('soru-meclisi')} />
+              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => handleTabChange('soru-meclisi')} />
             </motion.div>
           )}
 
@@ -177,7 +243,7 @@ export default function StudentDashboard() {
                 </button>
                 <h1 className="font-display font-bold text-lg text-foreground">Soru Meclisi</h1>
               </div>
-              <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+              <QuestionFlow currentProfileId={profileId} currentName={profile?.username || profile.full_name} currentRole={role} />
             </motion.div>
           )}
 
@@ -230,7 +296,7 @@ export default function StudentDashboard() {
           {tabs.map(t => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => handleTabChange(t.key)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
                 (tab === t.key || (t.key === 'hata-kumbarasi' && tab === 'soru-meclisi')) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -248,6 +314,42 @@ export default function StudentDashboard() {
           ))}
         </div>
       </nav>
+
+      {/* Username Gate Modal */}
+      <Dialog open={usernameModalOpen} onOpenChange={setUsernameModalOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Soru Meclisi'ne Katıl</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              Soru Meclisi'nde soru sormak ve yanıt vermek için benzersiz bir takma ad belirlemelisin.
+            </p>
+            <div className="space-y-2">
+              <Label className="font-semibold">Takma Ad</Label>
+              <Input
+                value={usernameInput}
+                onChange={e => { setUsernameInput(e.target.value); setUsernameError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleUsernameSave(); }}
+                placeholder="Örn: matematik_gurusu"
+                className="bg-secondary border-border h-11"
+                maxLength={20}
+              />
+              {usernameError && (
+                <p className="text-xs text-destructive font-medium">{usernameError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">3-20 karakter, benzersiz olmalı.</p>
+            </div>
+            <Button
+              onClick={handleUsernameSave}
+              disabled={usernameSaving || !usernameInput.trim()}
+              className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl"
+            >
+              {usernameSaving ? 'Kontrol ediliyor...' : 'Katıl'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
