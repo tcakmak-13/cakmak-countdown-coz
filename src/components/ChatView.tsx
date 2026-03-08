@@ -200,6 +200,12 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         .then(({ data }) => {
           if (data) setStudents(data.filter(s => s.id !== currentProfileId));
         });
+    } else if (currentRole === 'koc') {
+      supabase.from('profiles').select('id, full_name, area, grade')
+        .eq('coach_id', currentProfileId)
+        .then(({ data }) => {
+          if (data) setStudents(data);
+        });
     }
   }, [currentRole, currentProfileId]);
 
