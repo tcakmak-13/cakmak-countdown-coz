@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Mail, BarChart3, CheckCircle, Megaphone, Calendar, X } from 'lucide-react';
+import { Bell, Mail, BarChart3, CheckCircle, Megaphone, Calendar, X, BellRing } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Notification {
   id: string;
@@ -41,6 +43,10 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { permission, requestPermission, showNotification } = usePushNotifications(user?.id);
+  const showNotifRef = useRef(showNotification);
+  showNotifRef.current = showNotification;
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -80,6 +86,10 @@ export default function NotificationBell() {
             },
           } : undefined,
         });
+        // Native browser notification when tab is not focused
+        if (document.hidden) {
+          showNotifRef.current({ id: n.id, title: n.title, message: n.message, link: n.link });
+        }
       })
       .subscribe();
 
@@ -159,6 +169,17 @@ export default function NotificationBell() {
                 </button>
               </div>
             </div>
+
+            {/* Push permission prompt */}
+            {permission === 'default' && (
+              <button
+                onClick={requestPermission}
+                className="w-full flex items-center gap-2 p-3 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors border-b border-border"
+              >
+                <BellRing className="h-4 w-4 shrink-0" />
+                Cihaz bildirimlerini aç
+              </button>
+            )}
 
             {/* List */}
             <div className="overflow-y-auto max-h-[55vh] divide-y divide-border/50">
