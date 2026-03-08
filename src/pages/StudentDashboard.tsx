@@ -164,7 +164,20 @@ export default function StudentDashboard() {
 
           {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => setTab('soru-meclisi')} />
+            </motion.div>
+          )}
+
+          {tab === 'soru-meclisi' && profileId && (
+            <motion.div key="soru-meclisi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="flex items-center gap-3 mb-4">
+                <button onClick={() => setTab('hata-kumbarasi')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Geri</span>
+                </button>
+                <h1 className="font-display font-bold text-lg text-foreground">Soru Meclisi</h1>
+              </div>
+              <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
             </motion.div>
           )}
 
