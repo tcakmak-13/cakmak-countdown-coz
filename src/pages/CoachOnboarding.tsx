@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Trophy, Star, GraduationCap, Award, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -11,8 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function CoachOnboarding() {
+  const navigate = useNavigate();
   const { profile, profileId, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [form, setForm] = useState({
     title: 'YKS Koçu',
     bio: '',
@@ -22,6 +25,18 @@ export default function CoachOnboarding() {
     ayt_net: '',
     specialty: 'SAY',
   });
+
+  // Redirect if coach already has coach_info
+  useEffect(() => {
+    if (!profileId) return;
+    supabase.from('coach_info').select('id').eq('id', profileId).maybeSingle().then(({ data }) => {
+      if (data) {
+        navigate('/coach', { replace: true });
+      } else {
+        setChecking(false);
+      }
+    });
+  }, [profileId, navigate]);
 
   const update = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 
