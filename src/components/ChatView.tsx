@@ -179,6 +179,8 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [conversationPairs, setConversationPairs] = useState<ConversationPair[]>([]);
+  const [selectedPair, setSelectedPair] = useState<ConversationPair | null>(null);
 
   const getSignedUrl = async (fileName: string) => {
     if (signedUrls[fileName]) return signedUrls[fileName];
