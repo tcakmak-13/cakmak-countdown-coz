@@ -758,6 +758,7 @@ export type Database = {
       }
       subjects: {
         Row: {
+          allowed_areas: string[] | null
           exam_type: string
           icon: string | null
           id: string
@@ -765,6 +766,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          allowed_areas?: string[] | null
           exam_type?: string
           icon?: string | null
           id?: string
@@ -772,6 +774,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          allowed_areas?: string[] | null
           exam_type?: string
           icon?: string | null
           id?: string
