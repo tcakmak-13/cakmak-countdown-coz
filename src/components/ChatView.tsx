@@ -487,14 +487,14 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         >
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange ring-2 ring-primary/30 overflow-hidden">
-              {adminAvatarUrl ? (
-                <img src={adminAvatarUrl} alt={adminName} className="h-full w-full object-cover" />
+              {coachAvatarUrl ? (
+                <img src={coachAvatarUrl} alt={coachName} className="h-full w-full object-cover" />
               ) : (
-                adminName.charAt(0)
+                coachName.charAt(0)
               )}
             </div>
             <div className="flex-1">
-              <p className="font-display font-bold text-base">{adminName}</p>
+              <p className="font-display font-bold text-base">{coachName}</p>
               <div className="flex items-center gap-1.5">
                 <Circle className="h-2 w-2 fill-current text-emerald-500" />
                 <span className="text-xs text-emerald-400">Çevrimiçi</span>
