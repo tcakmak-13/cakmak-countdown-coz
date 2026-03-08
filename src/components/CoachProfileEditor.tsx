@@ -25,6 +25,7 @@ interface Props {
   adminName: string;
   adminAvatarUrl: string | null;
   onAvatarUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  coachProfileId?: string;
 }
 
 export default function CoachProfileEditor({ adminName, adminAvatarUrl, onAvatarUpload }: Props) {
