@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Timer, TrendingUp, Trophy, Flame, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
-import { format, startOfWeek, addDays, addWeeks, isToday, isSameWeek } from 'date-fns';
+import { Target, TrendingUp, Trophy, Flame, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { format, startOfWeek, addDays, addWeeks, isToday } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 interface Props {
   studentId: string;
@@ -12,9 +11,9 @@ interface Props {
 
 const DAY_LABELS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
-function formatHM(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
+function formatHM(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
   if (h === 0) return `${m} dk`;
   if (m === 0) return `${h} sa`;
   return `${h} sa ${m} dk`;
@@ -22,7 +21,7 @@ function formatHM(seconds: number): string {
 
 export default function WeeklyStudyStats({ studentId }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
-  const [weekData, setWeekData] = useState<{ day: string; seconds: number; date: string; isToday: boolean }[]>([]);
+  const [weekData, setWeekData] = useState<{ day: string; minutes: number; date: string; isToday: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
   const weekDates = useMemo(() => {
@@ -36,24 +35,22 @@ export default function WeeklyStudyStats({ studentId }: Props) {
   useEffect(() => {
     const fetchWeekStats = async () => {
       setLoading(true);
-      const startDate = format(weekDates[0], 'yyyy-MM-dd');
-      const endDate = format(weekDates[6], 'yyyy-MM-dd');
 
       const { data } = await supabase
-        .from('study_timer_logs')
-        .select('log_date, elapsed_seconds')
+        .from('study_tasks')
+        .select('day_of_week, estimated_minutes, completed')
         .eq('student_id', studentId)
-        .gte('log_date', startDate)
-        .lte('log_date', endDate);
+        .eq('completed', true);
 
-      const dateMap: Record<string, number> = {};
+      // day_of_week: 0=Mon … 6=Sun
+      const dayMap: Record<number, number> = {};
       data?.forEach((row: any) => {
-        dateMap[row.log_date] = (dateMap[row.log_date] || 0) + row.elapsed_seconds;
+        dayMap[row.day_of_week] = (dayMap[row.day_of_week] || 0) + (row.estimated_minutes || 0);
       });
 
       const result = weekDates.map((date, i) => ({
         day: DAY_LABELS[i],
-        seconds: dateMap[format(date, 'yyyy-MM-dd')] || 0,
+        minutes: dayMap[i] || 0,
         date: format(date, 'yyyy-MM-dd'),
         isToday: isToday(date),
       }));
@@ -65,18 +62,18 @@ export default function WeeklyStudyStats({ studentId }: Props) {
     fetchWeekStats();
   }, [studentId, weekDates]);
 
-  const totalSeconds = weekData.reduce((s, d) => s + d.seconds, 0);
-  const activeDays = weekData.filter(d => d.seconds > 0).length;
-  const bestDay = weekData.reduce((best, d) => (d.seconds > best.seconds ? d : best), weekData[0]);
-  const avgSeconds = activeDays > 0 ? Math.round(totalSeconds / activeDays) : 0;
+  const totalMinutes = weekData.reduce((s, d) => s + d.minutes, 0);
+  const activeDays = weekData.filter(d => d.minutes > 0).length;
+  const bestDay = weekData.reduce((best, d) => (d.minutes > best.minutes ? d : best), weekData[0]);
+  const avgMinutes = activeDays > 0 ? Math.round(totalMinutes / activeDays) : 0;
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
-    const { day, seconds } = payload[0].payload;
+    const { day, minutes } = payload[0].payload;
     return (
       <div className="bg-card border border-border rounded-xl px-3 py-2 shadow-lg">
         <p className="text-xs font-bold text-foreground">{day}</p>
-        <p className="text-sm font-mono text-primary">{formatHM(seconds)}</p>
+        <p className="text-sm font-mono text-primary">{formatHM(minutes)}</p>
       </div>
     );
   };
@@ -116,17 +113,17 @@ export default function WeeklyStudyStats({ studentId }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="glass-card rounded-2xl p-4 text-center">
           <div className="mx-auto w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center mb-2">
-            <Timer className="h-5 w-5 text-primary" />
+            <Target className="h-5 w-5 text-primary" />
           </div>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Toplam</p>
-          <p className="text-lg font-bold text-foreground font-display">{formatHM(totalSeconds)}</p>
+          <p className="text-lg font-bold text-foreground font-display">{formatHM(totalMinutes)}</p>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center">
           <div className="mx-auto w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center mb-2">
             <TrendingUp className="h-5 w-5 text-emerald-400" />
           </div>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Ortalama</p>
-          <p className="text-lg font-bold text-foreground font-display">{formatHM(avgSeconds)}</p>
+          <p className="text-lg font-bold text-foreground font-display">{formatHM(avgMinutes)}</p>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center">
           <div className="mx-auto w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center mb-2">
@@ -134,7 +131,7 @@ export default function WeeklyStudyStats({ studentId }: Props) {
           </div>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">En İyi Gün</p>
           <p className="text-lg font-bold text-foreground font-display">
-            {bestDay?.seconds > 0 ? `${bestDay.day} — ${formatHM(bestDay.seconds)}` : '—'}
+            {bestDay?.minutes > 0 ? `${bestDay.day} — ${formatHM(bestDay.minutes)}` : '—'}
           </p>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center">
@@ -151,11 +148,11 @@ export default function WeeklyStudyStats({ studentId }: Props) {
         <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4">
           {format(weekDates[0], 'd MMM', { locale: tr })} – {format(weekDates[6], 'd MMM', { locale: tr })} Haftalık Çalışma
         </h3>
-        {totalSeconds === 0 ? (
+        {totalMinutes === 0 ? (
           <div className="text-center py-12">
-            <Timer className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Bu hafta henüz kronometre verisi yok.</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Programındaki görevlerde kronometreyi başlatarak veri oluştur.</p>
+            <Target className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Bu hafta için henüz veri yok.</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Programına hedef süre belirleyerek görev eklediğinde istatistiklerin burada görünecektir.</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -168,11 +165,11 @@ export default function WeeklyStudyStats({ studentId }: Props) {
               />
               <YAxis hide />
               <Tooltip content={<CustomTooltip />} cursor={false} />
-              <Bar dataKey="seconds" radius={[8, 8, 0, 0]} maxBarSize={40}>
+              <Bar dataKey="minutes" radius={[8, 8, 0, 0]} maxBarSize={40}>
                 {weekData.map((entry, index) => (
                   <Cell
                     key={index}
-                    fill={entry.isToday ? 'hsl(25, 95%, 53%)' : entry.seconds > 0 ? 'hsl(25, 95%, 53%, 0.4)' : 'hsl(0, 0%, 15%)'}
+                    fill={entry.isToday ? 'hsl(25, 95%, 53%)' : entry.minutes > 0 ? 'hsl(25, 95%, 53%, 0.4)' : 'hsl(0, 0%, 15%)'}
                   />
                 ))}
               </Bar>
