@@ -293,23 +293,6 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         </div>
       )}
 
-      {/* ── Daily Timer Counter ── */}
-      {dayTasks.length > 0 && totalTimerSeconds > 0 && (
-        <div className="glass-card rounded-2xl p-4 mb-5 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/15">
-            <Timer className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Bugün Kronometreyle Çalışılan</p>
-            <p className="text-lg font-bold text-primary font-mono">
-              {String(Math.floor(totalTimerSeconds / 3600)).padStart(2, '0')}:
-              {String(Math.floor((totalTimerSeconds % 3600) / 60)).padStart(2, '0')}:
-              {String(totalTimerSeconds % 60).padStart(2, '0')}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Task Cards ── */}
       <div className="space-y-3">
         {dayTasks.length === 0 && (
@@ -323,52 +306,65 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
           <div
             key={task.id}
             className={cn(
-              'glass-card rounded-2xl p-5 flex items-start gap-4 transition-all duration-300',
-              task.completed && 'opacity-50'
+              'glass-card rounded-2xl p-5 transition-all duration-300',
+              task.completed && 'opacity-60'
             )}
           >
-            <Checkbox
-              checked={task.completed}
-              onCheckedChange={() => toggleComplete(task.id, task.completed)}
-              disabled={readOnly || isArchive}
-              className="mt-1 h-6 w-6 rounded-lg border-2 border-primary data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className={cn(
-                  'text-lg font-bold font-display',
-                  task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                )}>
-                  {task.subject}
-                </span>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/15 text-primary">
-                  {task.topic}
-                </span>
+            <div className="flex items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className={cn(
+                    'text-lg font-bold font-display',
+                    task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                  )}>
+                    {task.subject}
+                  </span>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/15 text-primary">
+                    {task.topic}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">Hedef: {formatDuration(task.estimated_minutes)}</span>
+                  </div>
+                  {task.completed && task.actual_minutes != null && (
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <span className="text-sm font-medium text-emerald-400">Gerçekleşen: {formatDuration(task.actual_minutes)}</span>
+                    </div>
+                  )}
+                </div>
+                {task.description && (
+                  <p className="text-sm text-muted-foreground/80 mt-2 leading-relaxed">{task.description}</p>
+                )}
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">{formatDuration(task.estimated_minutes)}</span>
-              </div>
-              {task.description && (
-                <p className="text-sm text-muted-foreground/80 mt-2 leading-relaxed">{task.description}</p>
+              {!readOnly && !isArchive && (
+                <div className="flex gap-1 shrink-0">
+                  {!task.completed ? (
+                    <button
+                      onClick={() => openCompleteDialog(task)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-xs font-bold hover:bg-emerald-500/25 transition-colors"
+                    >
+                      <Check className="h-4 w-4" /> Bitirdim
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleUncomplete(task.id)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-muted-foreground text-xs font-bold hover:bg-secondary/80 transition-colors"
+                    >
+                      Geri Al
+                    </button>
+                  )}
+                  <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               )}
-              <TaskTimer
-                disabled={readOnly || isArchive}
-                initialElapsed={timerElapsed[task.id] || 0}
-                onElapsedChange={(seconds) => handleTimerChange(task.id, seconds)}
-                onSave={(seconds) => handleTimerSave(task.id, seconds)}
-              />
             </div>
-            {!readOnly && !isArchive && (
-              <div className="flex gap-1 shrink-0">
-                <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         ))}
       </div>
