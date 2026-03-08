@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle } from 'lucide-react';
+import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle, Pencil, UserCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
