@@ -402,7 +402,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // Student: direct chat view
   if (currentRole === 'student') {
     return (
-      <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <button
           onClick={() => setCoachDrawerOpen(true)}
           className="p-4 border-b border-border bg-card/80 backdrop-blur-xl hover:bg-card/95 transition-colors cursor-pointer text-left"
