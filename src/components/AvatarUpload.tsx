@@ -205,6 +205,19 @@ export default function AvatarUpload({ size = 'md', className = '', onClick, dis
   return (
     <>
       <div className={`relative ${className}`}>
+      {disableUpload ? (
+        <button type="button" onClick={onClick} className="relative cursor-pointer group">
+          <div className={`${sizeClasses[size]} rounded-full bg-gradient-orange flex items-center justify-center shadow-orange overflow-hidden ring-2 ring-primary/30`}>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+            ) : (
+              <span className={`font-display font-bold text-primary-foreground ${textSizes[size]}`}>
+                {profile?.full_name?.charAt(0) || '?'}
+              </span>
+            )}
+          </div>
+        </button>
+      ) : (
       <label className="relative cursor-pointer group">
         <div className={`${sizeClasses[size]} rounded-full bg-gradient-orange flex items-center justify-center shadow-orange overflow-hidden ring-2 ring-primary/30 ${uploading ? 'opacity-60' : ''}`}>
           {profile?.avatar_url ? (
@@ -227,7 +240,8 @@ export default function AvatarUpload({ size = 'md', className = '', onClick, dis
           disabled={uploading}
         />
       </label>
-      {profile?.avatar_url && (
+      )}
+      {!disableUpload && profile?.avatar_url && (
         <button
           onClick={handleRemoveAvatar}
           disabled={uploading}
