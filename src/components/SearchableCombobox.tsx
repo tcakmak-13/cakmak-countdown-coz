@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Search, X, ChevronDown } from 'lucide-react';
