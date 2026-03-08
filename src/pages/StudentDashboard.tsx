@@ -16,6 +16,7 @@ import Denemelerim from '@/components/Denemelerim';
 import MotivationQuote from '@/components/MotivationQuote';
 import AppointmentBooking from '@/components/AppointmentBooking';
 import HataKumbarasi from '@/components/HataKumbarasi';
+import YKSScoreCalculator from '@/components/YKSScoreCalculator';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 
