@@ -115,7 +115,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<'video' | 'voice'>('video');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedDay, setSelectedDay] = useState<number | null>(null); // JS day_of_week
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
