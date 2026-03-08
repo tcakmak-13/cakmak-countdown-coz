@@ -412,6 +412,8 @@ export type Database = {
           area: string | null
           avatar_url: string | null
           birthday: string | null
+          coach_id: string | null
+          coach_selected: boolean
           created_at: string
           email: string | null
           full_name: string
@@ -433,6 +435,8 @@ export type Database = {
           area?: string | null
           avatar_url?: string | null
           birthday?: string | null
+          coach_id?: string | null
+          coach_selected?: boolean
           created_at?: string
           email?: string | null
           full_name?: string
@@ -454,6 +458,8 @@ export type Database = {
           area?: string | null
           avatar_url?: string | null
           birthday?: string | null
+          coach_id?: string | null
+          coach_selected?: boolean
           created_at?: string
           email?: string | null
           full_name?: string
@@ -471,7 +477,15 @@ export type Database = {
           user_id?: string
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       study_tasks: {
         Row: {
