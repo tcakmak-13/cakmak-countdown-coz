@@ -17,6 +17,7 @@ interface AppointmentRow {
   recurring_day: number | null;
   recurring_time: string | null;
   series_ended_at: string | null;
+  duration_minutes: number;
   student_profile: { full_name: string } | null;
   coach_profile: { full_name: string } | null;
 }
