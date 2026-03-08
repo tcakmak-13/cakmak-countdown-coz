@@ -137,10 +137,10 @@ export default function StudentDashboard() {
                   </div>
                 )}
                 {profileId && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex justify-center">
                     <button
                       onClick={() => setTab('randevular' as Tab)}
-                      className="glass-card rounded-2xl p-5 flex flex-col items-center gap-3 hover:bg-secondary/50 transition-colors text-center"
+                      className="glass-card rounded-2xl p-5 flex flex-col items-center gap-3 hover:bg-secondary/50 transition-colors text-center w-full max-w-xs"
                     >
                       <div className="h-12 w-12 rounded-xl bg-gradient-orange flex items-center justify-center shadow-orange shrink-0">
                         <CalendarIcon className="h-6 w-6 text-primary-foreground" />
@@ -148,18 +148,6 @@ export default function StudentDashboard() {
                       <div>
                         <p className="font-display font-semibold text-sm">Randevu Al</p>
                         <p className="text-[11px] text-muted-foreground">Koçunla görüşme planla</p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setTab('hata-kumbarasi' as Tab)}
-                      className="glass-card rounded-2xl p-5 flex flex-col items-center gap-3 hover:bg-secondary/50 transition-colors text-center"
-                    >
-                      <div className="h-12 w-12 rounded-xl bg-gradient-orange flex items-center justify-center shadow-orange shrink-0">
-                        <ScrollText className="h-6 w-6 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-display font-semibold text-sm">Hata Defteri</p>
-                        <p className="text-[11px] text-muted-foreground">Yanlışlarını kaydet</p>
                       </div>
                     </button>
                   </div>
