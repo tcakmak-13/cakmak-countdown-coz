@@ -82,6 +82,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const [editNote, setEditNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [qflowOpen, setQflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
