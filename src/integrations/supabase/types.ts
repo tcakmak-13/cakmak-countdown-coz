@@ -630,9 +630,15 @@ export type Database = {
         Args: never
         Returns: {
           avatar_url: string
+          ayt_net: string
+          bio: string
+          experience: string
           full_name: string
           id: string
+          title: string
+          tyt_net: string
           username: string
+          yks_ranking: string
         }[]
       }
       get_my_profile_id: { Args: never; Returns: string }
