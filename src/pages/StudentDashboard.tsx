@@ -27,7 +27,7 @@ import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi';
 
 const TAB_TITLES: Record<Tab, string> = {
-  'denemelerim': 'Denemelerim',
+  'denemelerim': 'Analizlerim',
   'hata-kumbarasi': 'Hatalarım',
   'ana-menu': '',
   'randevular': 'Randevular',
