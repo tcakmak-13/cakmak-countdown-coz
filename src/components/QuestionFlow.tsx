@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import ImagePicker from '@/components/ImagePicker';
-import ImageLightbox from '@/components/ImageLightbox';
+import ImageCanvas from '@/components/ImageCanvas';
 
 const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
 const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
