@@ -854,8 +854,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                     </div>
 
                     {q.image_url && (
-                      <div className="rounded-xl overflow-hidden mb-2 max-h-44">
-                        <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary" />
+                      <div className="rounded-xl overflow-hidden mb-2 max-h-44" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLightboxSrc(q.image_url); }}>
+                        <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary cursor-zoom-in hover:opacity-90 transition-opacity" />
                       </div>
                     )}
 
