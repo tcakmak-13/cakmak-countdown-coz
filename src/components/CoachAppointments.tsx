@@ -225,6 +225,8 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                     <p className="font-display font-bold text-lg">{a.profiles?.full_name || 'Öğrenci'}</p>
                     <p className="text-sm text-muted-foreground">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
+                      {a.recurring_time ? ` → ${endTimeStr(a.recurring_time, a.duration_minutes)}` : ''}
+                      <span className="ml-1.5 text-xs">({a.duration_minutes || 60} dk)</span>
                     </p>
                     <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 inline-block">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sonraki</p>
