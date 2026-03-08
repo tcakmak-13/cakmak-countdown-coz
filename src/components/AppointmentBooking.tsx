@@ -203,7 +203,6 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
   const activeRecurring = appointments.filter(a => a.status === 'approved' && a.recurring && !a.series_ended_at);
   const pending = appointments.filter(a => a.status === 'pending');
   const ended = appointments.filter(a => a.series_ended_at || a.status === 'rejected' || a.status === 'completed');
-  const durationLabel = selectedType === 'video' ? '60 dk' : '20 dk';
   const endTimeLabel = selectedTime ? minutesToTime(timeToMinutes(selectedTime) + DURATION[selectedType]) : '';
 
   return (
@@ -217,7 +216,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </div>
           <div className="text-center">
             <p className="font-display font-semibold text-lg">Görüntülü Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">60 dakika · Yüz yüze koçluk seansı</p>
+            <p className="text-sm text-muted-foreground mt-1">Yüz yüze koçluk seansı</p>
           </div>
         </motion.button>
 
@@ -228,7 +227,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </div>
           <div className="text-center">
             <p className="font-display font-semibold text-lg">Sesli Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">20 dakika · Telefon ile koçluk seansı</p>
+            <p className="text-sm text-muted-foreground mt-1">Telefon ile koçluk seansı</p>
           </div>
         </motion.button>
       </div>
@@ -257,7 +256,6 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                   <div className="flex-1 min-w-0 pt-1">
                     <p className="font-display font-bold text-lg">
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
-                      <span className="text-sm font-normal text-muted-foreground ml-2">({a.duration_minutes || 60} dk)</span>
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}{endTime ? ` → ${endTime}` : ''}
@@ -291,7 +289,6 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
               <div className="flex-1 min-w-0">
                 <p className="font-display font-semibold">
                   {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
-                  <span className="text-xs font-normal text-muted-foreground ml-1.5">({a.duration_minutes || 60} dk)</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
@@ -342,16 +339,10 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
-            {/* Duration + recurring info */}
-            <div className="flex gap-2">
-              <div className="flex-1 rounded-xl bg-secondary/50 border border-border p-2.5 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary shrink-0" />
-                <p className="text-xs font-medium">Süre: <span className="text-primary font-bold">{durationLabel}</span></p>
-              </div>
-              <div className="flex-1 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 flex items-center gap-2">
-                <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
-                <p className="text-xs text-amber-300 font-medium">Her hafta tekrar</p>
-              </div>
+            {/* Recurring info */}
+            <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
+              <p className="text-xs text-amber-300 font-medium">Her hafta tekrar</p>
             </div>
 
             {availability.length === 0 ? (
@@ -425,7 +416,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                       Her <span className="text-primary">{DAY_NAMES[selectedDay]}</span>
                     </p>
                     <p className="font-display font-bold text-3xl text-primary">{selectedTime} — {endTimeLabel}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{selectedType === 'video' ? 'Görüntülü' : 'Sesli'} · {durationLabel}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{selectedType === 'video' ? 'Görüntülü Görüşme' : 'Sesli Görüşme'}</p>
                   </motion.div>
                 )}
               </>
