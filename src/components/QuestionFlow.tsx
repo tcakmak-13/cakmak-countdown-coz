@@ -650,6 +650,58 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   return (
     <div className="space-y-4">
       {deleteDialog}
+
+      {/* Nickname bar */}
+      {username && (
+        <div className="glass-card rounded-2xl p-3 flex items-center gap-3">
+          <UserCircle className="h-5 w-5 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground truncate">@{username}</p>
+            <p className="text-[10px] text-muted-foreground">Soru Meclisi takma adın</p>
+          </div>
+          {canChangeNickname ? (
+            <button
+              onClick={() => { setNicknameInput(username); setNicknameError(''); setNicknameDialogOpen(true); }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <Pencil className="h-3 w-3" /> Değiştir
+            </button>
+          ) : (
+            <span className="text-[10px] text-muted-foreground/60 shrink-0">{daysUntilChange} gün sonra değiştirebilirsin</span>
+          )}
+        </div>
+      )}
+
+      {/* Nickname change dialog */}
+      <Dialog open={nicknameDialogOpen} onOpenChange={setNicknameDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Takma Adını Değiştir</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">Takma adını haftada 1 kez değiştirebilirsin.</p>
+            <div className="space-y-2">
+              <Label className="font-semibold">Yeni Takma Ad</Label>
+              <Input
+                value={nicknameInput}
+                onChange={e => { setNicknameInput(e.target.value); setNicknameError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleNicknameSave(); }}
+                placeholder="Yeni takma ad..."
+                className="bg-secondary border-border h-11"
+                maxLength={20}
+              />
+              {nicknameError && <p className="text-xs text-destructive font-medium">{nicknameError}</p>}
+            </div>
+            <Button
+              onClick={handleNicknameSave}
+              disabled={nicknameSaving || !nicknameInput.trim()}
+              className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl"
+            >
+              {nicknameSaving ? 'Kontrol ediliyor...' : 'Güncelle'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Header with filter + ask */}
       <div className="flex items-center gap-2">
         <h2 className="font-display text-xl font-semibold flex-1 flex items-center gap-2">
