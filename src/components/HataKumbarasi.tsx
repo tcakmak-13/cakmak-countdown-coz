@@ -102,6 +102,17 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  // Helper: extract storage path from image_url (handles both full URLs and plain paths)
+  const getStoragePath = (imageUrl: string): string => {
+    if (imageUrl.includes('/error-questions/')) {
+      const path = imageUrl.split('/object/public/error-questions/')[1] 
+        || imageUrl.split('/object/sign/error-questions/')[1]
+        || imageUrl.split('/error-questions/')[1];
+      return path ? decodeURIComponent(path.split('?')[0]) : imageUrl;
+    }
+    return imageUrl;
+  };
+
   // Generate signed URLs for all questions
   const generateSignedUrls = async (questions: ErrorQuestion[]) => {
     const paths = questions.map(q => getStoragePath(q.image_url));
