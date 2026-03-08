@@ -589,10 +589,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shrink-0 overflow-hidden">
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden ${a.is_coach ? 'bg-primary/30 text-primary ring-2 ring-primary/40' : 'bg-primary/20 text-primary'}`}>
                     {a.author_avatar ? <img src={a.author_avatar} className="h-full w-full object-cover" /> : a.author_name?.charAt(0)}
                   </div>
-                  <span className="text-xs font-medium">{a.author_name}</span>
+                  <span className={`text-xs font-medium ${a.is_coach ? 'font-bold text-primary' : ''}`}>{a.author_name}</span>
                   <span className="text-[10px] text-muted-foreground ml-auto">{formatTime(a.created_at)}</span>
                   {/* Delete answer */}
                   {canDeleteAnswer(a) && (
