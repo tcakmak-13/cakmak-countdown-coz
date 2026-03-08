@@ -52,10 +52,12 @@ export default function NotificationBell() {
 
   // Fetch notifications
   useEffect(() => {
+    if (!user) return;
     const load = async () => {
       const { data } = await supabase
         .from('notifications')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(30);
       if (data) setNotifications(data as Notification[]);
@@ -69,6 +71,7 @@ export default function NotificationBell() {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
       }, (payload) => {
         const n = payload.new as Notification;
         setNotifications(prev => [n, ...prev].slice(0, 30));
@@ -94,7 +97,7 @@ export default function NotificationBell() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [navigate]);
+  }, [navigate, user]);
 
   // Click outside to close
   useEffect(() => {
