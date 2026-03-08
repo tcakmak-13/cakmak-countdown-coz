@@ -134,8 +134,23 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     toast.success('Görev silindi.');
   };
 
-  const toggleComplete = async (taskId: string, current: boolean) => {
-    await supabase.from('study_tasks').update({ completed: !current }).eq('id', taskId);
+  const openCompleteDialog = (task: Task) => {
+    setCompletingTask(task);
+    setActualMinutes(task.estimated_minutes);
+    setCompleteDialogOpen(true);
+  };
+
+  const handleComplete = async () => {
+    if (!completingTask) return;
+    await supabase.from('study_tasks').update({ completed: true, actual_minutes: actualMinutes }).eq('id', completingTask.id);
+    setCompleteDialogOpen(false);
+    setCompletingTask(null);
+    fetchTasks();
+    toast.success('Görev tamamlandı! 🎉');
+  };
+
+  const handleUncomplete = async (taskId: string) => {
+    await supabase.from('study_tasks').update({ completed: false, actual_minutes: null }).eq('id', taskId);
     fetchTasks();
   };
 
