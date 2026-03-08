@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp } from 'lucide-react';
+import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import ImagePicker from '@/components/ImagePicker';
 
-// Subject lists
 const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
 const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
 const AYT_SUBJECTS_EA = ['Matematik', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
@@ -58,12 +58,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter state
   const [showFilter, setShowFilter] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterSubject, setFilterSubject] = useState<string | null>(null);
 
-  // New question wizard
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [newImage, setNewImage] = useState<File | null>(null);
@@ -74,7 +72,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   const [submitting, setSubmitting] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
 
-  // Thread view
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [loadingAnswers, setLoadingAnswers] = useState(false);
@@ -84,15 +81,28 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   const [sendingAnswer, setSendingAnswer] = useState(false);
   const [showAnswerImagePicker, setShowAnswerImagePicker] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  // Delete confirm state
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'question' | 'answer'; id: string } | null>(null);
 
-  // Load questions
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const flowScrollRef = useRef<HTMLDivElement>(null);
+
+  const canModerate = currentRole === 'koc' || currentRole === 'admin';
+
+  // Auto-scroll to bottom
+  const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
+    setTimeout(() => {
+      ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' });
+    }, 100);
+  }, []);
+
+  // Load questions (ascending = oldest first, newest at bottom)
   const loadQuestions = useCallback(async () => {
     setLoading(true);
     let query = supabase
       .from('questions')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (filterCategory) query = query.eq('category', filterCategory);
     if (filterSubject) query = query.eq('subject', filterSubject);
@@ -100,7 +110,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     const { data, error } = await query;
     if (error) { toast.error('Sorular yüklenemedi'); setLoading(false); return; }
 
-    // Fetch student names
     const studentIds = [...new Set((data || []).map(q => q.student_id))];
     let profileMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
     if (studentIds.length > 0) {
@@ -113,7 +122,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       }
     }
 
-    // Fetch answer counts
     const questionIds = (data || []).map(q => q.id);
     let answerCountMap: Record<string, number> = {};
     if (questionIds.length > 0) {
@@ -138,7 +146,14 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
-  // Realtime subscription for new questions
+  // Scroll flow to bottom after questions load
+  useEffect(() => {
+    if (!loading && questions.length > 0) {
+      scrollToBottom(flowScrollRef);
+    }
+  }, [loading, questions.length, scrollToBottom]);
+
+  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel('questions-flow')
@@ -153,7 +168,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     return () => { supabase.removeChannel(channel); };
   }, [loadQuestions, selectedQuestion]);
 
-  // Load answers for thread
+  // Load answers for thread (ascending order)
   const loadAnswers = async (questionId: string) => {
     setLoadingAnswers(true);
     const { data, error } = await supabase
@@ -184,7 +199,13 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setLoadingAnswers(false);
   };
 
-  // Open thread
+  // Scroll thread to bottom after answers load
+  useEffect(() => {
+    if (!loadingAnswers && answers.length > 0 && selectedQuestion) {
+      scrollToBottom(scrollRef);
+    }
+  }, [loadingAnswers, answers.length, selectedQuestion, scrollToBottom]);
+
   const openThread = (q: Question) => {
     setSelectedQuestion(q);
     loadAnswers(q.id);
@@ -275,13 +296,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   // Mark best answer
   const markBestAnswer = async (answerId: string) => {
     if (!selectedQuestion || selectedQuestion.student_id !== currentProfileId) return;
-
     try {
-      // Unmark previous best
       if (selectedQuestion.best_answer_id) {
         await supabase.from('question_answers').update({ is_best: false }).eq('id', selectedQuestion.best_answer_id);
       }
-      // Mark new best
       await supabase.from('question_answers').update({ is_best: true }).eq('id', answerId);
       await supabase.from('questions').update({ best_answer_id: answerId, status: 'solved' }).eq('id', selectedQuestion.id);
 
@@ -293,6 +311,69 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       toast.error('İşaretlenemedi');
     }
   };
+
+  // Unmark best answer
+  const unmarkBestAnswer = async () => {
+    if (!selectedQuestion || selectedQuestion.student_id !== currentProfileId || !selectedQuestion.best_answer_id) return;
+    try {
+      await supabase.from('question_answers').update({ is_best: false }).eq('id', selectedQuestion.best_answer_id);
+      await supabase.from('questions').update({ best_answer_id: null, status: 'open' }).eq('id', selectedQuestion.id);
+
+      setSelectedQuestion({ ...selectedQuestion, best_answer_id: null, status: 'open' });
+      toast.success('En iyi çözüm işareti kaldırıldı');
+      loadAnswers(selectedQuestion.id);
+      loadQuestions();
+    } catch {
+      toast.error('İşaret kaldırılamadı');
+    }
+  };
+
+  // Delete question
+  const handleDeleteQuestion = async (questionId: string) => {
+    try {
+      // Delete answers first
+      await supabase.from('question_answers').delete().eq('question_id', questionId);
+      const { error } = await supabase.from('questions').delete().eq('id', questionId);
+      if (error) throw error;
+      toast.success('Soru silindi');
+      if (selectedQuestion?.id === questionId) {
+        setSelectedQuestion(null);
+        setAnswers([]);
+      }
+      loadQuestions();
+    } catch (err: any) {
+      toast.error('Soru silinemedi: ' + (err.message || ''));
+    }
+    setDeleteTarget(null);
+  };
+
+  // Delete answer
+  const handleDeleteAnswer = async (answerId: string) => {
+    try {
+      // If this was best answer, clear it from question
+      if (selectedQuestion?.best_answer_id === answerId) {
+        await supabase.from('questions').update({ best_answer_id: null, status: 'open' }).eq('id', selectedQuestion.id);
+        setSelectedQuestion({ ...selectedQuestion, best_answer_id: null, status: 'open' });
+      }
+      const { error } = await supabase.from('question_answers').delete().eq('id', answerId);
+      if (error) throw error;
+      toast.success('Yanıt silindi');
+      if (selectedQuestion) loadAnswers(selectedQuestion.id);
+      loadQuestions();
+    } catch (err: any) {
+      toast.error('Yanıt silinemedi: ' + (err.message || ''));
+    }
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'question') handleDeleteQuestion(deleteTarget.id);
+    else handleDeleteAnswer(deleteTarget.id);
+  };
+
+  const canDeleteQuestion = (q: Question) => q.student_id === currentProfileId || canModerate;
+  const canDeleteAnswer = (a: Answer) => a.author_id === currentProfileId || canModerate;
 
   const formatTime = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -314,14 +395,36 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     return [...TYT_SUBJECTS, ...AYT_SUBJECTS_SAY];
   };
 
+  // ====== DELETE CONFIRMATION DIALOG ======
+  const deleteDialog = (
+    <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {deleteTarget?.type === 'question' ? 'Bu soruyu silmek istediğinize emin misiniz?' : 'Bu yanıtı silmek istediğinize emin misiniz?'}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Bu işlem geri alınamaz. {deleteTarget?.type === 'question' ? 'Soruya ait tüm yanıtlar da silinecektir.' : ''}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>İptal</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Sil</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   // ====== THREAD VIEW ======
   if (selectedQuestion) {
     const bestAnswer = answers.find(a => a.is_best);
     const otherAnswers = answers.filter(a => !a.is_best);
+    // Best answer pinned at top, rest in chronological order (ascending)
     const sortedAnswers = bestAnswer ? [bestAnswer, ...otherAnswers] : otherAnswers;
 
     return (
       <div className="flex flex-col h-[calc(100vh-11rem)]">
+        {deleteDialog}
         {/* Thread header */}
         <div className="flex items-center gap-3 pb-4 border-b border-border">
           <button onClick={() => { setSelectedQuestion(null); setAnswers([]); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
@@ -337,6 +440,15 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
             </div>
             <p className="text-sm font-medium truncate mt-1">{selectedQuestion.student_name}</p>
           </div>
+          {/* Delete question from thread header */}
+          {canDeleteQuestion(selectedQuestion) && (
+            <button
+              onClick={() => setDeleteTarget({ type: 'question', id: selectedQuestion.id })}
+              className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Question card at top */}
@@ -349,7 +461,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           )}
         </div>
 
-        {/* Answers scroll area */}
+        {/* Answers scroll area - scrolls to bottom */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-hide">
           {loadingAnswers ? (
             <div className="text-center py-8">
@@ -372,6 +484,16 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   <div className="flex items-center gap-1.5 mb-2">
                     <Crown className="h-3.5 w-3.5 text-primary" />
                     <span className="text-[11px] font-bold text-primary">En İyi Çözüm</span>
+                    {/* Unmark button - only for question owner */}
+                    {selectedQuestion.student_id === currentProfileId && (
+                      <button
+                        onClick={unmarkBestAnswer}
+                        className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <XCircle className="h-3 w-3" />
+                        Geri Al
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-2">
@@ -380,13 +502,22 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   </div>
                   <span className="text-xs font-medium">{a.author_name}</span>
                   <span className="text-[10px] text-muted-foreground ml-auto">{formatTime(a.created_at)}</span>
+                  {/* Delete answer */}
+                  {canDeleteAnswer(a) && (
+                    <button
+                      onClick={() => setDeleteTarget({ type: 'answer', id: a.id })}
+                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
                 {a.image_url && (
                   <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2" />
                 )}
                 {a.content && <p className="text-sm leading-relaxed">{a.content}</p>}
 
-                {/* Mark best button - only for question owner */}
+                {/* Mark best button */}
                 {selectedQuestion.student_id === currentProfileId && !a.is_best && (
                   <button
                     onClick={() => markBestAnswer(a.id)}
@@ -433,7 +564,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           </div>
         </div>
 
-        {/* Answer image picker */}
         <ImagePicker
           open={showAnswerImagePicker}
           onOpenChange={setShowAnswerImagePicker}
@@ -455,6 +585,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   // ====== MAIN FLOW VIEW ======
   return (
     <div className="space-y-4">
+      {deleteDialog}
       {/* Header with filter + ask */}
       <div className="flex items-center gap-2">
         <h2 className="font-display text-xl font-semibold flex-1 flex items-center gap-2">
@@ -532,8 +663,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         )}
       </AnimatePresence>
 
-      {/* Questions chat flow */}
-      <div className="space-y-3">
+      {/* Questions chat flow - bottom-to-top style */}
+      <div ref={flowScrollRef} className="space-y-3 max-h-[calc(100vh-16rem)] overflow-y-auto scrollbar-hide">
         {loading ? (
           <div className="text-center py-16">
             <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
@@ -548,56 +679,61 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           </div>
         ) : (
           questions.map((q, i) => (
-            <motion.button
+            <motion.div
               key={q.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              onClick={() => openThread(q)}
-              className="w-full text-left glass-card rounded-2xl p-4 hover:bg-primary/5 transition-all group"
+              transition={{ delay: i * 0.02 }}
+              className="w-full text-left glass-card rounded-2xl p-4 hover:bg-primary/5 transition-all group relative"
             >
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary shrink-0 overflow-hidden mt-0.5">
-                  {q.student_avatar ? <img src={q.student_avatar} className="h-full w-full object-cover" /> : q.student_name?.charAt(0)}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  {/* Name + time + solved badge */}
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-semibold truncate">{q.student_name}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(q.created_at)}</span>
-                    {q.best_answer_id && (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 ml-auto" />
-                    )}
+              <button onClick={() => openThread(q)} className="w-full text-left">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary shrink-0 overflow-hidden mt-0.5">
+                    {q.student_avatar ? <img src={q.student_avatar} className="h-full w-full object-cover" /> : q.student_name?.charAt(0)}
                   </div>
 
-                  {/* Tags */}
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary">{q.category}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground">{q.subject}</span>
-                  </div>
-
-                  {/* Image thumbnail */}
-                  {q.image_url && (
-                    <div className="rounded-xl overflow-hidden mb-2 max-h-44">
-                      <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-semibold truncate">{q.student_name}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(q.created_at)}</span>
+                      {q.best_answer_id && (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 ml-auto" />
+                      )}
                     </div>
-                  )}
 
-                  {/* Description */}
-                  {q.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{q.description}</p>
-                  )}
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary">{q.category}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground">{q.subject}</span>
+                    </div>
 
-                  {/* Answer count */}
-                  <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
-                    <MessageCircleQuestion className="h-3.5 w-3.5" />
-                    {q.answer_count || 0} yanıt
+                    {q.image_url && (
+                      <div className="rounded-xl overflow-hidden mb-2 max-h-44">
+                        <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary" />
+                      </div>
+                    )}
+
+                    {q.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{q.description}</p>
+                    )}
+
+                    <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+                      <MessageCircleQuestion className="h-3.5 w-3.5" />
+                      {q.answer_count || 0} yanıt
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.button>
+              </button>
+
+              {/* Delete button on question card */}
+              {canDeleteQuestion(q) && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: 'question', id: q.id }); }}
+                  className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </motion.div>
           ))
         )}
       </div>
@@ -613,7 +749,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
             </DialogTitle>
           </DialogHeader>
 
-          {/* Progress bar */}
           <div className="px-5">
             <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
               <motion.div
@@ -626,7 +761,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
           <div className="p-5 pt-4">
             <AnimatePresence mode="wait">
-              {/* Step 1: Image + Description */}
               {wizardStep === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
                   <p className="text-sm font-medium">📷 Soru fotoğrafını ekle ve açıklama yaz</p>
@@ -665,7 +799,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                 </motion.div>
               )}
 
-              {/* Step 2: Category */}
               {wizardStep === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
                   <p className="text-sm font-medium">📚 Sınav türünü seç</p>
@@ -684,7 +817,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                 </motion.div>
               )}
 
-              {/* Step 3: Subject */}
               {wizardStep === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
                   <p className="text-sm font-medium">🎯 Branşı seç</p>
@@ -725,7 +857,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         </DialogContent>
       </Dialog>
 
-      {/* Image picker for new question */}
       <ImagePicker
         open={showImagePicker}
         onOpenChange={setShowImagePicker}
