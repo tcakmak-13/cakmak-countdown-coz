@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle } from 'lucide-react';
+import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle, Pencil, UserCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -52,9 +54,12 @@ interface QuestionFlowProps {
   currentProfileId: string;
   currentName: string;
   currentRole: string;
+  username?: string;
+  usernameChangedAt?: string | null;
+  onUsernameChanged?: (newUsername: string) => void;
 }
 
-export default function QuestionFlow({ currentProfileId, currentName, currentRole }: QuestionFlowProps) {
+export default function QuestionFlow({ currentProfileId, currentName, currentRole, username, usernameChangedAt, onUsernameChanged }: QuestionFlowProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -83,6 +88,65 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'question' | 'answer'; id: string } | null>(null);
+
+  // Nickname change state
+  const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameError, setNicknameError] = useState('');
+  const [nicknameSaving, setNicknameSaving] = useState(false);
+
+  const canChangeNickname = (() => {
+    if (!usernameChangedAt) return true;
+    const changed = new Date(usernameChangedAt);
+    const now = new Date();
+    const diffDays = (now.getTime() - changed.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays >= 7;
+  })();
+
+  const daysUntilChange = (() => {
+    if (!usernameChangedAt) return 0;
+    const changed = new Date(usernameChangedAt);
+    const now = new Date();
+    const diffDays = (now.getTime() - changed.getTime()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(7 - diffDays));
+  })();
+
+  const handleNicknameSave = async () => {
+    const trimmed = nicknameInput.trim();
+    if (!trimmed || trimmed.length < 3) { setNicknameError('Takma ad en az 3 karakter olmalıdır.'); return; }
+    if (trimmed.length > 20) { setNicknameError('Takma ad en fazla 20 karakter olabilir.'); return; }
+    setNicknameSaving(true);
+    setNicknameError('');
+
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', trimmed)
+      .neq('id', currentProfileId)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      setNicknameError('Bu takma ad zaten alınmış.');
+      setNicknameSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username: trimmed, username_changed_at: new Date().toISOString() })
+      .eq('id', currentProfileId);
+
+    if (error) {
+      setNicknameError('Bir hata oluştu, tekrar deneyin.');
+      setNicknameSaving(false);
+      return;
+    }
+
+    setNicknameDialogOpen(false);
+    setNicknameSaving(false);
+    onUsernameChanged?.(trimmed);
+    toast.success('Takma adın güncellendi!');
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const flowScrollRef = useRef<HTMLDivElement>(null);
@@ -586,6 +650,58 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   return (
     <div className="space-y-4">
       {deleteDialog}
+
+      {/* Nickname bar */}
+      {username && (
+        <div className="glass-card rounded-2xl p-3 flex items-center gap-3">
+          <UserCircle className="h-5 w-5 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground truncate">@{username}</p>
+            <p className="text-[10px] text-muted-foreground">Soru Meclisi takma adın</p>
+          </div>
+          {canChangeNickname ? (
+            <button
+              onClick={() => { setNicknameInput(username); setNicknameError(''); setNicknameDialogOpen(true); }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <Pencil className="h-3 w-3" /> Değiştir
+            </button>
+          ) : (
+            <span className="text-[10px] text-muted-foreground/60 shrink-0">{daysUntilChange} gün sonra değiştirebilirsin</span>
+          )}
+        </div>
+      )}
+
+      {/* Nickname change dialog */}
+      <Dialog open={nicknameDialogOpen} onOpenChange={setNicknameDialogOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Takma Adını Değiştir</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">Takma adını haftada 1 kez değiştirebilirsin.</p>
+            <div className="space-y-2">
+              <Label className="font-semibold">Yeni Takma Ad</Label>
+              <Input
+                value={nicknameInput}
+                onChange={e => { setNicknameInput(e.target.value); setNicknameError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleNicknameSave(); }}
+                placeholder="Yeni takma ad..."
+                className="bg-secondary border-border h-11"
+                maxLength={20}
+              />
+              {nicknameError && <p className="text-xs text-destructive font-medium">{nicknameError}</p>}
+            </div>
+            <Button
+              onClick={handleNicknameSave}
+              disabled={nicknameSaving || !nicknameInput.trim()}
+              className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl"
+            >
+              {nicknameSaving ? 'Kontrol ediliyor...' : 'Güncelle'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Header with filter + ask */}
       <div className="flex items-center gap-2">
         <h2 className="font-display text-xl font-semibold flex-1 flex items-center gap-2">

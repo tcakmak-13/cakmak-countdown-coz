@@ -441,6 +441,7 @@ export type Database = {
           updated_at: string
           user_id: string
           username: string | null
+          username_changed_at: string | null
         }
         Insert: {
           area?: string | null
@@ -465,6 +466,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           username?: string | null
+          username_changed_at?: string | null
         }
         Update: {
           area?: string | null
@@ -489,6 +491,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
+          username_changed_at?: string | null
         }
         Relationships: [
           {
