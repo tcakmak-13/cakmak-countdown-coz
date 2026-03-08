@@ -126,12 +126,34 @@ export default function YKSScoreCalculator() {
     // 1. Puan Türünü JSON anahtarına uydur
     const secilenTur = selectedType as ScoreType;
 
-    // 2. Netleri güvenli bir şekilde sayıya çevirip çarp
+    // 2. TYT ham puanı (katsayılı netler toplamı)
     const tytPuan = (Number(tytNets.turkce || 0) * 3.3) + (Number(tytNets.sosyal || 0) * 3.4) + (Number(tytNets.matematik || 0) * 3.3) + (Number(tytNets.fen || 0) * 3.4);
-    const aytPuan = (Number(aytNets.ayt_matematik || 0) * 3.0) + (Number(aytNets.ayt_fizik || 0) * 2.85) + (Number(aytNets.ayt_kimya || 0) * 3.07) + (Number(aytNets.ayt_biyoloji || 0) * 3.07);
 
     // 3. Toplam Yerleştirme Puanı
-    const toplamPuan = 100 + tytPuan + aytPuan + (Number(obp || 0) * 0.6);
+    let toplamPuan: number;
+
+    if (selectedType === 'TYT') {
+      // TYT: Taban + TYT netleri + OBP
+      toplamPuan = 100 + tytPuan + (Number(obp || 0) * 0.6);
+    } else {
+      // SAY/EA/SÖZ/DİL: Taban + TYT(%40) + AYT(%60) + OBP
+      const tytKatki = tytPuan * 0.4;
+
+      // AYT ham puanı - puan türüne göre ilgili derslerin katsayılı toplamı
+      let aytPuan = 0;
+      if (selectedType === 'SAYISAL') {
+        aytPuan = (Number(aytNets.ayt_matematik || 0) * 3.0) + (Number(aytNets.ayt_fizik || 0) * 2.85) + (Number(aytNets.ayt_kimya || 0) * 3.07) + (Number(aytNets.ayt_biyoloji || 0) * 3.07);
+      } else if (selectedType === 'ESIT_AGIRLIK') {
+        aytPuan = (Number(aytNets.ayt_matematik || 0) * 3.0) + (Number(aytNets.ayt_edebiyat || 0) * 3.0) + (Number(aytNets.ayt_tarih1 || 0) * 2.80) + (Number(aytNets.ayt_cografya1 || 0) * 3.0);
+      } else if (selectedType === 'SOZEL' || selectedType === 'DIL') {
+        aytPuan = (Number(aytNets.ayt_edebiyat || 0) * 3.0) + (Number(aytNets.ayt_tarih1 || 0) * 2.80) + (Number(aytNets.ayt_cografya1 || 0) * 3.0)
+          + (Number(aytNets.ayt_tarih2 || 0) * 2.90) + (Number(aytNets.ayt_cografya2 || 0) * 2.90) + (Number(aytNets.ayt_felsefe || 0) * 3.0) + (Number(aytNets.ayt_din || 0) * 3.30);
+      }
+      const aytKatki = aytPuan * 0.6;
+
+      toplamPuan = 100 + tytKatki + aytKatki + (Number(obp || 0) * 0.6);
+    }
+
     const score = Math.round(toplamPuan * 100) / 100;
 
     // 4. Doğrusal Enterpolasyon ile Sıralama Bulma
