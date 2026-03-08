@@ -77,6 +77,7 @@ function scoresFromResult(result: any, subjects: SubjectConfig[]): ScoreMap {
 }
 
 export default function Denemelerim({ studentId, studentArea }: { studentId: string; studentArea: string }) {
+  const [mainTab, setMainTab] = useState<'net' | 'konu'>('net');
   const [results, setResults] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
