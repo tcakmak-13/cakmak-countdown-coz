@@ -48,6 +48,69 @@ export default function StudentDashboard() {
   const [tab, setTab] = useState<Tab>('ana-menu');
   const [studentArea, setStudentArea] = useState<string>('SAY');
   const unreadCount = useUnreadMessages(profileId);
+  const [usernameModalOpen, setUsernameModalOpen] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameSaving, setUsernameSaving] = useState(false);
+  const [hasUsername, setHasUsername] = useState<boolean>(!!profile?.username);
+
+  useEffect(() => {
+    setHasUsername(!!profile?.username);
+  }, [profile?.username]);
+
+  const handleTabChange = (newTab: Tab) => {
+    if (newTab === 'soru-meclisi' && !hasUsername) {
+      setUsernameInput('');
+      setUsernameError('');
+      setUsernameModalOpen(true);
+      return;
+    }
+    setTab(newTab);
+  };
+
+  const handleUsernameSave = async () => {
+    const trimmed = usernameInput.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameError('Takma ad en az 3 karakter olmalıdır.');
+      return;
+    }
+    if (trimmed.length > 20) {
+      setUsernameError('Takma ad en fazla 20 karakter olabilir.');
+      return;
+    }
+    setUsernameSaving(true);
+    setUsernameError('');
+
+    // Check uniqueness
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', trimmed)
+      .neq('id', profileId!)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      setUsernameError('Bu takma ad zaten alınmış. Başka bir tane deneyin.');
+      setUsernameSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username: trimmed })
+      .eq('id', profileId!);
+
+    if (error) {
+      setUsernameError(error.message.includes('unique') ? 'Bu takma ad zaten alınmış.' : 'Bir hata oluştu, tekrar deneyin.');
+      setUsernameSaving(false);
+      return;
+    }
+
+    setHasUsername(true);
+    setUsernameModalOpen(false);
+    setUsernameSaving(false);
+    setTab('soru-meclisi');
+  };
 
   // Sync area from profile and listen for realtime changes
   useEffect(() => {
