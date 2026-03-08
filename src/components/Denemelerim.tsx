@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, AlertTriangle, TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, Pencil, Trash2, BarChart3, BookOpenCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import ProgressCircle from '@/components/ProgressCircle';
+import KonuTakip from '@/components/KonuTakip';
 
 // ─── Subject Configuration ────────────────────────────────────
 interface SubjectConfig {
