@@ -305,6 +305,8 @@ export default function AdminDashboard() {
           <AdminAnalytics students={students} adminProfileId={profileId} />
         ) : tab === 'appointments' ? (
           <AdminAppointments />
+        ) : tab === 'coach-detail' && selectedCoach ? (
+          <CoachDetailView coachId={selectedCoach.id} coachName={selectedCoach.full_name || selectedCoach.username || 'Koç'} coachAvatar={selectedCoach.avatar_url} onBack={() => { setSelectedCoach(null); setTab('management'); }} />
         ) : tab === 'coach-edit' ? (
           <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
         ) : tab === 'messages' && profileId ? (
