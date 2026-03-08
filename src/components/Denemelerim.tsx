@@ -457,6 +457,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
     </div>
   );
 }
