@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, Camera, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -46,19 +46,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [coaches, setCoaches] = useState<CoachProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'overview' | 'students' | 'coaches' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('overview');
-
-  const TAB_TITLES: Record<string, string> = {
-    overview: 'Genel Bakış',
-    analytics: 'Analiz Merkezi',
-    students: 'Öğrenciler',
-    coaches: 'Koçlar',
-    schedule: selectedStudent ? selectedStudent.full_name || 'Program' : 'Program',
-    profile: selectedStudent ? selectedStudent.full_name || 'Profil' : 'Profil',
-    messages: 'Mesajlar',
-    'coach-edit': 'Koç Profilim',
-    appointments: 'Randevular',
-  };
+  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('overview');
 
   // Student creation
   const [showCreateStudent, setShowCreateStudent] = useState(false);
@@ -104,7 +92,6 @@ export default function AdminDashboard() {
   const loadStudents = async () => {
     const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id');
     if (data) {
-      // Filter out admin and coach profiles
       const coachIds = new Set(coaches.map(c => c.id));
       setStudents(data.filter((s: any) => s.id !== profileId && !coachIds.has(s.id)) as StudentProfile[]);
     }
@@ -120,7 +107,6 @@ export default function AdminDashboard() {
 
   const loadAll = async () => {
     await loadCoaches();
-    // loadStudents depends on coaches being loaded
   };
 
   useEffect(() => {
@@ -128,7 +114,6 @@ export default function AdminDashboard() {
     if (role === 'admin') loadAll();
   }, [loading, role, profile, navigate, profileId]);
 
-  // Reload students when coaches change
   useEffect(() => {
     if (role === 'admin') loadStudents();
   }, [coaches, profileId, role]);
@@ -229,8 +214,11 @@ export default function AdminDashboard() {
     return students.filter(s => s.coach_id === coachId).length;
   };
 
+  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management') ? 'management' : tab;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -239,14 +227,27 @@ export default function AdminDashboard() {
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
             <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">Admin</span>
-            {TAB_TITLES[tab] && (
-              <span className="text-muted-foreground font-display text-sm hidden sm:inline ml-1">/ {TAB_TITLES[tab]}</span>
-            )}
           </div>
           <div className="flex items-center gap-2">
             <YKSCountdown compact />
             <ThemeToggle />
             <NotificationBell />
+            {/* Announcement */}
+            <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
+              <DialogTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-secondary text-amber-400 hover:text-amber-300 transition-colors" title="Duyuru Gönder">
+                  <Megaphone className="h-5 w-5" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border sm:max-w-md">
+                <DialogHeader><DialogTitle className="font-display flex items-center gap-2"><Megaphone className="h-5 w-5 text-amber-400" /> Duyuru Gönder</DialogTitle></DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2"><Label>Başlık</Label><Input value={announcementTitle} onChange={e => setAnnouncementTitle(e.target.value)} placeholder="Önemli Duyuru" className="bg-secondary border-border" maxLength={100} /></div>
+                  <div className="space-y-2"><Label>İçerik</Label><Textarea value={announcementBody} onChange={e => setAnnouncementBody(e.target.value)} placeholder="Tüm öğrencilere iletmek istediğiniz mesajı yazın..." className="bg-secondary border-border min-h-[100px] resize-none" maxLength={500} /><p className="text-[11px] text-muted-foreground text-right">{announcementBody.length}/500</p></div>
+                  <Button onClick={handleSendAnnouncement} disabled={sendingAnnouncement} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2"><Megaphone className="h-4 w-4" />{sendingAnnouncement ? 'Gönderiliyor...' : `Tüm Öğrencilere Gönder (${students.length})`}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             <AvatarUpload size="sm" disableUpload onClick={() => { setSelectedStudent(null); setTab('coach-edit'); }} />
             <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
               <LogOut className="h-5 w-5" />
@@ -255,260 +256,220 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6 flex-col lg:flex-row">
-        <aside className="w-full lg:w-72 shrink-0 space-y-3">
-
-          {/* Overview */}
-          <button
-            onClick={() => { setSelectedStudent(null); setTab('overview'); }}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
-              tab === 'overview' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'
-            }`}
-          >
-            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
-              <Shield className="h-5 w-5" />
+      {/* Main content - full width */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {tab === 'overview' ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="glass-card rounded-2xl p-6 text-center">
+                <p className="text-3xl font-bold text-primary">{coaches.length}</p>
+                <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
+              </div>
+              <div className="glass-card rounded-2xl p-6 text-center">
+                <p className="text-3xl font-bold text-primary">{students.length}</p>
+                <p className="text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
+              </div>
+              <div className="glass-card rounded-2xl p-6 text-center">
+                <p className="text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
+                <p className="text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Genel Bakış</p>
-              <p className="text-xs text-muted-foreground">Sistem istatistikleri</p>
+            <div className="glass-card rounded-2xl p-6">
+              <h3 className="font-display text-lg font-semibold mb-4">Koç Bazlı Dağılım</h3>
+              {coaches.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Henüz koç oluşturulmamış.</p>
+              ) : (
+                <div className="space-y-3">
+                  {coaches.map(c => {
+                    const count = getCoachStudentCount(c.id);
+                    return (
+                      <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground text-sm font-bold shadow-orange">
+                            {c.full_name?.charAt(0) || '?'}
+                          </div>
+                          <span className="text-sm font-medium">{c.full_name || c.username}</span>
+                        </div>
+                        <span className="text-sm text-primary font-semibold">{count} öğrenci</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </button>
-
-          {/* Students */}
-          <div className="glass-card rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" /> Öğrenciler ({students.length})
-              </h2>
-              <Dialog open={showCreateStudent} onOpenChange={setShowCreateStudent}>
-                <DialogTrigger asChild>
-                  <button className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors">
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border">
-                  <DialogHeader><DialogTitle className="font-display">Yeni Öğrenci Oluştur</DialogTitle></DialogHeader>
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                      <Label>Kullanıcı Adı</Label>
-                      <Input value={newStudentUsername} onChange={e => setNewStudentUsername(e.target.value)} placeholder="ogrenci123" className="bg-secondary border-border" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Şifre</Label>
-                      <Input type="password" value={newStudentPassword} onChange={e => setNewStudentPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border" />
-                    </div>
-                    <Button onClick={handleCreateStudent} disabled={creatingStudent} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
-                      {creatingStudent ? 'Oluşturuluyor...' : 'Öğrenci Oluştur'}
+          </div>
+        ) : tab === 'analytics' ? (
+          <AdminAnalytics students={students} adminProfileId={profileId} />
+        ) : tab === 'appointments' ? (
+          <AdminAppointments />
+        ) : tab === 'coach-edit' ? (
+          <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
+        ) : tab === 'messages' && profileId ? (
+          <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
+        ) : tab === 'management' && !selectedStudent ? (
+          /* Management: Students + Coaches as full-width content */
+          <div className="space-y-6">
+            {/* Students section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" /> Öğrenciler ({students.length})
+                </h2>
+                <Dialog open={showCreateStudent} onOpenChange={setShowCreateStudent}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
+                      <Plus className="h-4 w-4" /> Öğrenci Ekle
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="space-y-2 max-h-[250px] overflow-y-auto">
-              {students.map(s => (
-                <div key={s.id} className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left group ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : 'hover:bg-secondary'}`}>
-                  <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                      {s.full_name?.charAt(0) || '?'}
+                  </DialogTrigger>
+                  <DialogContent className="bg-card border-border">
+                    <DialogHeader><DialogTitle className="font-display">Yeni Öğrenci Oluştur</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2"><Label>Kullanıcı Adı</Label><Input value={newStudentUsername} onChange={e => setNewStudentUsername(e.target.value)} placeholder="ogrenci123" className="bg-secondary border-border" /></div>
+                      <div className="space-y-2"><Label>Şifre</Label><Input type="password" value={newStudentPassword} onChange={e => setNewStudentPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border" /></div>
+                      <Button onClick={handleCreateStudent} disabled={creatingStudent} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
+                        {creatingStudent ? 'Oluşturuluyor...' : 'Öğrenci Oluştur'}
+                      </Button>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
-                      </p>
-                    </div>
-                  </button>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setAssignDialogStudent(s); setAssignCoachId(s.coach_id || 'none'); }}
-                      className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      title="Koç ata"
-                    >
-                      <UserPlus className="h-4 w-4" />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {students.map(s => (
+                  <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''}`}>
+                    <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                        {s.full_name?.charAt(0) || '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
+                        </p>
+                      </div>
                     </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setUserToDelete({ id: s.id, name: s.full_name || s.username || 'Öğrenci', type: 'student' }); }}
-                      className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      title="Öğrenciyi sil"
-                    >
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      <button onClick={() => { setAssignDialogStudent(s); setAssignCoachId(s.coach_id || 'none'); }} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10" title="Koç ata">
+                        <UserPlus className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => setUserToDelete({ id: s.id, name: s.full_name || s.username || 'Öğrenci', type: 'student' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Sil">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {students.length === 0 && <p className="text-sm text-muted-foreground py-4">Henüz öğrenci yok.</p>}
+              </div>
+            </div>
+
+            {/* Coaches section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" /> Koçlar ({coaches.length})
+                </h2>
+                <Dialog open={showCreateCoach} onOpenChange={setShowCreateCoach}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
+                      <Plus className="h-4 w-4" /> Koç Ekle
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-card border-border">
+                    <DialogHeader><DialogTitle className="font-display">Yeni Koç Oluştur</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2"><Label>Ad Soyad</Label><Input value={newCoachFullName} onChange={e => setNewCoachFullName(e.target.value)} placeholder="Koç ismi" className="bg-secondary border-border" /></div>
+                      <div className="space-y-2"><Label>Kullanıcı Adı</Label><Input value={newCoachUsername} onChange={e => setNewCoachUsername(e.target.value)} placeholder="koc123" className="bg-secondary border-border" /></div>
+                      <div className="space-y-2"><Label>Şifre</Label><Input type="password" value={newCoachPassword} onChange={e => setNewCoachPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border" /></div>
+                      <Button onClick={handleCreateCoach} disabled={creatingCoach} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
+                        {creatingCoach ? 'Oluşturuluyor...' : 'Koç Oluştur'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {coaches.map(c => (
+                  <div key={c.id} className="glass-card rounded-2xl p-4 flex items-center gap-3 group">
+                    <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
+                      {c.full_name?.charAt(0) || '?'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{c.full_name || c.username}</p>
+                      <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
+                    </div>
+                    <button onClick={() => setUserToDelete({ id: c.id, name: c.full_name || c.username || 'Koç', type: 'coach' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0" title="Koçu sil">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-              ))}
-              {students.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Henüz öğrenci yok.</p>}
+                ))}
+                {coaches.length === 0 && <p className="text-sm text-muted-foreground py-4">Henüz koç yok.</p>}
+              </div>
             </div>
           </div>
-
-          {/* Coaches */}
-          <div className="glass-card rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Shield className="h-4 w-4" /> Koçlar ({coaches.length})
-              </h2>
-              <Dialog open={showCreateCoach} onOpenChange={setShowCreateCoach}>
-                <DialogTrigger asChild>
-                  <button className="h-8 w-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors">
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border">
-                  <DialogHeader><DialogTitle className="font-display">Yeni Koç Oluştur</DialogTitle></DialogHeader>
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                      <Label>Ad Soyad</Label>
-                      <Input value={newCoachFullName} onChange={e => setNewCoachFullName(e.target.value)} placeholder="Koç ismi" className="bg-secondary border-border" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Kullanıcı Adı</Label>
-                      <Input value={newCoachUsername} onChange={e => setNewCoachUsername(e.target.value)} placeholder="koc123" className="bg-secondary border-border" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Şifre</Label>
-                      <Input type="password" value={newCoachPassword} onChange={e => setNewCoachPassword(e.target.value)} placeholder="••••••••" className="bg-secondary border-border" />
-                    </div>
-                    <Button onClick={handleCreateCoach} disabled={creatingCoach} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
-                      {creatingCoach ? 'Oluşturuluyor...' : 'Koç Oluştur'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="space-y-2">
-              {coaches.map(c => (
-                <div key={c.id} className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors group">
-                  <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
-                    {c.full_name?.charAt(0) || '?'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{c.full_name || c.username}</p>
-                    <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
-                  </div>
-                  <button
-                    onClick={() => setUserToDelete({ id: c.id, name: c.full_name || c.username || 'Koç', type: 'coach' })}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                    title="Koçu sil"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              {coaches.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Henüz koç yok.</p>}
-            </div>
-          </div>
-
-          {/* Sidebar buttons */}
-          <button onClick={() => { setSelectedStudent(null); setTab('analytics'); }} className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${tab === 'analytics' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'}`}>
-            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange"><BarChart3 className="h-5 w-5" /></div>
-            <div className="min-w-0"><p className="text-sm font-medium">Analiz Merkezi</p><p className="text-xs text-muted-foreground">Isı haritası & uyarılar</p></div>
-          </button>
-
-          <button onClick={() => { setSelectedStudent(null); setTab('messages'); }} className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${tab === 'messages' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'}`}>
-            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange"><MessageCircle className="h-5 w-5" /></div>
-            <div className="min-w-0"><p className="text-sm font-medium">Mesajlar</p><p className="text-xs text-muted-foreground">Tüm sohbetler</p></div>
-          </button>
-
-          <button onClick={() => { setSelectedStudent(null); setTab('appointments'); }} className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${tab === 'appointments' ? 'bg-primary/10 border border-primary/30' : 'glass-card hover:bg-secondary'}`}>
-            <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange"><CalendarCheck className="h-5 w-5" /></div>
-            <div className="min-w-0"><p className="text-sm font-medium">Randevular</p><p className="text-xs text-muted-foreground">Görüşme talepleri</p></div>
-          </button>
-
-          <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
-            <DialogTrigger asChild>
-              <button className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors glass-card hover:bg-secondary">
-                <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0"><Megaphone className="h-5 w-5" /></div>
-                <div className="min-w-0"><p className="text-sm font-medium">Duyuru Gönder</p><p className="text-xs text-muted-foreground">Tüm öğrencilere bildirim</p></div>
+        ) : selectedStudent ? (
+          <>
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={() => { setSelectedStudent(null); setTab('management'); }} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                ← Yönetim
               </button>
-            </DialogTrigger>
-            <DialogContent className="bg-card border-border sm:max-w-md">
-              <DialogHeader><DialogTitle className="font-display flex items-center gap-2"><Megaphone className="h-5 w-5 text-amber-400" /> Duyuru Gönder</DialogTitle></DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2"><Label>Başlık</Label><Input value={announcementTitle} onChange={e => setAnnouncementTitle(e.target.value)} placeholder="Önemli Duyuru" className="bg-secondary border-border" maxLength={100} /></div>
-                <div className="space-y-2"><Label>İçerik</Label><Textarea value={announcementBody} onChange={e => setAnnouncementBody(e.target.value)} placeholder="Tüm öğrencilere iletmek istediğiniz mesajı yazın..." className="bg-secondary border-border min-h-[100px] resize-none" maxLength={500} /><p className="text-[11px] text-muted-foreground text-right">{announcementBody.length}/500</p></div>
-                <Button onClick={handleSendAnnouncement} disabled={sendingAnnouncement} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2"><Megaphone className="h-4 w-4" />{sendingAnnouncement ? 'Gönderiliyor...' : `Tüm Öğrencilere Gönder (${students.length})`}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </aside>
+              <span className="text-muted-foreground">/</span>
+              <span className="font-medium text-sm">{selectedStudent.full_name || selectedStudent.username}</span>
+            </div>
+            <div className="flex gap-1 mb-4">
+              <button onClick={() => setTab('schedule')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'schedule' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                <Calendar className="h-4 w-4" /> Program
+              </button>
+              <button onClick={() => setTab('profile')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'profile' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                <UserIcon className="h-4 w-4" /> Profil
+              </button>
+            </div>
+            <div className="glass-card rounded-2xl p-6">
+              <h2 className="font-display text-lg font-semibold mb-4">
+                {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
+              </h2>
+              {tab === 'schedule' ? <StudyPlanner studentId={selectedStudent.id} /> : <StudentProfileForm studentId={selectedStudent.id} readOnly />}
+            </div>
+          </>
+        ) : (
+          <div className="glass-card rounded-2xl p-10 text-center">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="font-display text-xl font-semibold mb-2">Hoş geldiniz, {profile.full_name}</h2>
+            <p className="text-muted-foreground">Alt menüden bir bölüm seçin.</p>
+          </div>
+        )}
+      </main>
 
-        <main className="flex-1 min-w-0">
-          {tab === 'overview' ? (
-            <div className="space-y-6">
-              <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="glass-card rounded-2xl p-6 text-center">
-                  <p className="text-3xl font-bold text-primary">{coaches.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Aktif Koç</p>
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border">
+        <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
+          {[
+            { key: 'overview', icon: Shield, label: 'Bakış' },
+            { key: 'management', icon: Users, label: 'Yönetim' },
+            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesajlar' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
+          ].map(item => {
+            const isActive = activeNav === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
+                className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors relative"
+              >
+                <div className="relative">
+                  <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
-                <div className="glass-card rounded-2xl p-6 text-center">
-                  <p className="text-3xl font-bold text-primary">{students.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
-                </div>
-                <div className="glass-card rounded-2xl p-6 text-center">
-                  <p className="text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
-                </div>
-              </div>
-
-              {/* Coach breakdown */}
-              <div className="glass-card rounded-2xl p-6">
-                <h3 className="font-display text-lg font-semibold mb-4">Koç Bazlı Dağılım</h3>
-                {coaches.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Henüz koç oluşturulmamış.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {coaches.map(c => {
-                      const count = getCoachStudentCount(c.id);
-                      return (
-                        <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground text-sm font-bold shadow-orange">
-                              {c.full_name?.charAt(0) || '?'}
-                            </div>
-                            <span className="text-sm font-medium">{c.full_name || c.username}</span>
-                          </div>
-                          <span className="text-sm text-primary font-semibold">{count} öğrenci</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {item.label}
+                </span>
+                {isActive && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
                 )}
-              </div>
-            </div>
-          ) : tab === 'analytics' ? (
-            <AdminAnalytics students={students} adminProfileId={profileId} />
-          ) : tab === 'appointments' ? (
-            <AdminAppointments />
-          ) : tab === 'coach-edit' ? (
-            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
-          ) : tab === 'messages' && profileId ? (
-            <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
-          ) : !selectedStudent ? (
-            <div className="glass-card rounded-2xl p-10 text-center">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h2 className="font-display text-xl font-semibold mb-2">Hoş geldiniz, {profile.full_name}</h2>
-              <p className="text-muted-foreground">Sol taraftan bir öğrenci seçerek programını görüntüleyin.</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex gap-1 mb-4">
-                <button onClick={() => setTab('schedule')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'schedule' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-                  <Calendar className="h-4 w-4" /> Program
-                </button>
-                <button onClick={() => setTab('profile')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'profile' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-                  <UserIcon className="h-4 w-4" /> Profil
-                </button>
-              </div>
-              <div className="glass-card rounded-2xl p-6">
-                <h2 className="font-display text-lg font-semibold mb-4">
-                  {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
-                </h2>
-                {tab === 'schedule' ? <StudyPlanner studentId={selectedStudent.id} /> : <StudentProfileForm studentId={selectedStudent.id} readOnly />}
-              </div>
-            </>
-          )}
-        </main>
-      </div>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Delete confirmation */}
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => { if (!open) setUserToDelete(null); }}>
