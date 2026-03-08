@@ -249,6 +249,9 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setLoading(false);
   }, [filterCategory, filterSubject]);
 
+  // Keep refs in sync for canvas share callback
+  loadQuestionsRef.current = loadQuestions;
+
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
   // Scroll flow to bottom after questions load
