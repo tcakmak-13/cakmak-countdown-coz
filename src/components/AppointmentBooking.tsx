@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Video, Phone, CalendarIcon, Clock, RefreshCw, Check, X, Loader2, Repeat } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Video, Phone, CalendarIcon, Clock, Check, X, Loader2, Repeat } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,30 +20,94 @@ interface Appointment {
   recurring_day: number | null;
   recurring_time: string | null;
   series_ended_at: string | null;
+  duration_minutes: number;
 }
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 9);
-const MINUTES = [0, 15, 30, 45];
+interface AvailabilitySlot {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
+interface ApprovedSlot {
+  recurring_day: number;
+  recurring_time: string;
+  duration_minutes: number;
+}
+
 const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const DURATION = { video: 60, voice: 20 };
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(mins: number): string {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
 
 function getNextOccurrence(recurringDay: number, recurringTime: string): Date {
   const now = new Date();
   const [h, m] = recurringTime.split(':').map(Number);
   const today = now.getDay();
-
   let target: Date;
   if (today === recurringDay) {
     target = new Date(now);
     target.setHours(h, m, 0, 0);
-    if (target <= now) {
-      target = addDays(target, 7);
-    }
+    if (target <= now) target = addDays(target, 7);
   } else {
-    // nextDay expects 0=Sunday as the RDN standard
     target = nextDay(now, recurringDay as 0 | 1 | 2 | 3 | 4 | 5 | 6);
     target.setHours(h, m, 0, 0);
   }
   return target;
+}
+
+/**
+ * Given availability windows and approved appointments for a specific day,
+ * compute available start times for a given duration.
+ */
+function computeAvailableSlots(
+  availability: AvailabilitySlot[],
+  approved: ApprovedSlot[],
+  dayOfWeek: number,
+  durationMinutes: number
+): string[] {
+  // Get availability windows for this day
+  const windows = availability
+    .filter(a => a.day_of_week === dayOfWeek)
+    .map(a => ({
+      start: timeToMinutes(a.start_time),
+      end: a.end_time === '00:00:00' || a.end_time === '00:00' ? 1440 : timeToMinutes(a.end_time),
+    }));
+
+  if (windows.length === 0) return [];
+
+  // Get blocked ranges from approved appointments on this day
+  const blocked = approved
+    .filter(a => a.recurring_day === dayOfWeek)
+    .map(a => ({
+      start: timeToMinutes(a.recurring_time),
+      end: timeToMinutes(a.recurring_time) + a.duration_minutes,
+    }));
+
+  const slots: string[] = [];
+
+  for (const w of windows) {
+    // Generate candidate start times every 10 minutes within the window
+    for (let t = w.start; t + durationMinutes <= w.end; t += 10) {
+      const candidateEnd = t + durationMinutes;
+      // Check if this candidate overlaps with any blocked range
+      const isBlocked = blocked.some(b => t < b.end && candidateEnd > b.start);
+      if (!isBlocked) {
+        slots.push(minutesToTime(t));
+      }
+    }
+  }
+
+  return [...new Set(slots)]; // deduplicate
 }
 
 export default function AppointmentBooking({ studentId, coachId }: { studentId: string; coachId?: string | null }) {
@@ -52,9 +116,12 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<'video' | 'voice'>('video');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedHour, setSelectedHour] = useState(10);
-  const [selectedMinute, setSelectedMinute] = useState(0);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Coach availability & approved slots
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [approvedSlots, setApprovedSlots] = useState<ApprovedSlot[]>([]);
 
   const fetchAppointments = async () => {
     const { data } = await supabase
@@ -66,31 +133,65 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
     setLoading(false);
   };
 
+  const fetchAvailabilityAndApproved = async () => {
+    if (!coachId) return;
+    const [availRes, approvedRes] = await Promise.all([
+      supabase
+        .from('coach_availability')
+        .select('day_of_week, start_time, end_time')
+        .eq('coach_id', coachId),
+      supabase
+        .from('appointments')
+        .select('recurring_day, recurring_time, duration_minutes')
+        .eq('coach_id', coachId)
+        .eq('status', 'approved')
+        .eq('recurring', true)
+        .is('series_ended_at', null),
+    ]);
+    setAvailability((availRes.data as AvailabilitySlot[]) || []);
+    setApprovedSlots((approvedRes.data as ApprovedSlot[]) || []);
+  };
+
   useEffect(() => {
     fetchAppointments();
+    fetchAvailabilityAndApproved();
     const channel = supabase
       .channel('student-appointments')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `student_id=eq.${studentId}` }, () => fetchAppointments())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [studentId]);
+  }, [studentId, coachId]);
 
   const openDialog = (type: 'video' | 'voice') => {
     setSelectedType(type);
     setSelectedDate(undefined);
-    setSelectedHour(10);
-    setSelectedMinute(0);
+    setSelectedTime(null);
     setDialogOpen(true);
+    // Refresh availability when opening
+    fetchAvailabilityAndApproved();
   };
 
+  // Compute available days (days that have at least one availability window)
+  const availableDays = useMemo(() => {
+    return new Set(availability.map(a => a.day_of_week));
+  }, [availability]);
+
+  // Compute available time slots for selected date
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    const dayOfWeek = selectedDate.getDay();
+    return computeAvailableSlots(availability, approvedSlots, dayOfWeek, DURATION[selectedType]);
+  }, [selectedDate, availability, approvedSlots, selectedType]);
+
   const handleSubmit = async () => {
-    if (!selectedDate) { toast.error('Lütfen bir tarih seçin.'); return; }
+    if (!selectedDate || !selectedTime) { toast.error('Lütfen tarih ve saat seçin.'); return; }
+    const [h, m] = selectedTime.split(':').map(Number);
     const scheduledAt = new Date(selectedDate);
-    scheduledAt.setHours(selectedHour, selectedMinute, 0, 0);
+    scheduledAt.setHours(h, m, 0, 0);
     if (scheduledAt <= new Date()) { toast.error('Geçmiş bir tarih seçemezsiniz.'); return; }
 
     const dayOfWeek = scheduledAt.getDay();
-    const timeStr = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+    const duration = DURATION[selectedType];
 
     setSubmitting(true);
     const { error } = await supabase.from('appointments').insert({
@@ -100,19 +201,21 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
       scheduled_at: scheduledAt.toISOString(),
       recurring: true,
       recurring_day: dayOfWeek,
-      recurring_time: timeStr,
+      recurring_time: selectedTime,
+      duration_minutes: duration,
     });
     setSubmitting(false);
     if (error) { toast.error('Randevu oluşturulamadı: ' + error.message); return; }
-    toast.success('Haftalık randevu talebin koçuna iletildi!');
+    toast.success('Randevu talebin koçuna iletildi!');
     setDialogOpen(false);
     fetchAppointments();
+    fetchAvailabilityAndApproved();
   };
 
   const handleCancel = async (id: string) => {
     const { error } = await supabase.from('appointments').delete().eq('id', id);
     if (error) toast.error('İptal edilemedi.');
-    else { toast.success('Randevu iptal edildi.'); fetchAppointments(); }
+    else { toast.success('Randevu iptal edildi.'); fetchAppointments(); fetchAvailabilityAndApproved(); }
   };
 
   const statusBadge = (status: string) => {
@@ -126,10 +229,14 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
     return <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.cls}`}>{s.label}</span>;
   };
 
-  // Active recurring (approved, not ended)
   const activeRecurring = appointments.filter(a => a.status === 'approved' && a.recurring && !a.series_ended_at);
   const pending = appointments.filter(a => a.status === 'pending');
   const ended = appointments.filter(a => a.series_ended_at || a.status === 'rejected' || a.status === 'completed');
+
+  const durationLabel = selectedType === 'video' ? '60 dk' : '20 dk';
+  const endTimeLabel = selectedTime
+    ? minutesToTime(timeToMinutes(selectedTime) + DURATION[selectedType])
+    : '';
 
   return (
     <div className="space-y-6 pb-24">
@@ -146,7 +253,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </div>
           <div className="text-center">
             <p className="font-display font-semibold text-lg">Görüntülü Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">Yüz yüze koçluk seansı planla</p>
+            <p className="text-sm text-muted-foreground mt-1">60 dakika · Yüz yüze koçluk seansı</p>
           </div>
         </motion.button>
 
@@ -161,7 +268,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </div>
           <div className="text-center">
             <p className="font-display font-semibold text-lg">Sesli Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">Telefon ile koçluk seansı planla</p>
+            <p className="text-sm text-muted-foreground mt-1">20 dakika · Telefon ile koçluk seansı</p>
           </div>
         </motion.button>
       </div>
@@ -176,12 +283,14 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
             const nextOccurrence = a.recurring_day != null && a.recurring_time
               ? getNextOccurrence(a.recurring_day, a.recurring_time)
               : new Date(a.scheduled_at);
+            const endTime = a.recurring_time
+              ? minutesToTime(timeToMinutes(a.recurring_time) + (a.duration_minutes || 60))
+              : '';
 
             return (
               <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="glass-card rounded-2xl p-6 border border-emerald-500/30 relative overflow-hidden"
               >
-                {/* Recurring badge */}
                 <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
                   <Repeat className="h-3.5 w-3.5 text-emerald-400" />
                   <span className="text-xs font-medium text-emerald-400">Haftalık Tekrar</span>
@@ -194,12 +303,12 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                   <div className="flex-1 min-w-0 pt-1">
                     <p className="font-display font-bold text-lg">
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
+                      <span className="text-sm font-normal text-muted-foreground ml-2">({a.duration_minutes || 60} dk)</span>
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
+                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}{endTime ? ` → ${endTime}` : ''}
                     </p>
 
-                    {/* Next occurrence - large and prominent */}
                     <div className="mt-4 rounded-xl bg-primary/10 border border-primary/25 p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bir Sonraki Görüşme</p>
                       <p className="font-display font-black text-2xl text-primary">
@@ -235,7 +344,10 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                 {a.type === 'video' ? <Video className="h-6 w-6 text-primary" /> : <Phone className="h-6 w-6 text-emerald-400" />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-display font-semibold">{a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme</p>
+                <p className="font-display font-semibold">
+                  {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
+                  <span className="text-xs font-normal text-muted-foreground ml-1.5">({a.duration_minutes || 60} dk)</span>
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
                 </p>
@@ -278,7 +390,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
 
       {/* Booking dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
+        <DialogContent className="bg-card border-border sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
               {selectedType === 'video' ? <Video className="h-5 w-5 text-primary" /> : <Phone className="h-5 w-5 text-emerald-400" />}
@@ -287,57 +399,82 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </DialogHeader>
 
           <div className="space-y-5 pt-2">
+            {/* Duration info */}
+            <div className="rounded-xl bg-secondary/50 border border-border p-3 flex items-center gap-2.5">
+              <Clock className="h-5 w-5 text-primary shrink-0" />
+              <p className="text-sm font-medium">
+                Süre: <span className="text-primary font-bold">{durationLabel}</span>
+                {selectedType === 'video' ? ' (Görüntülü)' : ' (Sesli)'}
+              </p>
+            </div>
+
             {/* Recurring notice */}
             <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 flex items-start gap-2.5">
               <Repeat className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-300 font-medium leading-snug">
-                Bu randevu <span className="font-bold">her hafta aynı gün ve saatte</span> tekrarlanacaktır. İptal edilmediği sürece devam eder.
+                Bu randevu <span className="font-bold">her hafta aynı gün ve saatte</span> tekrarlanacaktır.
               </p>
             </div>
 
             {/* Date picker */}
             <div>
               <p className="text-sm font-medium mb-2 flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-primary" /> Tarih Seç</p>
-              <div className="flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                  locale={tr}
-                  className={cn("p-3 pointer-events-auto rounded-xl border border-border bg-secondary")}
-                />
-              </div>
+              {availability.length === 0 ? (
+                <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-center">
+                  <p className="text-sm text-destructive font-medium">Koçunuz henüz müsaitlik aralığı belirlememiş.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Randevu almak için koçunuzun müsaitlik saatlerini ayarlaması gerekiyor.</p>
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(d) => { setSelectedDate(d); setSelectedTime(null); }}
+                    disabled={(date) => {
+                      if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                      return !availableDays.has(date.getDay());
+                    }}
+                    locale={tr}
+                    className={cn("p-3 pointer-events-auto rounded-xl border border-border bg-secondary")}
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Time picker */}
-            <div>
-              <p className="text-sm font-medium mb-2 flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> Saat Seç</p>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <select
-                    value={selectedHour}
-                    onChange={e => setSelectedHour(Number(e.target.value))}
-                    className="w-full h-12 rounded-xl bg-secondary border border-border text-center text-2xl font-display font-bold text-primary appearance-none cursor-pointer"
-                  >
-                    {HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}</option>)}
-                  </select>
-                </div>
-                <span className="text-3xl font-bold text-muted-foreground self-center">:</span>
-                <div className="flex-1">
-                  <select
-                    value={selectedMinute}
-                    onChange={e => setSelectedMinute(Number(e.target.value))}
-                    className="w-full h-12 rounded-xl bg-secondary border border-border text-center text-2xl font-display font-bold text-primary appearance-none cursor-pointer"
-                  >
-                    {MINUTES.map(m => <option key={m} value={m}>{String(m).padStart(2, '0')}</option>)}
-                  </select>
-                </div>
+            {/* Time slot picker */}
+            {selectedDate && (
+              <div>
+                <p className="text-sm font-medium mb-2 flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> Müsait Saatler</p>
+                {availableTimeSlots.length === 0 ? (
+                  <div className="rounded-xl bg-secondary p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Bu gün için müsait saat bulunmuyor.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                    {availableTimeSlots.map(t => {
+                      const end = minutesToTime(timeToMinutes(t) + DURATION[selectedType]);
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => setSelectedTime(t)}
+                          className={`rounded-xl p-2.5 text-center border transition-all ${
+                            selectedTime === t
+                              ? 'border-primary bg-primary/10 text-primary font-bold'
+                              : 'border-border bg-secondary hover:border-primary/40 hover:bg-primary/5 text-foreground'
+                          }`}
+                        >
+                          <span className="text-sm font-medium">{t}</span>
+                          <span className="block text-[10px] text-muted-foreground">{t}–{end}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* Selected summary */}
-            {selectedDate && (
+            {selectedDate && selectedTime && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="rounded-xl bg-primary/10 border border-primary/30 p-4 text-center"
               >
@@ -346,9 +483,12 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                   Her <span className="text-primary">{DAY_NAMES[selectedDate.getDay()]}</span>
                 </p>
                 <p className="font-display font-bold text-3xl text-primary">
-                  {String(selectedHour).padStart(2, '0')}:{String(selectedMinute).padStart(2, '0')}
+                  {selectedTime} — {endTimeLabel}
                 </p>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedType === 'video' ? 'Görüntülü' : 'Sesli'} · {durationLabel}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
                   İlk görüşme: {format(selectedDate, 'dd MMMM yyyy', { locale: tr })}
                 </p>
               </motion.div>
@@ -356,7 +496,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
 
             <Button
               onClick={handleSubmit}
-              disabled={submitting || !selectedDate}
+              disabled={submitting || !selectedDate || !selectedTime}
               className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base gap-2"
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
