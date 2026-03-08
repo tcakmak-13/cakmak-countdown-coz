@@ -171,9 +171,9 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [input, setInput] = useState('');
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
-  const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
-  const [adminName, setAdminName] = useState('Talha Çakmak');
-  const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
+  const [coachProfileId, setCoachProfileId] = useState<string | null>(coachId ?? null);
+  const [coachName, setCoachName] = useState('Koçum');
+  const [coachAvatarUrl, setCoachAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [coachDrawerOpen, setCoachDrawerOpen] = useState(false);
