@@ -626,6 +626,15 @@ export type Database = {
           id: string
         }[]
       }
+      get_coach_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+          username: string
+        }[]
+      }
       get_my_profile_id: { Args: never; Returns: string }
       get_my_student_ids: { Args: never; Returns: string[] }
       has_role: {
