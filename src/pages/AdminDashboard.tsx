@@ -304,6 +304,8 @@ export default function AdminDashboard() {
           </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
+        ) : tab === 'soru-merkezi' && profileId ? (
+          <QuestionCenter currentProfileId={profileId} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'appointments' ? (
           <AdminAppointments />
         ) : tab === 'coach-detail' && selectedCoach ? (
