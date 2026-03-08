@@ -11,7 +11,7 @@ import StudyPlanner from '@/components/StudyPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
-import AdminAppointments from '@/components/AdminAppointments';
+import CoachAppointments from '@/components/CoachAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
