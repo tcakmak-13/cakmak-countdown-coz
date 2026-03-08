@@ -298,8 +298,8 @@ export default function CoachDashboard() {
         <main className="flex-1 min-w-0">
           {tab === 'analytics' ? (
             <AdminAnalytics students={students} adminProfileId={profileId} />
-          ) : tab === 'appointments' ? (
-            <AdminAppointments />
+          ) : tab === 'appointments' && profileId ? (
+            <CoachAppointments coachProfileId={profileId} />
           ) : tab === 'coach-edit' ? (
             <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
           ) : tab === 'messages' && profileId ? (
