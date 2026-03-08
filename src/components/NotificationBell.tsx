@@ -43,6 +43,10 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { permission, requestPermission, showNotification } = usePushNotifications(user?.id);
+  const showNotifRef = useRef(showNotification);
+  showNotifRef.current = showNotification;
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
