@@ -168,6 +168,12 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
+          {tab === 'soru-akisi' && profileId && (
+            <motion.div key="soru-akisi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+            </motion.div>
+          )}
+
           {tab === 'mesajlar' && profileId && (
             <motion.div key="mesajlar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={user?.id} coachId={profile?.coach_id} />
