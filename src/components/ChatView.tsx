@@ -278,19 +278,19 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   useEffect(() => {
     // Admin doesn't mark messages as read (spectator)
     if (currentRole === 'admin') return;
-    const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
-    if (!chatPartnerId) return;
-    const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === chatPartnerId);
+    const partner = currentRole === 'student' ? coachProfileId : selectedStudent;
+    if (!partner) return;
+    const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === partner);
     if (unread.length > 0) {
       supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
     }
-  }, [messages, currentProfileId, adminProfileId, selectedStudent, currentRole]);
+  }, [messages, currentProfileId, coachProfileId, selectedStudent, currentRole]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedStudent, selectedPair]);
 
-  const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
+  const chatPartnerId = currentRole === 'student' ? coachProfileId : selectedStudent;
 
   const filteredMessages = useMemo(() => {
     // Admin spectator: show messages between selected pair
