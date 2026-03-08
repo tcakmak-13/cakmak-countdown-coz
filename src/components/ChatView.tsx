@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock, ImagePlus, Eye } from 'lucide-react';
+import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock, ImagePlus, Eye, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -40,6 +40,14 @@ interface ConversationPair {
   key: string;
 }
 
+interface ChatContact {
+  id: string;
+  name: string;
+  type: 'student' | 'coach' | 'admin';
+  avatar_url?: string | null;
+  subtitle?: string;
+}
+
 function isImage(fileName: string) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
 }
@@ -73,13 +81,10 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="bg-card border-border w-[340px] sm:w-[400px] p-0 overflow-y-auto">
         <div className="relative">
-          {/* Hero gradient header */}
           <div className="h-36 bg-gradient-orange relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(35_100%_60%/0.4),transparent_60%)]" />
             <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent" />
           </div>
-
-          {/* Avatar */}
           <div className="flex justify-center -mt-14 relative z-10">
             <div className="h-24 w-24 rounded-full bg-gradient-orange flex items-center justify-center shadow-orange ring-4 ring-card overflow-hidden">
               {avatarUrl ? (
@@ -89,14 +94,11 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
               )}
             </div>
           </div>
-
           <SheetHeader className="pt-4 pb-2 px-6 text-center">
             <SheetTitle className="font-display text-2xl font-bold">{name}</SheetTitle>
             <p className="text-sm text-muted-foreground">{title}</p>
           </SheetHeader>
-
           <div className="px-6 pb-8 space-y-5">
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-card rounded-xl p-4 text-center border border-primary/20">
                 <Trophy className="h-5 w-5 text-primary mx-auto mb-2" />
@@ -109,8 +111,6 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
                 <p className="font-display text-2xl font-bold text-primary mt-1">{experience}</p>
               </div>
             </div>
-
-            {/* Net scores */}
             <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
               <h4 className="text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-primary" /> Sınav Başarısı
@@ -124,8 +124,6 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
                 <span className="font-display text-xl font-bold text-primary">{aytNet}</span>
               </div>
             </div>
-
-            {/* Bio */}
             {bio && (
               <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
                 <h4 className="text-xs text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -134,8 +132,6 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
                 <p className="text-sm text-muted-foreground leading-relaxed">{bio}</p>
               </div>
             )}
-
-            {/* Contact */}
             {(whatsappLink || instagram || appointmentHours) && (
               <div className="glass-card rounded-xl p-5 border border-primary/20 space-y-3">
                 <h4 className="text-xs text-muted-foreground uppercase tracking-widest">İletişim</h4>
@@ -183,6 +179,15 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [conversationPairs, setConversationPairs] = useState<ConversationPair[]>([]);
   const [selectedPair, setSelectedPair] = useState<ConversationPair | null>(null);
 
+  // Admin direct messaging with coaches
+  const [adminCoachContacts, setAdminCoachContacts] = useState<ChatContact[]>([]);
+  const [adminChatMode, setAdminChatMode] = useState<'spectator' | 'direct'>('spectator');
+  const [adminDirectContact, setAdminDirectContact] = useState<ChatContact | null>(null);
+
+  // Coach: admin contact for direct messaging
+  const [adminContact, setAdminContact] = useState<ChatContact | null>(null);
+  const [coachChatMode, setCoachChatMode] = useState<'students' | 'admin'>('students');
+
   const getSignedUrl = async (fileName: string) => {
     if (signedUrls[fileName]) return signedUrls[fileName];
     const { data } = await supabase.storage.from('chat-files').createSignedUrl(fileName, 3600);
@@ -207,13 +212,22 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   useEffect(() => {
     if (currentRole === 'admin') {
-      // Build coach-student conversation pairs for spectator mode
       const loadPairs = async () => {
         const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
-        if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); return; }
+        if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); setAdminCoachContacts([]); return; }
         const coachUserIds = coachRoles.map(r => r.user_id);
-        const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, user_id').in('user_id', coachUserIds);
-        if (!coachProfiles) { setConversationPairs([]); return; }
+        const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, user_id, avatar_url').in('user_id', coachUserIds);
+        if (!coachProfiles) { setConversationPairs([]); setAdminCoachContacts([]); return; }
+
+        // Coach contacts for direct messaging
+        setAdminCoachContacts(coachProfiles.map(c => ({
+          id: c.id,
+          name: c.full_name || 'Koç',
+          type: 'coach' as const,
+          avatar_url: c.avatar_url,
+          subtitle: 'Koç',
+        })));
+
         const { data: allStudents } = await supabase.from('profiles').select('id, full_name, coach_id').not('coach_id', 'is', null);
         if (!allStudents) { setConversationPairs([]); return; }
         const pairs: ConversationPair[] = [];
@@ -233,11 +247,25 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       };
       loadPairs();
     } else if (currentRole === 'koc') {
+      // Load students
       supabase.from('profiles').select('id, full_name, area, grade')
         .eq('coach_id', currentProfileId)
         .then(({ data }) => {
           if (data) setStudents(data);
         });
+      // Load admin contact
+      supabase.rpc('get_admin_profile_info').then(({ data }) => {
+        if (data && data.length > 0) {
+          const admin = data[0];
+          setAdminContact({
+            id: admin.id,
+            name: admin.full_name || 'Yönetici',
+            type: 'admin',
+            avatar_url: admin.avatar_url,
+            subtitle: 'Süper Yönetici',
+          });
+        }
+      });
     }
   }, [currentRole, currentProfileId]);
 
@@ -276,28 +304,68 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   }, []);
 
   useEffect(() => {
-    // Admin doesn't mark messages as read (spectator)
-    if (currentRole === 'admin') return;
-    const partner = currentRole === 'student' ? coachProfileId : selectedStudent;
+    if (currentRole === 'admin') {
+      // Admin marks direct messages as read
+      if (adminChatMode === 'direct' && adminDirectContact) {
+        const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === adminDirectContact.id);
+        if (unread.length > 0) {
+          supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
+        }
+      }
+      return;
+    }
+    // Coach: mark messages from admin or selected student as read
+    if (currentRole === 'koc') {
+      const partnerId = coachChatMode === 'admin' && adminContact ? adminContact.id : selectedStudent;
+      if (!partnerId) return;
+      const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === partnerId);
+      if (unread.length > 0) {
+        supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
+      }
+      return;
+    }
+    // Student
+    const partner = coachProfileId;
     if (!partner) return;
     const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === partner);
     if (unread.length > 0) {
       supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
     }
-  }, [messages, currentProfileId, coachProfileId, selectedStudent, currentRole]);
+  }, [messages, currentProfileId, coachProfileId, selectedStudent, currentRole, adminChatMode, adminDirectContact, coachChatMode, adminContact]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, selectedStudent, selectedPair]);
+  }, [messages, selectedStudent, selectedPair, adminDirectContact, coachChatMode]);
 
-  const chatPartnerId = currentRole === 'student' ? coachProfileId : selectedStudent;
+  // Determine chat partner for sending
+  const chatPartnerId = useMemo(() => {
+    if (currentRole === 'student') return coachProfileId;
+    if (currentRole === 'admin' && adminChatMode === 'direct' && adminDirectContact) return adminDirectContact.id;
+    if (currentRole === 'koc' && coachChatMode === 'admin' && adminContact) return adminContact.id;
+    if (currentRole === 'koc' && coachChatMode === 'students') return selectedStudent;
+    return null;
+  }, [currentRole, coachProfileId, adminChatMode, adminDirectContact, coachChatMode, adminContact, selectedStudent]);
 
   const filteredMessages = useMemo(() => {
-    // Admin spectator: show messages between selected pair
-    if (currentRole === 'admin' && selectedPair) {
+    // Admin spectator
+    if (currentRole === 'admin' && adminChatMode === 'spectator' && selectedPair) {
       return messages.filter(m =>
         (m.sender_id === selectedPair.coachId && m.receiver_id === selectedPair.studentId) ||
         (m.sender_id === selectedPair.studentId && m.receiver_id === selectedPair.coachId)
+      );
+    }
+    // Admin direct
+    if (currentRole === 'admin' && adminChatMode === 'direct' && adminDirectContact) {
+      return messages.filter(m =>
+        (m.sender_id === currentProfileId && m.receiver_id === adminDirectContact.id) ||
+        (m.sender_id === adminDirectContact.id && m.receiver_id === currentProfileId)
+      );
+    }
+    // Coach: admin chat
+    if (currentRole === 'koc' && coachChatMode === 'admin' && adminContact) {
+      return messages.filter(m =>
+        (m.sender_id === currentProfileId && m.receiver_id === adminContact.id) ||
+        (m.sender_id === adminContact.id && m.receiver_id === currentProfileId)
       );
     }
     if (!chatPartnerId) return [];
@@ -305,18 +373,18 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       (m.sender_id === currentProfileId && m.receiver_id === chatPartnerId) ||
       (m.sender_id === chatPartnerId && m.receiver_id === currentProfileId)
     );
-  }, [messages, currentRole, selectedPair, chatPartnerId, currentProfileId]);
+  }, [messages, currentRole, selectedPair, chatPartnerId, currentProfileId, adminChatMode, adminDirectContact, coachChatMode, adminContact]);
 
-  const getLastMessage = (studentId: string) => {
-    const studentMsgs = messages.filter(m =>
-      (m.sender_id === studentId && m.receiver_id === currentProfileId) ||
-      (m.sender_id === currentProfileId && m.receiver_id === studentId)
+  const getLastMessage = (partnerId: string) => {
+    const msgs = messages.filter(m =>
+      (m.sender_id === partnerId && m.receiver_id === currentProfileId) ||
+      (m.sender_id === currentProfileId && m.receiver_id === partnerId)
     );
-    return studentMsgs[studentMsgs.length - 1];
+    return msgs[msgs.length - 1];
   };
 
-  const getUnreadForStudent = (studentId: string) =>
-    messages.filter(m => m.sender_id === studentId && m.receiver_id === currentProfileId && !m.read).length;
+  const getUnreadCount = (partnerId: string) =>
+    messages.filter(m => m.sender_id === partnerId && m.receiver_id === currentProfileId && !m.read).length;
 
   const getLastMessageForPair = (pair: ConversationPair) => {
     const pairMsgs = messages.filter(m =>
@@ -334,11 +402,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
-    if (!chatPartnerId) {
-      toast.error('Henüz bir koç seçmediniz. Lütfen önce koç seçimi yapın.');
-      return;
-    }
+    if (!trimmed || !chatPartnerId) return;
     if (trimmed.length > 2000) {
       toast.error('Mesaj çok uzun (maks 2000 karakter)');
       return;
@@ -357,21 +421,18 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     if (!file || !chatPartnerId || !currentUserId) return;
     const allowed = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
     if (!allowed.test(file.name)) {
-      toast.error('Desteklenmeyen dosya türü. Yalnızca resim ve PDF yükleyebilirsiniz.');
+      toast.error('Desteklenmeyen dosya türü.');
       return;
     }
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > 10 * 1024 * 1024) {
       toast.error('Dosya boyutu çok büyük (maks 10MB).');
       return;
     }
-
     setUploading(true);
     const ext = file.name.split('.').pop();
     const filePath = `${currentUserId}/${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
     if (uploadError) { setUploading(false); return; }
-
     const fileType = isImage(file.name) ? 'image' : 'file';
     await supabase.from('chat_messages').insert({
       sender_id: currentProfileId,
@@ -391,10 +452,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       const ext = file.name.split('.').pop();
       const filePath = `${currentUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
       const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
-      if (uploadError) {
-        toast.error(`Yükleme hatası: ${file.name}`);
-        continue;
-      }
+      if (uploadError) { toast.error(`Yükleme hatası: ${file.name}`); continue; }
       await supabase.from('chat_messages').insert({
         sender_id: currentProfileId,
         receiver_id: chatPartnerId,
@@ -454,11 +512,9 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     <div className="p-3 border-t border-border bg-card/80 backdrop-blur-xl">
       <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="flex items-center gap-2">
         <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onChange={handleFileUpload} className="hidden" />
-        {/* PDF/file attach */}
         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
           {uploading ? <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Paperclip className="h-4 w-4" />}
         </button>
-        {/* Image picker */}
         <button type="button" onClick={() => setImagePickerOpen(true)} disabled={uploading} className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center shrink-0 hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
           <ImagePlus className="h-4 w-4" />
         </button>
@@ -475,27 +531,48 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         maxFiles={10}
         maxSizeMB={10}
         title="Fotoğraf Gönder"
-        description="Koçuna göndermek istediğin fotoğrafları seç"
+        description="Göndermek istediğiniz fotoğrafları seçin"
         uploading={uploading}
       />
     </div>
   );
 
-  // Student: direct chat view
+  const renderChatBubbles = (isSpectator = false, spectatorPair?: ConversationPair) => (
+    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {filteredMessages.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok</p>
+      )}
+      {filteredMessages.map(msg => {
+        const isMine = isSpectator
+          ? msg.sender_id === spectatorPair?.coachId
+          : msg.sender_id === currentProfileId;
+        return (
+          <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+            <div className="max-w-[85%]">
+              {isSpectator && spectatorPair && (
+                <p className={`text-[10px] mb-1 ${isMine ? 'text-right text-primary/60' : 'text-muted-foreground'}`}>
+                  {isMine ? spectatorPair.coachName : spectatorPair.studentName}
+                </p>
+              )}
+              <div className={`px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
+                {renderMessageContent(msg)}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div ref={bottomRef} />
+    </div>
+  );
+
+  // ─── STUDENT VIEW ───
   if (currentRole === 'student') {
     return (
       <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-        <button
-          onClick={() => setCoachDrawerOpen(true)}
-          className="p-4 border-b border-border bg-card/80 backdrop-blur-xl hover:bg-card/95 transition-colors cursor-pointer text-left"
-        >
+        <button onClick={() => setCoachDrawerOpen(true)} className="p-4 border-b border-border bg-card/80 backdrop-blur-xl hover:bg-card/95 transition-colors cursor-pointer text-left">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange ring-2 ring-primary/30 overflow-hidden">
-              {coachAvatarUrl ? (
-                <img src={coachAvatarUrl} alt={coachName} className="h-full w-full object-cover" />
-              ) : (
-                coachName.charAt(0)
-              )}
+              {coachAvatarUrl ? <img src={coachAvatarUrl} alt={coachName} className="h-full w-full object-cover" /> : coachName.charAt(0)}
             </div>
             <div className="flex-1">
               <p className="font-display font-bold text-base">{coachName}</p>
@@ -507,209 +584,277 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Profili Gör</span>
           </div>
         </button>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {filteredMessages.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok. Koçunuza bir mesaj gönderin!</p>
-          )}
-          {filteredMessages.map(msg => {
-            const isMine = msg.sender_id === currentProfileId;
-            return (
-              <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
-                  {renderMessageContent(msg)}
-                </div>
-              </div>
-            );
-          })}
-          <div ref={bottomRef} />
-        </div>
-
+        {renderChatBubbles()}
         {renderMessageInput()}
         <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={coachName} avatarUrl={coachAvatarUrl} />
       </div>
     );
   }
 
-  // Admin spectator: conversation pair list
-  if (currentRole === 'admin' && !selectedPair) {
-    return (
-      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-        <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Sohbet Geçmişi</p>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium">
-              <Eye className="h-3 w-3" /> İzleyici Modu
-            </span>
+  // ─── ADMIN VIEW ───
+  if (currentRole === 'admin') {
+    // Admin: contact list (tabs: spectator + direct)
+    if (!selectedPair && !adminDirectContact) {
+      const adminUnreadFromCoaches = adminCoachContacts.reduce((sum, c) => sum + getUnreadCount(c.id), 0);
+      return (
+        <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAdminChatMode('direct')}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${adminChatMode === 'direct' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                <span className="flex items-center justify-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" /> Koçlarla Mesajlaş
+                  {adminUnreadFromCoaches > 0 && (
+                    <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#FF5A01] text-white text-[9px] font-bold flex items-center justify-center">{adminUnreadFromCoaches > 9 ? '9+' : adminUnreadFromCoaches}</span>
+                  )}
+                </span>
+              </button>
+              <button
+                onClick={() => setAdminChatMode('spectator')}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${adminChatMode === 'spectator' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              >
+                <span className="flex items-center justify-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5" /> Sohbet İzle
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {adminChatMode === 'direct' ? (
+              <>
+                {adminCoachContacts.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-12">Henüz koç yok.</p>
+                )}
+                {adminCoachContacts.map(contact => {
+                  const lastMsg = getLastMessage(contact.id);
+                  const unread = getUnreadCount(contact.id);
+                  return (
+                    <button key={contact.id} onClick={() => setAdminDirectContact(contact)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
+                      <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange shrink-0 overflow-hidden">
+                        {contact.avatar_url ? <img src={contact.avatar_url} alt={contact.name} className="h-full w-full object-cover" /> : contact.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-medium truncate">{contact.name}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMsg ? lastMsg.content : 'Henüz mesaj yok'}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                        {unread > 0 && <span className="h-5 min-w-[20px] rounded-full bg-[#FF5A01] text-white text-[10px] flex items-center justify-center font-bold px-1.5 shadow-lg">{unread}</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                {conversationPairs.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-12">Henüz koç-öğrenci eşleşmesi yok.</p>
+                )}
+                {conversationPairs.map(pair => {
+                  const lastMsg = getLastMessageForPair(pair);
+                  const msgCount = getMessageCountForPair(pair);
+                  return (
+                    <button key={pair.key} onClick={() => setSelectedPair(pair)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
+                      <div className="flex -space-x-3 shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
+                          {pair.coachName.charAt(0)}
+                        </div>
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
+                          {pair.studentName.charAt(0)}
+                        </div>
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-medium truncate">{pair.coachName} ↔ {pair.studentName}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
+                          {msgCount > 0 && <span className="ml-1 text-primary/60">({msgCount} mesaj)</span>}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {conversationPairs.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-12">Henüz koç-öğrenci eşleşmesi yok.</p>
-          )}
-          {conversationPairs.map(pair => {
-            const lastMsg = getLastMessageForPair(pair);
-            const msgCount = getMessageCountForPair(pair);
-            return (
-              <button key={pair.key} onClick={() => setSelectedPair(pair)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
-                <div className="flex -space-x-3 shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
-                    {pair.coachName.charAt(0)}
-                  </div>
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
-                    {pair.studentName.charAt(0)}
-                  </div>
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium truncate">{pair.coachName} ↔ {pair.studentName}</p>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
-                    {msgCount > 0 && <span className="ml-1 text-primary/60">({msgCount} mesaj)</span>}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
-                </div>
+      );
+    }
+
+    // Admin: direct chat with a coach
+    if (adminDirectContact) {
+      return (
+        <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setAdminDirectContact(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
               </button>
-            );
-          })}
+              <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shadow-orange overflow-hidden shrink-0">
+                {adminDirectContact.avatar_url ? <img src={adminDirectContact.avatar_url} alt={adminDirectContact.name} className="h-full w-full object-cover" /> : adminDirectContact.name.charAt(0)}
+              </div>
+              <div>
+                <p className="font-display font-semibold text-sm">{adminDirectContact.name}</p>
+                <p className="text-xs text-muted-foreground">Koç — Doğrudan Mesaj</p>
+              </div>
+            </div>
+          </div>
+          {renderChatBubbles()}
+          {renderMessageInput()}
         </div>
-      </div>
-    );
+      );
+    }
+
+    // Admin: spectator pair view
+    if (selectedPair) {
+      return (
+        <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSelectedPair(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div className="flex -space-x-2">
+                <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
+                  {selectedPair.coachName.charAt(0)}
+                </div>
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
+                  {selectedPair.studentName.charAt(0)}
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="font-display font-semibold text-sm">{selectedPair.coachName} ↔ {selectedPair.studentName}</p>
+                <p className="text-xs text-muted-foreground">Koç — Öğrenci Sohbeti</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-medium shrink-0">
+                <Eye className="h-3 w-3" /> Salt Okunur
+              </span>
+            </div>
+          </div>
+          {renderChatBubbles(true, selectedPair)}
+          <div className="p-3 border-t border-border bg-card/50 text-center">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+              <Eye className="h-3.5 w-3.5" /> İzleyici modundasınız — mesaj gönderemezsiniz
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
-  // Admin spectator: read-only chat view
-  if (currentRole === 'admin' && selectedPair) {
+  // ─── COACH VIEW ───
+  if (currentRole === 'koc') {
+    // Coach: contact list with tabs
+    if (!selectedStudent && coachChatMode === 'students') {
+      const adminUnread = adminContact ? getUnreadCount(adminContact.id) : 0;
+      return (
+        <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl space-y-3">
+            <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Mesajlar</p>
+            {/* Admin contact - special card */}
+            {adminContact && (
+              <button
+                onClick={() => setCoachChatMode('admin')}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors"
+              >
+                <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shadow-orange shrink-0 overflow-hidden">
+                  {adminContact.avatar_url ? <img src={adminContact.avatar_url} alt={adminContact.name} className="h-full w-full object-cover" /> : <Shield className="h-5 w-5" />}
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                    {adminContact.name}
+                    <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">Yönetici</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {(() => { const lm = getLastMessage(adminContact.id); return lm ? lm.content : 'Yönetici ile mesajlaşın'; })()}
+                  </p>
+                </div>
+                {adminUnread > 0 && (
+                  <span className="h-5 min-w-[20px] rounded-full bg-[#FF5A01] text-white text-[10px] flex items-center justify-center font-bold px-1.5 shadow-lg">{adminUnread}</span>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {students.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-12">Henüz atanmış öğrenci yok.</p>
+            )}
+            {students.map(s => {
+              const lastMsg = getLastMessage(s.id);
+              const unread = getUnreadCount(s.id);
+              return (
+                <button key={s.id} onClick={() => setSelectedStudent(s.id)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
+                  <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                    {s.full_name?.charAt(0) || '?'}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-medium truncate">{s.full_name}</p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMsg ? lastMsg.content : 'Henüz mesaj yok'}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    {unread > 0 && <span className="h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold px-1.5 shadow-orange">{unread}</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Coach: chat with admin
+    if (coachChatMode === 'admin' && adminContact) {
+      return (
+        <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <button onClick={() => { setCoachChatMode('students'); }} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shadow-orange shrink-0 overflow-hidden">
+                {adminContact.avatar_url ? <img src={adminContact.avatar_url} alt={adminContact.name} className="h-full w-full object-cover" /> : <Shield className="h-5 w-5" />}
+              </div>
+              <div>
+                <p className="font-display font-semibold text-sm">{adminContact.name}</p>
+                <p className="text-xs text-muted-foreground">Süper Yönetici</p>
+              </div>
+            </div>
+          </div>
+          {renderChatBubbles()}
+          {renderMessageInput()}
+        </div>
+      );
+    }
+
+    // Coach: chat with selected student
+    const selectedStudentData = students.find(s => s.id === selectedStudent);
     return (
       <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSelectedPair(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+            <button onClick={() => setSelectedStudent(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <div className="flex -space-x-2">
-              <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
-                {selectedPair.coachName.charAt(0)}
-              </div>
-              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
-                {selectedPair.studentName.charAt(0)}
-              </div>
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+              {selectedStudentData?.full_name?.charAt(0) || '?'}
             </div>
-            <div className="flex-1">
-              <p className="font-display font-semibold text-sm">{selectedPair.coachName} ↔ {selectedPair.studentName}</p>
-              <p className="text-xs text-muted-foreground">Koç — Öğrenci Sohbeti</p>
+            <div>
+              <p className="font-display font-semibold text-sm">{selectedStudentData?.full_name}</p>
+              <p className="text-xs text-muted-foreground">{selectedStudentData?.area ?? 'SAY'} — {selectedStudentData?.grade ?? '12. Sınıf'}</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-medium shrink-0">
-              <Eye className="h-3 w-3" /> Salt Okunur
-            </span>
           </div>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {filteredMessages.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-12">Bu eşleşmede henüz mesaj yok</p>
-          )}
-          {filteredMessages.map(msg => {
-            const isCoach = msg.sender_id === selectedPair.coachId;
-            return (
-              <div key={msg.id} className={`flex ${isCoach ? 'justify-end' : 'justify-start'}`}>
-                <div className="max-w-[85%]">
-                  <p className={`text-[10px] mb-1 ${isCoach ? 'text-right text-primary/60' : 'text-muted-foreground'}`}>
-                    {isCoach ? selectedPair.coachName : selectedPair.studentName}
-                  </p>
-                  <div className={`px-4 py-2.5 text-sm ${isCoach ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
-                    {renderMessageContent(msg)}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* No input bar for admin - spectator mode */}
-        <div className="p-3 border-t border-border bg-card/50 text-center">
-          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-            <Eye className="h-3.5 w-3.5" /> İzleyici modundasınız — mesaj gönderemezsiniz
-          </p>
-        </div>
+        {renderChatBubbles()}
+        {renderMessageInput()}
       </div>
     );
   }
 
-  // Coach: student list
-  if (currentRole === 'koc' && !selectedStudent) {
-    return (
-      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-        <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-          <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Öğrencilerimle Mesajlar</p>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {students.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-12">Henüz atanmış öğrenci yok.</p>
-          )}
-          {students.map(s => {
-            const lastMsg = getLastMessage(s.id);
-            const unread = getUnreadForStudent(s.id);
-            return (
-              <button key={s.id} onClick={() => setSelectedStudent(s.id)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
-                <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                  {s.full_name?.charAt(0) || '?'}
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium truncate">{s.full_name}</p>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMsg ? lastMsg.content : 'Henüz mesaj yok'}</p>
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
-                  {unread > 0 && <span className="h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold px-1.5 shadow-orange">{unread}</span>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Coach: chat with selected student
-  const selectedStudentData = students.find(s => s.id === selectedStudent);
-
-  return (
-    <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-      <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setSelectedStudent(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-            {selectedStudentData?.full_name?.charAt(0) || '?'}
-          </div>
-          <div>
-            <p className="font-display font-semibold text-sm">{selectedStudentData?.full_name}</p>
-            <p className="text-xs text-muted-foreground">{selectedStudentData?.area ?? 'SAY'} — {selectedStudentData?.grade ?? '12. Sınıf'}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {filteredMessages.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok</p>
-        )}
-        {filteredMessages.map(msg => {
-          const isMine = msg.sender_id === currentProfileId;
-          return (
-            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
-                {renderMessageContent(msg)}
-              </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
-      </div>
-
-      {renderMessageInput()}
-    </div>
-  );
+  return null;
 }
