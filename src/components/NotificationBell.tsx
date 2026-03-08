@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Mail, BarChart3, CheckCircle, Megaphone, Calendar, X } from 'lucide-react';
+import { Bell, Mail, BarChart3, CheckCircle, Megaphone, Calendar, X, BellRing } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Notification {
   id: string;
