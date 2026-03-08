@@ -28,22 +28,20 @@ interface Props {
   coachProfileId?: string;
 }
 
-export default function CoachProfileEditor({ adminName, adminAvatarUrl, onAvatarUpload }: Props) {
+export default function CoachProfileEditor({ adminName, adminAvatarUrl, onAvatarUpload, coachProfileId }: Props) {
   const [data, setData] = useState<CoachData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from('coach_info')
-      .select('*')
-      .limit(1)
-      .single()
-      .then(({ data: row }) => {
-        if (row) setData(row as unknown as CoachData);
-        setLoading(false);
-      });
-  }, []);
+    const query = coachProfileId
+      ? supabase.from('coach_info').select('*').eq('id', coachProfileId).single()
+      : supabase.from('coach_info').select('*').limit(1).single();
+    query.then(({ data: row }) => {
+      if (row) setData(row as unknown as CoachData);
+      setLoading(false);
+    });
+  }, [coachProfileId]);
 
   const handleSave = async () => {
     if (!data) return;
