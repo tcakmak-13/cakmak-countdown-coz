@@ -16,6 +16,7 @@ import { tr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SearchableCombobox from '@/components/SearchableCombobox';
 import tytMufredat from '@/data/tyt_mufredat.json';
+import aytMufredat from '@/data/ayt_mufredat.json';
 
 const DAY_LABELS_SHORT = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
