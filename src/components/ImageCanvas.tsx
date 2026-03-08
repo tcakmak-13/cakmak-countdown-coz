@@ -160,7 +160,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     if (tool === 'eraser') {
       // Eraser clears the drawing layer only (reveals image underneath)
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineWidth = penSize * 3;
+      ctx.lineWidth = eraserSize;
       ctx.strokeStyle = 'rgba(0,0,0,1)';
       ctx.globalAlpha = 1;
     } else {
