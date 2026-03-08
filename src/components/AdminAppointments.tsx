@@ -96,7 +96,7 @@ export default function AdminAppointments() {
               Koç: <span className="text-foreground font-medium">{a.coach_profile?.full_name || '—'}</span>
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              {a.type === 'video' ? 'Görüntülü' : 'Sesli'} — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
+              {a.type === 'video' ? 'Görüntülü' : 'Sesli'} ({a.duration_minutes || 60} dk) — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
             </p>
             {a.status === 'approved' && a.recurring && !a.series_ended_at && (
               <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 inline-block">
