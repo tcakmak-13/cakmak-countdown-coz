@@ -195,6 +195,8 @@ export default function CoachDashboard() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
+        ) : tab === 'soru-merkezi' && profileId ? (
+          <QuestionCenter currentProfileId={profileId} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'appointments' && profileId ? (
           <CoachAppointments coachProfileId={profileId} />
         ) : tab === 'coach-edit' ? (
