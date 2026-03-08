@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, AlertTriangle, TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { Plus, AlertTriangle, TrendingUp, Pencil, Trash2, BarChart3, BookOpenCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import ProgressCircle from '@/components/ProgressCircle';
+import KonuTakip from '@/components/KonuTakip';
 
 // ─── Subject Configuration ────────────────────────────────────
 interface SubjectConfig {
@@ -76,6 +77,7 @@ function scoresFromResult(result: any, subjects: SubjectConfig[]): ScoreMap {
 }
 
 export default function Denemelerim({ studentId, studentArea }: { studentId: string; studentArea: string }) {
+  const [mainTab, setMainTab] = useState<'net' | 'konu'>('net');
   const [results, setResults] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
@@ -221,6 +223,36 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   return (
     <div className="space-y-6 pb-24">
+      {/* Main Tabs: Net Analizi / Konu Takibi */}
+      <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl">
+        <button
+          onClick={() => setMainTab('net')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+            mainTab === 'net'
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          Net Analizi
+        </button>
+        <button
+          onClick={() => setMainTab('konu')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
+            mainTab === 'konu'
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BookOpenCheck className="w-4 h-4" />
+          Konu Takibi
+        </button>
+      </div>
+
+      {mainTab === 'konu' ? (
+        <KonuTakip studentId={studentId} />
+      ) : (
+      <>
       {/* Exam Type Filter */}
       <button id="deneme-add-btn" onClick={() => { setEditingId(null); setScores(emptyScores(activeSubjects)); setOpen(true); }} className="hidden" />
 
@@ -425,6 +457,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
     </div>
   );
 }
