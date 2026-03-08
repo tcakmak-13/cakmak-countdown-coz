@@ -206,10 +206,31 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   useEffect(() => {
     if (currentRole === 'admin') {
-      supabase.from('profiles').select('id, full_name, area, grade')
-        .then(({ data }) => {
-          if (data) setStudents(data.filter(s => s.id !== currentProfileId));
-        });
+      // Build coach-student conversation pairs for spectator mode
+      const loadPairs = async () => {
+        const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
+        if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); return; }
+        const coachUserIds = coachRoles.map(r => r.user_id);
+        const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, user_id').in('user_id', coachUserIds);
+        if (!coachProfiles) { setConversationPairs([]); return; }
+        const { data: allStudents } = await supabase.from('profiles').select('id, full_name, coach_id').not('coach_id', 'is', null);
+        if (!allStudents) { setConversationPairs([]); return; }
+        const pairs: ConversationPair[] = [];
+        for (const student of allStudents) {
+          const coach = coachProfiles.find(c => c.id === student.coach_id);
+          if (coach) {
+            pairs.push({
+              coachId: coach.id,
+              coachName: coach.full_name || 'Koç',
+              studentId: student.id,
+              studentName: student.full_name || 'Öğrenci',
+              key: `${coach.id}-${student.id}`,
+            });
+          }
+        }
+        setConversationPairs(pairs);
+      };
+      loadPairs();
     } else if (currentRole === 'koc') {
       supabase.from('profiles').select('id, full_name, area, grade')
         .eq('coach_id', currentProfileId)
