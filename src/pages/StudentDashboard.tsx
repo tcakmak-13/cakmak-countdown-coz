@@ -296,7 +296,7 @@ export default function StudentDashboard() {
           {tabs.map(t => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => handleTabChange(t.key)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
                 (tab === t.key || (t.key === 'hata-kumbarasi' && tab === 'soru-meclisi')) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
