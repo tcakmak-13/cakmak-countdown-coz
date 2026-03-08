@@ -176,6 +176,7 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
+          {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <HataKumbarasi studentId={profileId} />
             </motion.div>
