@@ -285,9 +285,9 @@ export default function CoachDashboard() {
         <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesajlar', badge: unreadCount },
-            { key: 'list', icon: Users, label: 'Öğrenciler' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
+            { key: 'list', icon: Users, label: 'Öğrenciler' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesajlar', badge: unreadCount },
             { key: 'coach-edit', icon: Settings, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
