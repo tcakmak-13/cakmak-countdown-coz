@@ -38,6 +38,16 @@ export default function AdminDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('analytics');
 
+  const TAB_TITLES: Record<string, string> = {
+    analytics: 'Analiz Merkezi',
+    list: 'Öğrenciler',
+    schedule: selectedStudent ? selectedStudent.full_name || 'Program' : 'Program',
+    profile: selectedStudent ? selectedStudent.full_name || 'Profil' : 'Profil',
+    messages: 'Mesajlar',
+    'coach-edit': 'Koç Profilim',
+    appointments: 'Randevular',
+  };
+
   // Student creation
   const [showCreate, setShowCreate] = useState(false);
   const [newUsername, setNewUsername] = useState('');
