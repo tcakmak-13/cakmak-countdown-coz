@@ -29,6 +29,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'randevular': 'Randevular',
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
+  'puan-hesapla': 'Puan Hesapla',
 };
 
 const tabVariants = {
