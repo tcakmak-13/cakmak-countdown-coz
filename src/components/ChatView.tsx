@@ -402,7 +402,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // Student: direct chat view
   if (currentRole === 'student') {
     return (
-      <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <button
           onClick={() => setCoachDrawerOpen(true)}
           className="p-4 border-b border-border bg-card/80 backdrop-blur-xl hover:bg-card/95 transition-colors cursor-pointer text-left"
@@ -434,7 +434,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             const isMine = msg.sender_id === currentProfileId;
             return (
               <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'glass-card rounded-2xl rounded-bl-md'}`}>
+              <div className={`max-w-[85%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
                   {renderMessageContent(msg)}
                 </div>
               </div>
@@ -452,7 +452,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // Admin: student list
   if (currentRole === 'admin' && !selectedStudent) {
     return (
-      <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+    <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
           <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Öğrenci Mesajları</p>
         </div>
@@ -480,7 +480,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             );
           })}
         </div>
-      </div>
+    </div>
     );
   }
 
@@ -512,7 +512,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
           const isMine = msg.sender_id === currentProfileId;
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'glass-card rounded-2xl rounded-bl-md'}`}>
+              <div className={`max-w-[85%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
                 {renderMessageContent(msg)}
               </div>
             </div>

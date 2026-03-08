@@ -221,13 +221,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl font-bold">Denemelerim</h2>
-        <Button onClick={() => { setEditingId(null); setScores(emptyScores(activeSubjects)); setOpen(true); }} size="icon" className="rounded-full bg-gradient-orange border-0 hover:opacity-90 shadow-orange h-10 w-10">
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
+      {/* Exam Type Filter */}
+      <button id="deneme-add-btn" onClick={() => { setEditingId(null); setScores(emptyScores(activeSubjects)); setOpen(true); }} className="hidden" />
 
       {/* Exam Type Filter */}
       <div className="flex gap-2">
