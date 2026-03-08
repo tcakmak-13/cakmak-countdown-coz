@@ -56,16 +56,16 @@ function isPdf(fileName: string) {
   return /\.pdf$/i.test(fileName);
 }
 
-function CoachDrawer({ open, onOpenChange, name, avatarUrl, coachProfileId }: { open: boolean; onOpenChange: (v: boolean) => void; name: string; avatarUrl: string | null; coachProfileId?: string | null }) {
+function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; onOpenChange: (v: boolean) => void; name: string; avatarUrl: string | null }) {
   const [info, setInfo] = useState<any>(null);
 
   useEffect(() => {
-    if (open && !info && coachProfileId) {
-      supabase.from('coach_info').select('*').eq('id', coachProfileId).maybeSingle().then(({ data }) => {
+    if (open && !info) {
+      supabase.from('coach_info').select('*').limit(1).single().then(({ data }) => {
         if (data) setInfo(data);
       });
     }
-  }, [open, coachProfileId]);
+  }, [open]);
 
   const title = info?.title || 'YKS Koçu • Mentor';
   const bio = info?.bio || '';
@@ -271,11 +271,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   useEffect(() => {
     const fetchMessages = async () => {
-      // Only fetch messages relevant to current user to avoid loading entire table
-      const { data } = await supabase.from('chat_messages').select('*')
-        .or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`)
-        .order('created_at')
-        .limit(500);
+      const { data } = await supabase.from('chat_messages').select('*').order('created_at');
       if (data) {
         setMessages(data as Message[]);
         for (const msg of data) {
@@ -590,7 +586,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         </button>
         {renderChatBubbles()}
         {renderMessageInput()}
-        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={coachName} avatarUrl={coachAvatarUrl} coachProfileId={coachProfileId} />
+        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={coachName} avatarUrl={coachAvatarUrl} />
       </div>
     );
   }
