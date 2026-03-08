@@ -315,6 +315,42 @@ export default function StudentDashboard() {
         </div>
       </nav>
 
+      {/* Username Gate Modal */}
+      <Dialog open={usernameModalOpen} onOpenChange={setUsernameModalOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Soru Meclisi'ne Katıl</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              Soru Meclisi'nde soru sormak ve yanıt vermek için benzersiz bir takma ad belirlemelisin.
+            </p>
+            <div className="space-y-2">
+              <Label className="font-semibold">Takma Ad</Label>
+              <Input
+                value={usernameInput}
+                onChange={e => { setUsernameInput(e.target.value); setUsernameError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') handleUsernameSave(); }}
+                placeholder="Örn: matematik_gurusu"
+                className="bg-secondary border-border h-11"
+                maxLength={20}
+              />
+              {usernameError && (
+                <p className="text-xs text-destructive font-medium">{usernameError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">3-20 karakter, benzersiz olmalı.</p>
+            </div>
+            <Button
+              onClick={handleUsernameSave}
+              disabled={usernameSaving || !usernameInput.trim()}
+              className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl"
+            >
+              {usernameSaving ? 'Kontrol ediliyor...' : 'Katıl'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
