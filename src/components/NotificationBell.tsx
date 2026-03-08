@@ -71,6 +71,7 @@ export default function NotificationBell() {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
       }, (payload) => {
         const n = payload.new as Notification;
         setNotifications(prev => [n, ...prev].slice(0, 30));
