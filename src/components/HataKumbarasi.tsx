@@ -83,19 +83,8 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const [savingNote, setSavingNote] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
-
-  // Helper: extract storage path from image_url (handles both full URLs and plain paths)
-  const getStoragePath = (imageUrl: string): string => {
-    if (imageUrl.includes('/error-questions/')) {
-      const path = imageUrl.split('/object/public/error-questions/')[1] 
-        || imageUrl.split('/object/sign/error-questions/')[1]
-        || imageUrl.split('/error-questions/')[1];
-      return path ? decodeURIComponent(path.split('?')[0]) : imageUrl;
-    }
-    return imageUrl;
-  };
+  const [pendingCount, setPendingCount] = useState(0);
 
   // Fetch pending (open) questions count for badge
   useEffect(() => {
