@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { estimateRanking, formatRanking, formatRankingShort } from '@/lib/yksRankingEngine';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { interpolateRanking, formatRanking, formatRankingShort, type ScoreType } from '@/lib/yksRankingEngine';
 
 // ─── ÖSYM Katsayılar ────────────────────────────────────────────────────
-const TYT_COEFFICIENTS = { turkce: 3.3, matematik: 3.3, fen: 3.4, sosyal: 3.3 };
+const TYT_COEFFICIENTS = { turkce: 3.3, matematik: 3.3, fen: 3.4, sosyal: 3.4 };
 const TYT_BASE = 100;
 const OBP_COEFFICIENT = 0.6;
 const TYT_TO_AYT_RATIO = 0.4;
@@ -35,22 +36,29 @@ const FIELD_LABELS: Record<string, string> = {
   ayt_tarih2: 'Tarih-2', ayt_cografya2: 'Coğrafya-2', ayt_felsefe: 'Felsefe', ayt_din: 'Din',
 };
 
+const SCORE_TYPE_LABELS: Record<ScoreType, string> = {
+  TYT: 'TYT',
+  SAYISAL: 'Sayısal (SAY)',
+  SOZEL: 'Sözel (SÖZ)',
+  ESIT_AGIRLIK: 'Eşit Ağırlık (EA)',
+  DIL: 'Dil',
+};
+
 interface SavedCalculation {
   id: string;
   date: string;
   tytNets: Record<string, number>;
   aytNets: Record<string, number>;
   obp: number;
-  results: ScoreResult[];
+  selectedType: ScoreType;
+  result: ScoreResult;
 }
 
 interface ScoreResult {
-  type: string;
+  type: ScoreType;
+  typeLabel: string;
   score: number;
-  bestEstimate: number;
-  lowerBound: number;
-  upperBound: number;
-  confidence: number;
+  ranking: number | null;
 }
 
 function NetInput({ label, maxNet, value, onChange }: {
@@ -85,7 +93,8 @@ export default function YKSScoreCalculator() {
     ayt_tarih2: 0, ayt_cografya2: 0, ayt_felsefe: 0, ayt_din: 0,
   });
   const [obp, setObp] = useState<number>(80);
-  const [results, setResults] = useState<ScoreResult[]>([]);
+  const [selectedType, setSelectedType] = useState<ScoreType>('TYT');
+  const [result, setResult] = useState<ScoreResult | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [showAytDetails, setShowAytDetails] = useState(false);
   const [savedCalcs, setSavedCalcs] = useState<SavedCalculation[]>([]);
@@ -99,10 +108,21 @@ export default function YKSScoreCalculator() {
     } catch { /* ignore */ }
   }, []);
 
+  // Auto-open AYT section when a non-TYT type is selected
+  useEffect(() => {
+    if (selectedType !== 'TYT' && !showAytDetails) {
+      setShowAytDetails(true);
+    }
+    // Switch AYT tab to match selected type
+    if (selectedType === 'SAYISAL') setActiveAytTab('say');
+    else if (selectedType === 'ESIT_AGIRLIK') setActiveAytTab('ea');
+    else if (selectedType === 'SOZEL' || selectedType === 'DIL') setActiveAytTab('soz');
+  }, [selectedType]);
+
   const updateTyt = (key: string, val: number) => setTytNets(prev => ({ ...prev, [key]: val }));
   const updateAyt = (key: string, val: number) => setAytNets(prev => ({ ...prev, [key]: val }));
 
-  const calculate = () => {
+  const calculateScore = (): number => {
     const tytRaw = TYT_BASE
       + tytNets.turkce * TYT_COEFFICIENTS.turkce
       + tytNets.matematik * TYT_COEFFICIENTS.matematik
@@ -110,62 +130,65 @@ export default function YKSScoreCalculator() {
       + tytNets.sosyal * TYT_COEFFICIENTS.sosyal
       + obp * OBP_COEFFICIENT;
 
+    if (selectedType === 'TYT') return tytRaw;
+
     const tytContrib = (tytRaw - TYT_BASE) * TYT_TO_AYT_RATIO;
 
-    const sayAyt = aytNets.ayt_matematik * SAY_COEFFICIENTS.ayt_matematik
-      + aytNets.ayt_fizik * SAY_COEFFICIENTS.ayt_fizik
-      + aytNets.ayt_kimya * SAY_COEFFICIENTS.ayt_kimya
-      + aytNets.ayt_biyoloji * SAY_COEFFICIENTS.ayt_biyoloji;
-    const sayScore = TYT_BASE + tytContrib + sayAyt * AYT_RATIO + obp * OBP_COEFFICIENT;
+    if (selectedType === 'SAYISAL') {
+      const aytRaw = aytNets.ayt_matematik * SAY_COEFFICIENTS.ayt_matematik
+        + aytNets.ayt_fizik * SAY_COEFFICIENTS.ayt_fizik
+        + aytNets.ayt_kimya * SAY_COEFFICIENTS.ayt_kimya
+        + aytNets.ayt_biyoloji * SAY_COEFFICIENTS.ayt_biyoloji;
+      return TYT_BASE + tytContrib + aytRaw * AYT_RATIO + obp * OBP_COEFFICIENT;
+    }
 
-    const eaAyt = aytNets.ayt_matematik * EA_COEFFICIENTS.ayt_matematik
-      + aytNets.ayt_edebiyat * EA_COEFFICIENTS.ayt_edebiyat
-      + aytNets.ayt_tarih1 * EA_COEFFICIENTS.ayt_tarih1
-      + aytNets.ayt_cografya1 * EA_COEFFICIENTS.ayt_cografya1;
-    const eaScore = TYT_BASE + tytContrib + eaAyt * AYT_RATIO + obp * OBP_COEFFICIENT;
+    if (selectedType === 'ESIT_AGIRLIK') {
+      const aytRaw = aytNets.ayt_matematik * EA_COEFFICIENTS.ayt_matematik
+        + aytNets.ayt_edebiyat * EA_COEFFICIENTS.ayt_edebiyat
+        + aytNets.ayt_tarih1 * EA_COEFFICIENTS.ayt_tarih1
+        + aytNets.ayt_cografya1 * EA_COEFFICIENTS.ayt_cografya1;
+      return TYT_BASE + tytContrib + aytRaw * AYT_RATIO + obp * OBP_COEFFICIENT;
+    }
 
-    const sozAyt = aytNets.ayt_edebiyat * SOZ_COEFFICIENTS.ayt_edebiyat
-      + aytNets.ayt_tarih1 * SOZ_COEFFICIENTS.ayt_tarih1
-      + aytNets.ayt_cografya1 * SOZ_COEFFICIENTS.ayt_cografya1
-      + aytNets.ayt_tarih2 * SOZ_COEFFICIENTS.ayt_tarih2
-      + aytNets.ayt_cografya2 * SOZ_COEFFICIENTS.ayt_cografya2
-      + aytNets.ayt_felsefe * SOZ_COEFFICIENTS.ayt_felsefe
-      + aytNets.ayt_din * SOZ_COEFFICIENTS.ayt_din;
-    const sozScore = TYT_BASE + tytContrib + sozAyt * AYT_RATIO + obp * OBP_COEFFICIENT;
+    if (selectedType === 'SOZEL' || selectedType === 'DIL') {
+      const aytRaw = aytNets.ayt_edebiyat * SOZ_COEFFICIENTS.ayt_edebiyat
+        + aytNets.ayt_tarih1 * SOZ_COEFFICIENTS.ayt_tarih1
+        + aytNets.ayt_cografya1 * SOZ_COEFFICIENTS.ayt_cografya1
+        + aytNets.ayt_tarih2 * SOZ_COEFFICIENTS.ayt_tarih2
+        + aytNets.ayt_cografya2 * SOZ_COEFFICIENTS.ayt_cografya2
+        + aytNets.ayt_felsefe * SOZ_COEFFICIENTS.ayt_felsefe
+        + aytNets.ayt_din * SOZ_COEFFICIENTS.ayt_din;
+      return TYT_BASE + tytContrib + aytRaw * AYT_RATIO + obp * OBP_COEFFICIENT;
+    }
 
-    const scores: [string, number, 'TYT' | 'SAY' | 'EA' | 'SOZ'][] = [
-      ['TYT', tytRaw, 'TYT'],
-      ['SAY', sayScore, 'SAY'],
-      ['EA', eaScore, 'EA'],
-      ['SÖZ', sozScore, 'SOZ'],
-    ];
+    return tytRaw;
+  };
 
-    const newResults: ScoreResult[] = scores.map(([type, score, rankType]) => {
-      const roundedScore = Math.round(score * 100) / 100;
-      const ranking = estimateRanking(roundedScore, rankType);
-      return {
-        type,
-        score: roundedScore,
-        bestEstimate: ranking.bestEstimate,
-        lowerBound: ranking.lowerBound,
-        upperBound: ranking.upperBound,
-        confidence: ranking.confidence,
-      };
-    });
+  const calculate = () => {
+    const score = Math.round(calculateScore() * 100) / 100;
+    const ranking = interpolateRanking(score, selectedType);
 
-    setResults(newResults);
+    const newResult: ScoreResult = {
+      type: selectedType,
+      typeLabel: SCORE_TYPE_LABELS[selectedType],
+      score,
+      ranking,
+    };
+
+    setResult(newResult);
     setShowResults(true);
   };
 
   const saveCalculation = () => {
-    if (results.length === 0) return;
+    if (!result) return;
     const calc: SavedCalculation = {
       id: crypto.randomUUID(),
       date: new Date().toLocaleString('tr-TR'),
       tytNets: { ...tytNets },
       aytNets: { ...aytNets },
       obp,
-      results: [...results],
+      selectedType,
+      result: { ...result },
     };
     const updated = [calc, ...savedCalcs].slice(0, 10);
     setSavedCalcs(updated);
@@ -182,7 +205,8 @@ export default function YKSScoreCalculator() {
     setTytNets(calc.tytNets);
     setAytNets(calc.aytNets);
     setObp(calc.obp);
-    setResults(calc.results);
+    setSelectedType(calc.selectedType);
+    setResult(calc.result);
     setShowResults(true);
     setShowHistory(false);
   };
@@ -195,21 +219,15 @@ export default function YKSScoreCalculator() {
       ayt_tarih2: 0, ayt_cografya2: 0, ayt_felsefe: 0, ayt_din: 0,
     });
     setObp(80);
-    setResults([]);
+    setResult(null);
     setShowResults(false);
   };
 
   const scoreColor = (score: number) => {
-    if (score >= 400) return 'text-emerald-400';
+    if (score >= 400) return 'text-emerald-500 dark:text-emerald-400';
     if (score >= 300) return 'text-primary';
-    if (score >= 200) return 'text-amber-400';
+    if (score >= 200) return 'text-amber-500 dark:text-amber-400';
     return 'text-destructive';
-  };
-
-  const confidenceColor = (c: number) => {
-    if (c >= 85) return 'text-emerald-400';
-    if (c >= 70) return 'text-primary';
-    return 'text-amber-400';
   };
 
   const sayFields = ['ayt_matematik', 'ayt_fizik', 'ayt_kimya', 'ayt_biyoloji'];
@@ -234,8 +252,8 @@ export default function YKSScoreCalculator() {
             <Calculator className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-display text-lg font-bold">Puan Hesapla</h2>
-            <p className="text-xs text-muted-foreground">3 yıllık veri analizi ile hassas tahmin</p>
+            <h2 className="font-display text-lg font-bold">Puan & Sıralama Simülatörü</h2>
+            <p className="text-xs text-muted-foreground">2024 ÖSYM verisine dayalı doğrusal enterpolasyon</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="gap-1.5 text-muted-foreground">
@@ -261,12 +279,13 @@ export default function YKSScoreCalculator() {
                   <button onClick={() => loadCalc(calc)} className="flex-1 text-left">
                     <p className="text-xs text-muted-foreground">{calc.date}</p>
                     <div className="flex gap-3 mt-1 flex-wrap">
-                      {calc.results.map(r => (
-                        <span key={r.type} className="text-xs font-mono">
-                          <span className="text-muted-foreground">{r.type}:</span>{' '}
-                          <span className={scoreColor(r.score)}>{r.score.toFixed(1)}</span>
-                        </span>
-                      ))}
+                      <span className="text-xs font-mono">
+                        <span className="text-muted-foreground">{SCORE_TYPE_LABELS[calc.selectedType]}:</span>{' '}
+                        <span className={scoreColor(calc.result.score)}>{calc.result.score.toFixed(1)}</span>
+                        {calc.result.ranking !== null && (
+                          <span className="text-muted-foreground ml-2">→ {formatRankingShort(calc.result.ranking)}</span>
+                        )}
+                      </span>
                     </div>
                   </button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => deleteCalc(calc.id)}>
@@ -278,6 +297,24 @@ export default function YKSScoreCalculator() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Puan Türü Seçimi */}
+      <div className="glass-card rounded-xl p-5 space-y-3">
+        <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-primary" />
+          Puan Türü
+        </h3>
+        <Select value={selectedType} onValueChange={(v) => setSelectedType(v as ScoreType)}>
+          <SelectTrigger className="bg-secondary border-border">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(SCORE_TYPE_LABELS) as ScoreType[]).map(key => (
+              <SelectItem key={key} value={key}>{SCORE_TYPE_LABELS[key]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* TYT Nets */}
       <div className="glass-card rounded-xl p-5 space-y-4">
@@ -293,35 +330,37 @@ export default function YKSScoreCalculator() {
       </div>
 
       {/* AYT Nets */}
-      <div className="glass-card rounded-xl p-5 space-y-4">
-        <button onClick={() => setShowAytDetails(!showAytDetails)} className="w-full flex items-center justify-between">
-          <h3 className="font-display font-semibold text-sm flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-primary/70" />
-            AYT Netleri
-          </h3>
-          {showAytDetails ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </button>
-        <AnimatePresence>
-          {showAytDetails && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <Tabs value={activeAytTab} onValueChange={setActiveAytTab} className="w-full">
-                <TabsList className="w-full bg-secondary/50 mb-4">
-                  <TabsTrigger value="say" className="flex-1 text-xs">SAY</TabsTrigger>
-                  <TabsTrigger value="ea" className="flex-1 text-xs">EA</TabsTrigger>
-                  <TabsTrigger value="soz" className="flex-1 text-xs">SÖZ</TabsTrigger>
-                </TabsList>
-                <TabsContent value={activeAytTab} className="mt-0">
-                  <div className="grid grid-cols-2 gap-3">
-                    {getActiveAytFields().map(key => (
-                      <NetInput key={key} label={FIELD_LABELS[key]} maxNet={AYT_MAX[key]} value={aytNets[key]} onChange={v => updateAyt(key, v)} />
-                    ))}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {selectedType !== 'TYT' && (
+        <div className="glass-card rounded-xl p-5 space-y-4">
+          <button onClick={() => setShowAytDetails(!showAytDetails)} className="w-full flex items-center justify-between">
+            <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-primary/70" />
+              AYT Netleri
+            </h3>
+            {showAytDetails ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          <AnimatePresence>
+            {showAytDetails && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                <Tabs value={activeAytTab} onValueChange={setActiveAytTab} className="w-full">
+                  <TabsList className="w-full bg-secondary/50 mb-4">
+                    <TabsTrigger value="say" className="flex-1 text-xs">SAY</TabsTrigger>
+                    <TabsTrigger value="ea" className="flex-1 text-xs">EA</TabsTrigger>
+                    <TabsTrigger value="soz" className="flex-1 text-xs">SÖZ</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value={activeAytTab} className="mt-0">
+                    <div className="grid grid-cols-2 gap-3">
+                      {getActiveAytFields().map(key => (
+                        <NetInput key={key} label={FIELD_LABELS[key]} maxNet={AYT_MAX[key]} value={aytNets[key]} onChange={v => updateAyt(key, v)} />
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* OBP */}
       <div className="glass-card rounded-xl p-5 space-y-3">
@@ -350,14 +389,14 @@ export default function YKSScoreCalculator() {
         <Button variant="outline" onClick={resetAll} className="h-12 px-4">Sıfırla</Button>
       </div>
 
-      {/* Results */}
+      {/* Result */}
       <AnimatePresence>
-        {showResults && results.length > 0 && (
+        {showResults && result && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-display font-bold text-lg flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-primary" />
-                Sonuçlar
+                Sonuç
               </h3>
               <Button variant="ghost" size="sm" onClick={saveCalculation} className="gap-1.5 text-primary">
                 <Save className="h-4 w-4" />
@@ -365,67 +404,61 @@ export default function YKSScoreCalculator() {
               </Button>
             </div>
 
-            {/* Score Cards */}
-            <div className="space-y-3">
-              {results.map((r, i) => (
-                <motion.div
-                  key={r.type}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="glass-card rounded-xl p-4 relative overflow-hidden"
-                >
-                  {/* Top accent bar */}
-                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary/60 to-primary" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="glass-card rounded-2xl p-6 relative overflow-hidden"
+            >
+              {/* Top accent */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
 
-                  <div className="flex items-start justify-between">
-                    {/* Left: Score */}
-                    <div className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{r.type} Puanı</p>
-                      <p className={`text-3xl font-bold font-mono ${scoreColor(r.score)}`}>
-                        {r.score.toFixed(1)}
-                      </p>
-                    </div>
+              <div className="space-y-5">
+                {/* Score Type Badge */}
+                <div className="flex items-center gap-2">
+                  <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full">
+                    {result.typeLabel}
+                  </span>
+                  <span className="text-xs text-muted-foreground">2024 ÖSYM Verisi</span>
+                </div>
 
-                    {/* Right: Ranking */}
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center gap-1 justify-end">
-                        <Target className="h-3 w-3 text-primary" />
-                        <p className="text-xs font-semibold text-muted-foreground">En Yakın Tahmin</p>
-                      </div>
-                      <p className="text-2xl font-bold font-mono text-foreground">
-                        {r.bestEstimate > 0 ? formatRankingShort(r.bestEstimate) : '-'}
-                      </p>
+                {/* Main Score */}
+                <div className="text-center py-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Yerleştirme Puanı</p>
+                  <p className={`text-5xl font-bold font-mono tracking-tight ${scoreColor(result.score)}`}>
+                    {result.score.toFixed(2)}
+                  </p>
+                </div>
+
+                {/* Ranking */}
+                {result.ranking !== null && result.ranking > 0 && (
+                  <div className="bg-secondary/60 rounded-xl p-4 text-center space-y-2">
+                    <div className="flex items-center gap-1.5 justify-center">
+                      <Target className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-semibold text-muted-foreground">2024 ÖSYM Sıralaması</p>
                     </div>
+                    <p className="text-3xl font-bold font-mono text-foreground">
+                      {formatRanking(result.ranking)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Doğrusal enterpolasyon ile hesaplanmıştır
+                    </p>
                   </div>
+                )}
 
-                  {/* Bottom: Range & Confidence */}
-                  {r.bestEstimate > 0 && (
-                    <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {formatRanking(r.lowerBound)} – {formatRanking(r.upperBound)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className={`h-1.5 w-1.5 rounded-full ${r.confidence >= 85 ? 'bg-emerald-400' : r.confidence >= 70 ? 'bg-primary' : 'bg-amber-400'}`} />
-                        <p className={`text-[10px] font-medium ${confidenceColor(r.confidence)}`}>
-                          %{r.confidence} güven
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+                {result.ranking === null && (
+                  <div className="bg-secondary/60 rounded-xl p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Bu puan aralığı için sıralama verisi bulunamadı.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
 
             <div className="glass-card rounded-lg p-3 space-y-1">
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                <span className="font-semibold">📊 Metodoloji:</span> 2023, 2024 ve 2025 yıllarının yığılma verileri 3 puanlık dilimlerde analiz edilerek logaritmik interpolasyon uygulanmıştır. Standart sapma ve sınav zorluk katsayısı hesaba katılarak %5-8 hata payı ile sonuç üretilmiştir.
+                <span className="font-semibold">📊 Metodoloji:</span> Puan = Taban(100) + Σ(Net × Katsayı) + (OBP × 0.6) formülüyle hesaplanmıştır. Sıralama, 2024 ÖSYM yığılma tablosuna doğrusal enterpolasyon uygulanarak bulunmuştur.
               </p>
               <p className="text-[10px] text-muted-foreground italic">
-                * "En Yakın Tahmin" ağırlıklı ortalamadır (2025: %50, 2024: %30, 2023: %20). Aralık değerleri güven aralığını gösterir.
+                * Katsayılar yaklaşık ÖSYM değerleridir. Gerçek sonuçlar farklılık gösterebilir.
               </p>
             </div>
           </motion.div>
