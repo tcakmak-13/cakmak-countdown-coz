@@ -42,6 +42,7 @@ export default function StudentDashboard() {
   const { profile, role, loading, signOut, profileId, user } = useAuth();
   const [tab, setTab] = useState<Tab>('ana-menu');
   const [studentArea, setStudentArea] = useState<string>('SAY');
+  const unreadCount = useUnreadMessages(profileId);
 
   // Sync area from profile and listen for realtime changes
   useEffect(() => {
