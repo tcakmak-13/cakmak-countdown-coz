@@ -564,8 +564,14 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                 key={a.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : 'bg-secondary/50 border border-border'}`}
+                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : a.is_coach ? 'bg-accent/60 border-2 border-accent-foreground/10 shadow-sm' : 'bg-secondary/50 border border-border'}`}
               >
+                {a.is_coach && !a.is_best && (
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Crown className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[11px] font-bold text-primary">Koç Yanıtı</span>
+                  </div>
+                )}
                 {a.is_best && (
                   <div className="flex items-center gap-1.5 mb-2">
                     <Crown className="h-3.5 w-3.5 text-primary" />
