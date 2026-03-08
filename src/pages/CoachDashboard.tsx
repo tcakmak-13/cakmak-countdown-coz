@@ -105,12 +105,24 @@ export default function CoachDashboard() {
       });
   };
 
+  const [coachInfoReady, setCoachInfoReady] = useState<boolean | null>(null);
+
   useEffect(() => {
     if (!loading && (!profile || role !== 'koc')) { navigate('/login'); return; }
-    if (role === 'koc') loadStudents();
+    if (role === 'koc' && profileId) {
+      loadStudents();
+      // Check if coach has completed onboarding (has coach_info row)
+      supabase.from('coach_info').select('id').eq('id', profileId).maybeSingle().then(({ data }) => {
+        if (!data) {
+          navigate('/coach-onboarding');
+        } else {
+          setCoachInfoReady(true);
+        }
+      });
+    }
   }, [loading, role, profile, navigate, profileId]);
 
-  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
+  if (loading || coachInfoReady === null) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
   if (!profile || role !== 'koc') return null;
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
@@ -301,7 +313,7 @@ export default function CoachDashboard() {
           ) : tab === 'appointments' && profileId ? (
             <CoachAppointments coachProfileId={profileId} />
           ) : tab === 'coach-edit' ? (
-            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
+            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} coachProfileId={profileId} />
           ) : tab === 'messages' && profileId ? (
             <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
           ) : !selectedStudent ? (

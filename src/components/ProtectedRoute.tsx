@@ -24,15 +24,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
   // Student-specific redirects
   if (role === 'student' && profile) {
-    // Force onboarding if profile not completed
     if (!profile.profile_completed && location.pathname !== '/onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
-    // Force coach selection if profile completed but coach not selected
     if (profile.profile_completed && !profile.coach_selected && location.pathname !== '/select-coach') {
       return <Navigate to="/select-coach" replace />;
     }
-    // Redirect away from onboarding/coach-select if already done
     if (profile.profile_completed && location.pathname === '/onboarding') {
       return <Navigate to={profile.coach_selected ? '/student' : '/select-coach'} replace />;
     }
@@ -40,6 +37,8 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       return <Navigate to="/student" replace />;
     }
   }
+
+  // Coach-specific redirects: handled inside CoachDashboard and CoachOnboarding
 
   return <>{children}</>;
 }

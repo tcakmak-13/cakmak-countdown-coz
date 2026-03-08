@@ -9,6 +9,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import SelectCoach from "./pages/SelectCoach";
+import CoachOnboarding from "./pages/CoachOnboarding";
 import StudentDashboard from "./pages/StudentDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/select-coach" element={<ProtectedRoute><SelectCoach /></ProtectedRoute>} />
+            <Route path="/coach-onboarding" element={<ProtectedRoute requiredRole="koc"><CoachOnboarding /></ProtectedRoute>} />
             <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/coach" element={<ProtectedRoute requiredRole="koc"><CoachDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
