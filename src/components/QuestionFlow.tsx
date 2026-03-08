@@ -643,7 +643,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   )}
                 </div>
                 {a.image_url && (
-                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setLightboxSrc(a.image_url)} />
+                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => openCanvas(a.image_url!)} />
                 )}
                 {a.content && <p className="text-sm leading-relaxed">{a.content}</p>}
 
