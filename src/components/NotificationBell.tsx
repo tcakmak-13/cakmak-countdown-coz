@@ -170,6 +170,17 @@ export default function NotificationBell() {
               </div>
             </div>
 
+            {/* Push permission prompt */}
+            {permission === 'default' && (
+              <button
+                onClick={requestPermission}
+                className="w-full flex items-center gap-2 p-3 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors border-b border-border"
+              >
+                <BellRing className="h-4 w-4 shrink-0" />
+                Cihaz bildirimlerini aç
+              </button>
+            )}
+
             {/* List */}
             <div className="overflow-y-auto max-h-[55vh] divide-y divide-border/50">
               {notifications.length === 0 ? (

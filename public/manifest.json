@@ -1,0 +1,17 @@
+{
+  "name": "ÇakmakKoçluk - YKS Koçluk Platformu",
+  "short_name": "ÇakmakKoçluk",
+  "description": "YKS sınavına profesyonel koçluk desteği ile hazırlanın.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
