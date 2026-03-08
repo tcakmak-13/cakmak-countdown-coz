@@ -84,7 +84,7 @@ export default function StudentDashboard() {
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button onClick={() => setTab('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <button onClick={() => setTab('ana-menu')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Flame className="h-6 w-6 text-primary" />
               <span className="font-display text-lg font-bold hidden sm:inline">
                 Çakmak<span className="text-primary">Koçluk</span>
