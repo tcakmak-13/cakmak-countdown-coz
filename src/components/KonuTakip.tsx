@@ -12,6 +12,7 @@ interface Subject {
   name: string;
   sort_order: number;
   icon: string;
+  allowed_areas: string[];
 }
 
 interface Topic {
