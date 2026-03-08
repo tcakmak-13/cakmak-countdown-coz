@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import QuestionFlow from '@/components/QuestionFlow';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -62,9 +63,12 @@ type View = 'home' | 'subjects' | 'gallery';
 
 interface Props {
   studentId: string;
+  currentProfileId?: string;
+  currentName?: string;
+  currentRole?: string;
 }
 
-export default function HataKumbarasi({ studentId }: Props) {
+export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole }: Props) {
   const { user } = useAuth();
   const [view, setView] = useState<View>('home');
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
@@ -743,6 +747,18 @@ export default function HataKumbarasi({ studentId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Topluluk Soru Akışı - embedded section */}
+      {currentProfileId && currentName && currentRole && (
+        <>
+          <div className="mt-10 mb-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <h2 className="font-display text-lg font-semibold text-foreground whitespace-nowrap">💬 Topluluk Soru Akışı</h2>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <QuestionFlow currentProfileId={currentProfileId} currentName={currentName} currentRole={currentRole} />
+        </>
+      )}
     </div>
   );
 }

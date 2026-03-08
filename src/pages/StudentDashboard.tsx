@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, MessageCircleQuestion } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,10 @@ import AppointmentBooking from '@/components/AppointmentBooking';
 import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
-import QuestionFlow from '@/components/QuestionFlow';
+
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-akisi';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Denemelerim',
@@ -30,7 +30,6 @@ const TAB_TITLES: Record<Tab, string> = {
   'randevular': 'Randevular',
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
-  'soru-akisi': 'Soru Akışı',
 };
 
 const tabVariants = {
@@ -75,7 +74,7 @@ export default function StudentDashboard() {
 
   const tabs: { key: Tab; label: string; icon: typeof BarChart3 }[] = [
     { key: 'denemelerim', label: 'Denemelerim', icon: BarChart3 },
-    { key: 'soru-akisi', label: 'Sorular', icon: MessageCircleQuestion },
+    { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
@@ -178,13 +177,7 @@ export default function StudentDashboard() {
 
           {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <HataKumbarasi studentId={profileId} />
-            </motion.div>
-          )}
-
-          {tab === 'soru-akisi' && profileId && (
-            <motion.div key="soru-akisi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
+              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
             </motion.div>
           )}
 
