@@ -217,7 +217,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </div>
           <div className="text-center">
             <p className="font-display font-semibold text-lg">Görüntülü Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">60 dakika · Yüz yüze koçluk seansı</p>
+            <p className="text-sm text-muted-foreground mt-1">Yüz yüze koçluk seansı</p>
           </div>
         </motion.button>
 
