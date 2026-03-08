@@ -25,9 +25,11 @@ export default function WeeklyStudyStats({ studentId }: Props) {
   const [loading, setLoading] = useState(true);
 
   const weekDates = useMemo(() => {
-    const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const now = new Date();
+    const monday = startOfWeek(now, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   useEffect(() => {
     const fetchWeekStats = async () => {

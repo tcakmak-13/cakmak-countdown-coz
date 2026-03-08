@@ -79,9 +79,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   // Week dates (Mon-Sun) for the strip
   const weekDates = useMemo(() => {
-    const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const now = new Date();
+    const monday = startOfWeek(now, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   const fetchTasks = async () => {
     const { data } = await supabase
