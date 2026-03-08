@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { interpolateRanking, formatRanking, formatRankingShort, type ScoreType } from '@/lib/yksRankingEngine';
+import { osymData2024, formatRanking, formatRankingShort, type ScoreType } from '@/lib/yksRankingEngine';
 
 // ─── ÖSYM Katsayılar ────────────────────────────────────────────────────
 const TYT_COEFFICIENTS = { turkce: 3.3, matematik: 3.3, fen: 3.4, sosyal: 3.4 };
@@ -122,51 +122,39 @@ export default function YKSScoreCalculator() {
   const updateTyt = (key: string, val: number) => setTytNets(prev => ({ ...prev, [key]: val }));
   const updateAyt = (key: string, val: number) => setAytNets(prev => ({ ...prev, [key]: val }));
 
-  const calculateScore = (): number => {
-    const tytRaw = TYT_BASE
-      + tytNets.turkce * TYT_COEFFICIENTS.turkce
-      + tytNets.matematik * TYT_COEFFICIENTS.matematik
-      + tytNets.fen * TYT_COEFFICIENTS.fen
-      + tytNets.sosyal * TYT_COEFFICIENTS.sosyal
-      + obp * OBP_COEFFICIENT;
-
-    if (selectedType === 'TYT') return tytRaw;
-
-    const tytContrib = (tytRaw - TYT_BASE) * TYT_TO_AYT_RATIO;
-
-    if (selectedType === 'SAYISAL') {
-      const aytRaw = aytNets.ayt_matematik * SAY_COEFFICIENTS.ayt_matematik
-        + aytNets.ayt_fizik * SAY_COEFFICIENTS.ayt_fizik
-        + aytNets.ayt_kimya * SAY_COEFFICIENTS.ayt_kimya
-        + aytNets.ayt_biyoloji * SAY_COEFFICIENTS.ayt_biyoloji;
-      return TYT_BASE + tytContrib + aytRaw * AYT_RATIO + obp * OBP_COEFFICIENT;
-    }
-
-    if (selectedType === 'ESIT_AGIRLIK') {
-      const aytRaw = aytNets.ayt_matematik * EA_COEFFICIENTS.ayt_matematik
-        + aytNets.ayt_edebiyat * EA_COEFFICIENTS.ayt_edebiyat
-        + aytNets.ayt_tarih1 * EA_COEFFICIENTS.ayt_tarih1
-        + aytNets.ayt_cografya1 * EA_COEFFICIENTS.ayt_cografya1;
-      return TYT_BASE + tytContrib + aytRaw * AYT_RATIO + obp * OBP_COEFFICIENT;
-    }
-
-    if (selectedType === 'SOZEL' || selectedType === 'DIL') {
-      const aytRaw = aytNets.ayt_edebiyat * SOZ_COEFFICIENTS.ayt_edebiyat
-        + aytNets.ayt_tarih1 * SOZ_COEFFICIENTS.ayt_tarih1
-        + aytNets.ayt_cografya1 * SOZ_COEFFICIENTS.ayt_cografya1
-        + aytNets.ayt_tarih2 * SOZ_COEFFICIENTS.ayt_tarih2
-        + aytNets.ayt_cografya2 * SOZ_COEFFICIENTS.ayt_cografya2
-        + aytNets.ayt_felsefe * SOZ_COEFFICIENTS.ayt_felsefe
-        + aytNets.ayt_din * SOZ_COEFFICIENTS.ayt_din;
-      return TYT_BASE + tytContrib + aytRaw * AYT_RATIO + obp * OBP_COEFFICIENT;
-    }
-
-    return tytRaw;
-  };
-
   const calculate = () => {
-    const score = Math.round(calculateScore() * 100) / 100;
-    const ranking = interpolateRanking(score, selectedType);
+    // 1. Puan Türünü JSON anahtarına uydur
+    const secilenTur = selectedType as ScoreType;
+
+    // 2. Netleri güvenli bir şekilde sayıya çevirip çarp
+    const tytPuan = (Number(tytNets.turkce || 0) * 3.3) + (Number(tytNets.sosyal || 0) * 3.4) + (Number(tytNets.matematik || 0) * 3.3) + (Number(tytNets.fen || 0) * 3.4);
+    const aytPuan = (Number(aytNets.ayt_matematik || 0) * 3.0) + (Number(aytNets.ayt_fizik || 0) * 2.85) + (Number(aytNets.ayt_kimya || 0) * 3.07) + (Number(aytNets.ayt_biyoloji || 0) * 3.07);
+
+    // 3. Toplam Yerleştirme Puanı
+    const toplamPuan = 100 + tytPuan + aytPuan + (Number(obp || 0) * 0.6);
+    const score = Math.round(toplamPuan * 100) / 100;
+
+    // 4. Doğrusal Enterpolasyon ile Sıralama Bulma
+    let bulunanSiralama: number | null = null;
+    if (toplamPuan >= osymData2024[0].puan) {
+      bulunanSiralama = osymData2024[0][secilenTur];
+    } else if (toplamPuan <= osymData2024[osymData2024.length - 1].puan) {
+      bulunanSiralama = osymData2024[osymData2024.length - 1][secilenTur];
+    } else {
+      for (let i = 0; i < osymData2024.length - 1; i++) {
+        const upper = osymData2024[i];
+        const lower = osymData2024[i + 1];
+        if (toplamPuan <= upper.puan && toplamPuan >= lower.puan) {
+          const pointDiff = upper.puan - lower.puan;
+          const rankDiff = lower[secilenTur] - upper[secilenTur];
+          const scoreOffset = toplamPuan - lower.puan;
+          bulunanSiralama = lower[secilenTur] - (rankDiff * (scoreOffset / pointDiff));
+          break;
+        }
+      }
+    }
+
+    const ranking = bulunanSiralama !== null ? Math.round(bulunanSiralama) : null;
 
     const newResult: ScoreResult = {
       type: selectedType,
