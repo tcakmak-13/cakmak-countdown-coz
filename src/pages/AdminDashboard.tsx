@@ -443,9 +443,9 @@ export default function AdminDashboard() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-around h-16">
           {[
+            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
-            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'messages', icon: MessageCircle, label: 'Mesajlar' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
           ].map(item => {
