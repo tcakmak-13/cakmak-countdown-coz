@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Search, X, ChevronDown } from 'lucide-react';
@@ -88,11 +89,12 @@ export default function SearchableCombobox({
           {filtered.length === 0 && allowCustom && search.trim() && (
             <button
               type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+              className="w-full px-3 py-2.5 text-left text-sm flex items-center gap-2 text-primary font-bold hover:bg-primary/10 transition-colors"
               onClick={() => { onChange(search.trim()); setSearch(''); setOpen(false); }}
             >
-              <span className="text-muted-foreground">Ekle: </span>
-              <span className="font-medium">{search.trim()}</span>
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>{search.trim()}</span>
+              <span className="text-primary/60 font-medium ml-auto">Ekle</span>
             </button>
           )}
           {filtered.map(option => (
@@ -111,11 +113,12 @@ export default function SearchableCombobox({
           {allowCustom && search.trim() && filtered.length > 0 && !filtered.includes(search.trim()) && (
             <button
               type="button"
-              className="w-full px-3 py-2 text-left text-sm border-t border-border hover:bg-accent hover:text-accent-foreground"
+              className="w-full px-3 py-2.5 text-left text-sm flex items-center gap-2 text-primary font-bold border-t border-border/50 hover:bg-primary/10 transition-colors"
               onClick={() => { onChange(search.trim()); setSearch(''); setOpen(false); }}
             >
-              <span className="text-muted-foreground">Özel ekle: </span>
-              <span className="font-medium">{search.trim()}</span>
+              <Plus className="h-4 w-4 shrink-0" />
+              <span>{search.trim()}</span>
+              <span className="text-primary/60 font-medium ml-auto">Ekle</span>
             </button>
           )}
         </div>
