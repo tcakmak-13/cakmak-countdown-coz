@@ -290,7 +290,6 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
               <div className="flex-1 min-w-0">
                 <p className="font-display font-semibold">
                   {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
-                  <span className="text-xs font-normal text-muted-foreground ml-1.5">({a.duration_minutes || 60} dk)</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
