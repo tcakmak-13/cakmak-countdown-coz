@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import SearchableCombobox from '@/components/SearchableCombobox';
 import { UNIVERSITIES } from '@/lib/universities';
 import { DEPARTMENTS } from '@/lib/departments';
+import PhoneInput from '@/components/PhoneInput';
+import { isValidPhone } from '@/lib/phoneUtils';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -26,13 +28,16 @@ export default function Onboarding() {
   const [grade, setGrade] = useState('');
   const [targetUniversity, setTargetUniversity] = useState('');
   const [targetDepartment, setTargetDepartment] = useState('');
+  const [goals, setGoals] = useState('');
+  const [expectations, setExpectations] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const phonesValid = isValidPhone(phone) && isValidPhone(parentPhone);
 
   const isFormValid =
     fullName.trim() !== '' &&
     birthday.trim() !== '' &&
-    phone.trim() !== '' &&
-    parentPhone.trim() !== '' &&
+    phonesValid &&
     highSchool.trim() !== '' &&
     obp.trim() !== '' &&
     area !== '' &&
@@ -42,6 +47,7 @@ export default function Onboarding() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phonesValid) { toast.error('Lütfen geçerli telefon numaraları giriniz (05XX XXX XX XX).'); return; }
     if (!isFormValid) { toast.error('Tüm alanları doldurun.'); return; }
     if (!profileId) { toast.error('Profil bulunamadı.'); return; }
 
@@ -57,6 +63,8 @@ export default function Onboarding() {
       grade,
       target_university: targetUniversity.trim(),
       target_department: targetDepartment.trim(),
+      goals: goals.trim(),
+      expectations: expectations.trim(),
       profile_completed: true,
     }).eq('id', profileId);
 
@@ -112,14 +120,14 @@ export default function Onboarding() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefon *</Label>
-              <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="05XX XXX XX XX" className="bg-secondary border-border" required />
+              <PhoneInput id="phone" value={phone} onChange={setPhone} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="parentPhone">Veli Telefonu *</Label>
-              <Input id="parentPhone" value={parentPhone} onChange={e => setParentPhone(e.target.value)} placeholder="05XX XXX XX XX" className="bg-secondary border-border" required />
+              <PhoneInput id="parentPhone" value={parentPhone} onChange={setParentPhone} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="highSchool">Lise *</Label>
@@ -175,6 +183,23 @@ export default function Onboarding() {
               onChange={setTargetDepartment}
               placeholder="Bölüm ara veya yaz..."
               allowCustom={true}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="goals">Hedefim</Label>
+            <Input id="goals" value={goals} onChange={e => setGoals(e.target.value)} placeholder="Örn: Tıp Fakültesi, İlk 1000..." className="bg-secondary border-border" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="expectations">Koçluktan Beklentilerim</Label>
+            <textarea
+              id="expectations"
+              value={expectations}
+              onChange={e => setExpectations(e.target.value)}
+              rows={3}
+              className="w-full rounded-lg bg-secondary border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              placeholder="Koçunuzdan ne bekliyorsunuz?"
             />
           </div>
 

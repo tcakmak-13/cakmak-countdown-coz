@@ -426,6 +426,7 @@ export type Database = {
           coach_selected: boolean
           created_at: string
           email: string | null
+          expectations: string | null
           full_name: string
           goals: string | null
           grade: string | null
@@ -449,6 +450,7 @@ export type Database = {
           coach_selected?: boolean
           created_at?: string
           email?: string | null
+          expectations?: string | null
           full_name?: string
           goals?: string | null
           grade?: string | null
@@ -472,6 +474,7 @@ export type Database = {
           coach_selected?: boolean
           created_at?: string
           email?: string | null
+          expectations?: string | null
           full_name?: string
           goals?: string | null
           grade?: string | null
