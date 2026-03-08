@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import ImagePicker from '@/components/ImagePicker';
+import ImageLightbox from '@/components/ImageLightbox';
 
 const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
 const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
@@ -153,6 +154,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   const flowScrollRef = useRef<HTMLDivElement>(null);
 
   const canModerate = currentRole === 'koc' || currentRole === 'admin';
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
@@ -511,7 +513,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     return (
       <div className="flex flex-col h-[calc(100vh-11rem)]">
         {deleteDialog}
-        {/* Thread header */}
+        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
         <div className="flex items-center gap-3 pb-4 border-b border-border">
           <button onClick={() => { setSelectedQuestion(null); setAnswers([]); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ChevronLeft className="h-5 w-5" />
@@ -540,7 +542,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         {/* Question card at top */}
         <div className="py-4 border-b border-border">
           {selectedQuestion.image_url && (
-            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3" />
+            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setLightboxSrc(selectedQuestion.image_url)} />
           )}
           {selectedQuestion.description && (
             <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
@@ -606,7 +608,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   )}
                 </div>
                 {a.image_url && (
-                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2" />
+                  <img src={a.image_url} alt="Çözüm" className="rounded-lg max-h-48 w-full object-contain bg-background mb-2 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => setLightboxSrc(a.image_url)} />
                 )}
                 {a.content && <p className="text-sm leading-relaxed">{a.content}</p>}
 
@@ -679,6 +681,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   return (
     <div className="space-y-4">
       {deleteDialog}
+      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
 
       {/* Nickname bar */}
       {username && (
@@ -852,8 +855,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                     </div>
 
                     {q.image_url && (
-                      <div className="rounded-xl overflow-hidden mb-2 max-h-44">
-                        <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary" />
+                      <div className="rounded-xl overflow-hidden mb-2 max-h-44" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLightboxSrc(q.image_url); }}>
+                        <img src={q.image_url} alt="Soru" className="w-full object-contain max-h-44 bg-secondary cursor-zoom-in hover:opacity-90 transition-opacity" />
                       </div>
                     )}
 
