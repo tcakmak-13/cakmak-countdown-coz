@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public read error question images" ON storage.objects;
