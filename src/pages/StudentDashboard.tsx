@@ -21,7 +21,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-akisi';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Denemelerim',
@@ -30,7 +30,6 @@ const TAB_TITLES: Record<Tab, string> = {
   'randevular': 'Randevular',
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
-  'soru-akisi': 'Soru Akışı',
 };
 
 const tabVariants = {
