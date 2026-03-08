@@ -147,6 +147,18 @@ export default function StudentDashboard() {
                     </div>
                   </button>
                 )}
+                <button
+                  onClick={() => setTab('puan-hesapla' as Tab)}
+                  className="w-full glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors text-left"
+                >
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shrink-0">
+                    <Calculator className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold">Puan Hesapla</p>
+                    <p className="text-xs text-muted-foreground">Tahmini YKS puanı ve sıralama</p>
+                  </div>
+                </button>
                 <MotivationQuote />
               </div>
             </motion.div>
