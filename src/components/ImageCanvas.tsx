@@ -12,7 +12,8 @@ interface ImageCanvasProps {
 }
 
 type Tool = 'pen' | 'eraser';
-type PenSize = 2 | 5 | 10;
+type PenSize = 4 | 8 | 14;
+type EraserSize = 16 | 32 | 56;
 
 const COLORS = [
   { name: 'Turuncu', value: '#FF5A01', alpha: 1 },
@@ -21,12 +22,19 @@ const COLORS = [
   { name: 'Yeşil', value: '#22C55E', alpha: 1 },
   { name: 'Beyaz', value: '#FFFFFF', alpha: 1 },
   { name: 'Fosforlu', value: '#FACC15', alpha: 0.5 },
+  { name: 'Siyah', value: '#000000', alpha: 1 },
 ];
 
-const PEN_SIZES: { label: string; value: PenSize }[] = [
-  { label: 'İnce', value: 2 },
-  { label: 'Orta', value: 5 },
-  { label: 'Kalın', value: 10 },
+const PEN_SIZES: { label: string; value: PenSize; dot: number }[] = [
+  { label: 'İnce', value: 4, dot: 8 },
+  { label: 'Orta', value: 8, dot: 13 },
+  { label: 'Kalın', value: 14, dot: 18 },
+];
+
+const ERASER_SIZES: { label: string; value: EraserSize; dot: number }[] = [
+  { label: 'Küçük', value: 16, dot: 12 },
+  { label: 'Orta', value: 32, dot: 18 },
+  { label: 'Büyük', value: 56, dot: 24 },
 ];
 
 export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAnswer, showShareButton = false }: ImageCanvasProps) {
