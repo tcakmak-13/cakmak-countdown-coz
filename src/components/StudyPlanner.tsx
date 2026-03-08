@@ -25,6 +25,7 @@ interface Task {
   subject: string;
   topic: string;
   estimated_minutes: number;
+  actual_minutes: number | null;
   description: string | null;
   completed: boolean;
   created_at: string;
