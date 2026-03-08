@@ -21,8 +21,13 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
   if (!user) return <Navigate to="/login" replace />;
   if (requiredRole && role !== requiredRole) return <Navigate to="/login" replace />;
-  if (role === 'student' && profile && !profile.profile_completed && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
+  if (role === 'student' && profile && !profile.profile_completed) {
+    if (location.pathname !== '/onboarding') {
+      return <Navigate to="/onboarding" replace />;
+    }
+  }
+  if (role === 'student' && profile && profile.profile_completed && location.pathname === '/onboarding') {
+    return <Navigate to="/student" replace />;
   }
 
   return <>{children}</>;
