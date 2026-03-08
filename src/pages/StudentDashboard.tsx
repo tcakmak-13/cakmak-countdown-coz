@@ -182,7 +182,13 @@ export default function StudentDashboard() {
         <AnimatePresence mode="wait">
           {tab === 'denemelerim' && profileId && (
             <motion.div key="denemelerim" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <Denemelerim studentId={profileId} studentArea={studentArea} />
+              <div className="space-y-8">
+                <Denemelerim studentId={profileId} studentArea={studentArea} />
+                <div className="glass-card rounded-2xl p-6">
+                  <h2 className="font-display text-lg font-semibold mb-4">📊 Haftalık Çalışma İstatistikleri</h2>
+                  <WeeklyStudyStats studentId={profileId} />
+                </div>
+              </div>
             </motion.div>
           )}
 
