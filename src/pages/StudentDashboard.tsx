@@ -170,7 +170,12 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
-          {tab === 'hata-kumbarasi' && profileId && (
+          {tab === 'puan-hesapla' && (
+            <motion.div key="puan-hesapla" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <YKSScoreCalculator />
+            </motion.div>
+          )}
+
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <HataKumbarasi studentId={profileId} />
             </motion.div>
