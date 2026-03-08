@@ -260,6 +260,8 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   }, []);
 
   useEffect(() => {
+    // Admin doesn't mark messages as read (spectator)
+    if (currentRole === 'admin') return;
     const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
     if (!chatPartnerId) return;
     const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === chatPartnerId);
@@ -270,15 +272,24 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, selectedStudent]);
+  }, [messages, selectedStudent, selectedPair]);
 
   const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
 
-  const filteredMessages = messages.filter(m => {
-    if (!chatPartnerId) return false;
-    return (m.sender_id === currentProfileId && m.receiver_id === chatPartnerId) ||
-           (m.sender_id === chatPartnerId && m.receiver_id === currentProfileId);
-  });
+  const filteredMessages = useMemo(() => {
+    // Admin spectator: show messages between selected pair
+    if (currentRole === 'admin' && selectedPair) {
+      return messages.filter(m =>
+        (m.sender_id === selectedPair.coachId && m.receiver_id === selectedPair.studentId) ||
+        (m.sender_id === selectedPair.studentId && m.receiver_id === selectedPair.coachId)
+      );
+    }
+    if (!chatPartnerId) return [];
+    return messages.filter(m =>
+      (m.sender_id === currentProfileId && m.receiver_id === chatPartnerId) ||
+      (m.sender_id === chatPartnerId && m.receiver_id === currentProfileId)
+    );
+  }, [messages, currentRole, selectedPair, chatPartnerId, currentProfileId]);
 
   const getLastMessage = (studentId: string) => {
     const studentMsgs = messages.filter(m =>
