@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-import { format, startOfWeek, addDays, isToday, isBefore, startOfDay, isSameDay } from 'date-fns';
+import { format, startOfWeek, addDays, addWeeks, isToday, isBefore, startOfDay, isSameDay, isSameWeek } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SearchableCombobox from '@/components/SearchableCombobox';
