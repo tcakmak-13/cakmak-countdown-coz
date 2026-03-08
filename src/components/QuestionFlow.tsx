@@ -548,7 +548,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     return (
       <div className="flex flex-col h-[calc(100vh-11rem)]">
         {deleteDialog}
-        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+        <ImageCanvas src={lightboxSrc} onClose={() => { setLightboxSrc(null); setLightboxQuestionId(null); }} onShareAsAnswer={handleCanvasShareAsAnswer} showShareButton={!!lightboxQuestionId || !!selectedQuestion} />
         <div className="flex items-center gap-3 pb-4 border-b border-border">
           <button onClick={() => { setSelectedQuestion(null); setAnswers([]); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ChevronLeft className="h-5 w-5" />
