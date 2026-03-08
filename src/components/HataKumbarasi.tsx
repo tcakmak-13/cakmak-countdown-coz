@@ -751,18 +751,29 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Topluluk Soru Akışı - collapsible section */}
+      {/* Soru Meclisi - collapsible section */}
       {currentProfileId && currentName && currentRole && (
-        <div className="mt-8">
+        <div className="mt-8" ref={qflowRef}>
           <div className="flex items-center gap-3 mb-2">
             <div className="h-px flex-1 bg-border" />
             <button
-              onClick={() => setQflowOpen(prev => !prev)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl glass-card hover:bg-secondary/50 transition-all group"
+              onClick={() => {
+                const willOpen = !qflowOpen;
+                setQflowOpen(willOpen);
+                if (willOpen) {
+                  setTimeout(() => qflowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+                }
+              }}
+              className="relative flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-card border border-primary/30 hover:border-primary/60 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] transition-all duration-300 group"
             >
-              <MessagesSquare className="h-5 w-5 text-primary" />
-              <span className="font-display font-semibold text-sm text-foreground">Topluluk Soru Akışı</span>
+              <Users className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+              <span className="font-display font-bold text-sm text-foreground">Soru Meclisi</span>
               <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${qflowOpen ? 'rotate-180' : ''}`} />
+              {pendingCount > 0 && !qflowOpen && (
+                <span className="absolute -top-2 -right-2 h-5 min-w-[20px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-orange animate-scale-in">
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
             </button>
             <div className="h-px flex-1 bg-border" />
           </div>
