@@ -716,7 +716,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   return (
     <div className="space-y-4">
       {deleteDialog}
-      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      <ImageCanvas src={lightboxSrc} onClose={() => { setLightboxSrc(null); setLightboxQuestionId(null); }} onShareAsAnswer={handleCanvasShareAsAnswer} showShareButton={!!lightboxQuestionId} />
 
       {/* Nickname bar */}
       {username && (
