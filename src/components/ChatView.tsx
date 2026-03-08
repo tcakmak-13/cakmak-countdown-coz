@@ -334,7 +334,11 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || !chatPartnerId) return;
+    if (!trimmed) return;
+    if (!chatPartnerId) {
+      toast.error('Henüz bir koç seçmediniz. Lütfen önce koç seçimi yapın.');
+      return;
+    }
     if (trimmed.length > 2000) {
       toast.error('Mesaj çok uzun (maks 2000 karakter)');
       return;
