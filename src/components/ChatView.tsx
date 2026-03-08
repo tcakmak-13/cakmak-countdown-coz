@@ -11,6 +11,7 @@ interface Props {
   currentName: string;
   currentRole: 'admin' | 'koc' | 'student' | null;
   currentUserId?: string;
+  coachId?: string | null;
 }
 
 interface Message {
@@ -165,14 +166,14 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl }: { open: boolean; o
   );
 }
 
-export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId }: Props) {
+export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId, coachId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
-  const [adminProfileId, setAdminProfileId] = useState<string | null>(null);
-  const [adminName, setAdminName] = useState('Talha Çakmak');
-  const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
+  const [coachProfileId, setCoachProfileId] = useState<string | null>(coachId ?? null);
+  const [coachName, setCoachName] = useState('Koçum');
+  const [coachAvatarUrl, setCoachAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [coachDrawerOpen, setCoachDrawerOpen] = useState(false);
@@ -193,16 +194,16 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   };
 
   useEffect(() => {
-    if (currentRole === 'student') {
-      supabase.rpc('get_admin_profile_info').then(({ data }) => {
-        if (data && Array.isArray(data) && data.length > 0) {
-          setAdminProfileId(data[0].id);
-          setAdminName(data[0].full_name || 'Talha Çakmak');
-          setAdminAvatarUrl(data[0].avatar_url || null);
+    if (currentRole === 'student' && coachId) {
+      setCoachProfileId(coachId);
+      supabase.from('profiles').select('id, full_name, avatar_url').eq('id', coachId).single().then(({ data }) => {
+        if (data) {
+          setCoachName(data.full_name || 'Koçum');
+          setCoachAvatarUrl(data.avatar_url || null);
         }
       });
     }
-  }, [currentRole]);
+  }, [currentRole, coachId]);
 
   useEffect(() => {
     if (currentRole === 'admin') {
@@ -277,19 +278,19 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   useEffect(() => {
     // Admin doesn't mark messages as read (spectator)
     if (currentRole === 'admin') return;
-    const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
-    if (!chatPartnerId) return;
-    const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === chatPartnerId);
+    const partner = currentRole === 'student' ? coachProfileId : selectedStudent;
+    if (!partner) return;
+    const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === partner);
     if (unread.length > 0) {
       supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
     }
-  }, [messages, currentProfileId, adminProfileId, selectedStudent, currentRole]);
+  }, [messages, currentProfileId, coachProfileId, selectedStudent, currentRole]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedStudent, selectedPair]);
 
-  const chatPartnerId = currentRole === 'student' ? adminProfileId : selectedStudent;
+  const chatPartnerId = currentRole === 'student' ? coachProfileId : selectedStudent;
 
   const filteredMessages = useMemo(() => {
     // Admin spectator: show messages between selected pair
@@ -486,14 +487,14 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         >
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange ring-2 ring-primary/30 overflow-hidden">
-              {adminAvatarUrl ? (
-                <img src={adminAvatarUrl} alt={adminName} className="h-full w-full object-cover" />
+              {coachAvatarUrl ? (
+                <img src={coachAvatarUrl} alt={coachName} className="h-full w-full object-cover" />
               ) : (
-                adminName.charAt(0)
+                coachName.charAt(0)
               )}
             </div>
             <div className="flex-1">
-              <p className="font-display font-bold text-base">{adminName}</p>
+              <p className="font-display font-bold text-base">{coachName}</p>
               <div className="flex items-center gap-1.5">
                 <Circle className="h-2 w-2 fill-current text-emerald-500" />
                 <span className="text-xs text-emerald-400">Çevrimiçi</span>
@@ -521,7 +522,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         </div>
 
         {renderMessageInput()}
-        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={adminName} avatarUrl={adminAvatarUrl} />
+        <CoachDrawer open={coachDrawerOpen} onOpenChange={setCoachDrawerOpen} name={coachName} avatarUrl={coachAvatarUrl} />
       </div>
     );
   }
