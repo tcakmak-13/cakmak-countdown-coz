@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface StudentProfile {
   id: string;
@@ -36,6 +37,7 @@ export default function CoachDashboard() {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<'list' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments'>('analytics');
+  const unreadCount = useUnreadMessages(profileId);
 
   const TAB_TITLES: Record<string, string> = {
     analytics: 'Analiz Merkezi',
@@ -247,10 +249,15 @@ export default function CoachDashboard() {
             <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
               <MessageCircle className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Mesajlar</p>
               <p className="text-xs text-muted-foreground">Öğrenci sohbetleri</p>
             </div>
+            {unreadCount > 0 && tab !== 'messages' && (
+              <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-orange shrink-0">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
 
           {/* Appointments */}
