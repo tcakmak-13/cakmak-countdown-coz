@@ -161,6 +161,11 @@ export default function CoachAppointments({ coachProfileId }: Props) {
         </div>
       </div>
 
+      {/* Coach Availability Management */}
+      <CoachAvailability coachProfileId={coachProfileId} />
+
+      <div className="border-t border-border pt-6" />
+
       {/* Pending */}
       {pending.length > 0 && (
         <div className="space-y-3">
