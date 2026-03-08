@@ -257,7 +257,6 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                   <div className="flex-1 min-w-0 pt-1">
                     <p className="font-display font-bold text-lg">
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
-                      <span className="text-sm font-normal text-muted-foreground ml-2">({a.duration_minutes || 60} dk)</span>
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}{endTime ? ` → ${endTime}` : ''}
