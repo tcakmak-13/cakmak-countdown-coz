@@ -48,6 +48,7 @@ interface Answer {
   created_at: string;
   author_name?: string;
   author_avatar?: string;
+  is_coach?: boolean;
 }
 
 interface QuestionFlowProps {
@@ -244,22 +245,43 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     if (error) { setLoadingAnswers(false); return; }
 
     const authorIds = [...new Set((data || []).map(a => a.author_id))];
-    let profileMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+    let profileMap: Record<string, { full_name: string; avatar_url: string | null; user_id: string }> = {};
+    let coachSet = new Set<string>();
+
     if (authorIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select('id, full_name, avatar_url, user_id')
         .in('id', authorIds);
       if (profiles) {
-        profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url }; });
+        const userIds = profiles.map(p => p.user_id);
+        profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url, user_id: p.user_id }; });
+
+        // Check which authors are coaches
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds)
+          .eq('role', 'koc');
+        if (roles) {
+          const coachUserIds = new Set(roles.map(r => r.user_id));
+          profiles.forEach(p => {
+            if (coachUserIds.has(p.user_id)) coachSet.add(p.id);
+          });
+        }
       }
     }
 
-    setAnswers((data || []).map(a => ({
-      ...a,
-      author_name: profileMap[a.author_id]?.full_name || 'Anonim',
-      author_avatar: profileMap[a.author_id]?.avatar_url || null,
-    })));
+    setAnswers((data || []).map(a => {
+      const isCoach = coachSet.has(a.author_id);
+      const profile = profileMap[a.author_id];
+      return {
+        ...a,
+        author_name: isCoach ? `Koç ${profile?.full_name || ''}` : (profile?.full_name || 'Anonim'),
+        author_avatar: profile?.avatar_url || null,
+        is_coach: isCoach,
+      };
+    }));
     setLoadingAnswers(false);
   };
 
@@ -542,8 +564,14 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                 key={a.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : 'bg-secondary/50 border border-border'}`}
+                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : a.is_coach ? 'bg-accent/60 border-2 border-accent-foreground/10 shadow-sm' : 'bg-secondary/50 border border-border'}`}
               >
+                {a.is_coach && !a.is_best && (
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Crown className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[11px] font-bold text-primary">Koç Yanıtı</span>
+                  </div>
+                )}
                 {a.is_best && (
                   <div className="flex items-center gap-1.5 mb-2">
                     <Crown className="h-3.5 w-3.5 text-primary" />
@@ -561,10 +589,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary shrink-0 overflow-hidden">
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden ${a.is_coach ? 'bg-primary/30 text-primary ring-2 ring-primary/40' : 'bg-primary/20 text-primary'}`}>
                     {a.author_avatar ? <img src={a.author_avatar} className="h-full w-full object-cover" /> : a.author_name?.charAt(0)}
                   </div>
-                  <span className="text-xs font-medium">{a.author_name}</span>
+                  <span className={`text-xs font-medium ${a.is_coach ? 'font-bold text-primary' : ''}`}>{a.author_name}</span>
                   <span className="text-[10px] text-muted-foreground ml-auto">{formatTime(a.created_at)}</span>
                   {/* Delete answer */}
                   {canDeleteAnswer(a) && (
