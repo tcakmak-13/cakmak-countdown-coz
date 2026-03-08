@@ -29,6 +29,14 @@ const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cu
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 9);
 const MINUTES = [0, 15, 30, 45];
 
+function endTimeStr(startTime: string, durationMinutes: number): string {
+  const [h, m] = startTime.split(':').map(Number);
+  const totalMin = h * 60 + m + (durationMinutes || 60);
+  const eh = Math.floor(totalMin / 60) % 24;
+  const em = totalMin % 60;
+  return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+}
+
 function getNextOccurrence(recurringDay: number, recurringTime: string): Date {
   const now = new Date();
   const [h, m] = recurringTime.split(':').map(Number);
