@@ -480,7 +480,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             );
           })}
         </div>
-      </div>
+    </div>
     );
   }
 
