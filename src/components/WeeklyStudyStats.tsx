@@ -38,14 +38,14 @@ export default function WeeklyStudyStats({ studentId }: Props) {
 
       const { data } = await supabase
         .from('study_tasks')
-        .select('day_of_week, estimated_minutes, completed')
+        .select('day_of_week, estimated_minutes, actual_minutes, completed')
         .eq('student_id', studentId)
         .eq('completed', true);
 
       // day_of_week: 0=Mon … 6=Sun
       const dayMap: Record<number, number> = {};
       data?.forEach((row: any) => {
-        dayMap[row.day_of_week] = (dayMap[row.day_of_week] || 0) + (row.estimated_minutes || 0);
+        dayMap[row.day_of_week] = (dayMap[row.day_of_week] || 0) + (row.actual_minutes ?? row.estimated_minutes ?? 0);
       });
 
       const result = weekDates.map((date, i) => ({
