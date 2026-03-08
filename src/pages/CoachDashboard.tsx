@@ -249,11 +249,15 @@ export default function CoachDashboard() {
             <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shrink-0 shadow-orange">
               <MessageCircle className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Mesajlar</p>
               <p className="text-xs text-muted-foreground">Öğrenci sohbetleri</p>
             </div>
-          </button>
+            {unreadCount > 0 && tab !== 'messages' && (
+              <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-orange shrink-0">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
 
           {/* Appointments */}
           <button
