@@ -9,6 +9,7 @@ interface Profile {
   email: string;
   avatar_url: string | null;
   username: string | null;
+  username_changed_at: string | null;
   profile_completed: boolean;
   area: string | null;
   obp: string | null;
