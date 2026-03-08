@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import SearchableCombobox from '@/components/SearchableCombobox';
 import { UNIVERSITIES } from '@/lib/universities';
 import { DEPARTMENTS } from '@/lib/departments';
+import PhoneInput from '@/components/PhoneInput';
+import { isValidPhone } from '@/lib/phoneUtils';
 
 interface ProfileData {
   id: string;
@@ -19,6 +21,7 @@ interface ProfileData {
   high_school: string | null;
   obp: string | null;
   goals: string | null;
+  expectations: string | null;
   area: string | null;
   grade: string | null;
   target_university: string | null;
@@ -35,7 +38,7 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
   const [student, setStudent] = useState<ProfileData | null>(null);
 
   useEffect(() => {
-    supabase.from('profiles').select('id, full_name, birthday, phone, parent_phone, email, high_school, obp, goals, area, grade, target_university, target_department')
+    supabase.from('profiles').select('id, full_name, birthday, phone, parent_phone, email, high_school, obp, goals, expectations, area, grade, target_university, target_department')
       .eq('id', studentId).single()
       .then(({ data }) => { if (data) setStudent(data as ProfileData); });
   }, [studentId]);
@@ -47,8 +50,13 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
     if (key === 'area' && onAreaChange) onAreaChange(value);
   };
 
+  const phonesValid =
+    (!student.phone || student.phone.trim() === '' || isValidPhone(student.phone)) &&
+    (!student.parent_phone || student.parent_phone.trim() === '' || isValidPhone(student.parent_phone));
+
   const handleSave = async () => {
     if (!student) return;
+    if (!phonesValid) { toast.error('Lütfen geçerli telefon numaraları giriniz (05XX XXX XX XX).'); return; }
     const { error } = await supabase.from('profiles').update({
       full_name: student.full_name,
       birthday: student.birthday,
@@ -58,6 +66,7 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
       high_school: student.high_school,
       obp: student.obp,
       goals: student.goals,
+      expectations: student.expectations,
       area: student.area,
       grade: student.grade,
       target_university: student.target_university,
@@ -80,11 +89,11 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
         </div>
         <div className="space-y-2">
           <Label>Telefon</Label>
-          <Input value={student.phone ?? ''} onChange={e => update('phone', e.target.value)} readOnly={readOnly} className="bg-secondary border-border" />
+          <PhoneInput value={student.phone ?? ''} onChange={v => update('phone', v)} readOnly={readOnly} />
         </div>
         <div className="space-y-2">
           <Label>Veli Telefonu</Label>
-          <Input value={student.parent_phone ?? ''} onChange={e => update('parent_phone', e.target.value)} readOnly={readOnly} className="bg-secondary border-border" />
+          <PhoneInput value={student.parent_phone ?? ''} onChange={v => update('parent_phone', v)} readOnly={readOnly} />
         </div>
         <div className="space-y-2">
           <Label>E-posta</Label>
@@ -153,14 +162,24 @@ export default function StudentProfileForm({ studentId, readOnly = false, onArea
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Hedefler ve Beklentiler</Label>
-        <textarea
+        <Label>Hedefim</Label>
+        <Input
           value={student.goals ?? ''}
           onChange={e => update('goals', e.target.value)}
           readOnly={readOnly}
+          placeholder="Örn: Tıp Fakültesi, İlk 1000..."
+          className="bg-secondary border-border"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Koçluktan Beklentilerim</Label>
+        <textarea
+          value={student.expectations ?? ''}
+          onChange={e => update('expectations', e.target.value)}
+          readOnly={readOnly}
           rows={4}
           className="w-full rounded-lg bg-secondary border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          placeholder="Hedeflerinizi yazın..."
+          placeholder="Koçunuzdan ne bekliyorsunuz?"
         />
       </div>
       {!readOnly && (
