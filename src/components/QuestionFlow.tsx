@@ -89,6 +89,65 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'question' | 'answer'; id: string } | null>(null);
 
+  // Nickname change state
+  const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameError, setNicknameError] = useState('');
+  const [nicknameSaving, setNicknameSaving] = useState(false);
+
+  const canChangeNickname = (() => {
+    if (!usernameChangedAt) return true;
+    const changed = new Date(usernameChangedAt);
+    const now = new Date();
+    const diffDays = (now.getTime() - changed.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays >= 7;
+  })();
+
+  const daysUntilChange = (() => {
+    if (!usernameChangedAt) return 0;
+    const changed = new Date(usernameChangedAt);
+    const now = new Date();
+    const diffDays = (now.getTime() - changed.getTime()) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(7 - diffDays));
+  })();
+
+  const handleNicknameSave = async () => {
+    const trimmed = nicknameInput.trim();
+    if (!trimmed || trimmed.length < 3) { setNicknameError('Takma ad en az 3 karakter olmalıdır.'); return; }
+    if (trimmed.length > 20) { setNicknameError('Takma ad en fazla 20 karakter olabilir.'); return; }
+    setNicknameSaving(true);
+    setNicknameError('');
+
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', trimmed)
+      .neq('id', currentProfileId)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      setNicknameError('Bu takma ad zaten alınmış.');
+      setNicknameSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ username: trimmed, username_changed_at: new Date().toISOString() })
+      .eq('id', currentProfileId);
+
+    if (error) {
+      setNicknameError('Bir hata oluştu, tekrar deneyin.');
+      setNicknameSaving(false);
+      return;
+    }
+
+    setNicknameDialogOpen(false);
+    setNicknameSaving(false);
+    onUsernameChanged?.(trimmed);
+    toast.success('Takma adın güncellendi!');
+  };
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const flowScrollRef = useRef<HTMLDivElement>(null);
 
