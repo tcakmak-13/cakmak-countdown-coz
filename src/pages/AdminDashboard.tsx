@@ -455,6 +455,7 @@ export default function AdminDashboard() {
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
+            { key: 'soru-merkezi', icon: HelpCircle, label: 'Sorular' },
             { key: 'messages', icon: MessageCircle, label: 'Mesajlar' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevular' },
           ].map(item => {
