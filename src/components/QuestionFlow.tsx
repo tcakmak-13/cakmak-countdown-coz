@@ -564,7 +564,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                 key={a.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : a.is_coach ? 'border-l-[3px] border-l-primary bg-secondary/50 border-t border-r border-b border-t-border border-r-border border-b-border' : 'bg-secondary/50 border border-border'}`}
+                className={`rounded-xl p-3 ${a.is_best ? 'bg-primary/10 border border-primary/30 ring-1 ring-primary/20' : 'bg-secondary/50 border border-border'}`}
               >
                 {a.is_best && (
                   <div className="flex items-center gap-1.5 mb-2">
@@ -585,11 +585,14 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
                   <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden bg-primary/20 text-primary`}>
                     {a.author_avatar ? <img src={a.author_avatar} className="h-full w-full object-cover" /> : a.author_name?.charAt(0)}
                   </div>
-                  <span className={`text-xs font-medium ${a.is_coach ? 'text-primary font-semibold' : ''}`}>
+                  <span className={`text-xs font-medium ${a.is_coach ? 'text-primary font-bold' : ''}`}>
                     {a.author_name}
                   </span>
                   {a.is_coach && (
-                    <span className="text-[9px] font-semibold text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded-md">Koç</span>
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="h-3 w-3" />
+                      KOÇ
+                    </span>
                   )}
                   <span className="text-[10px] text-muted-foreground ml-auto">{formatTime(a.created_at)}</span>
                   {/* Delete answer */}
