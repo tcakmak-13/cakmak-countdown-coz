@@ -643,6 +643,7 @@ export type Database = {
       }
       get_my_profile_id: { Args: never; Returns: string }
       get_my_student_ids: { Args: never; Returns: string[] }
+      has_coach_info: { Args: { _profile_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
