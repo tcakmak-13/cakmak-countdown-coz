@@ -512,7 +512,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
           const isMine = msg.sender_id === currentProfileId;
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'glass-card rounded-2xl rounded-bl-md'}`}>
+              <div className={`max-w-[85%] px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
                 {renderMessageContent(msg)}
               </div>
             </div>
