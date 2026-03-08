@@ -21,6 +21,15 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim';
 
+const TAB_TITLES: Record<Tab, string> = {
+  'denemelerim': 'Denemelerim',
+  'hata-kumbarasi': 'Hatalarım',
+  'ana-menu': '',
+  'randevular': 'Randevular',
+  'mesajlar': 'Mesajlar',
+  'profilim': 'Profilim',
+};
+
 const tabVariants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
