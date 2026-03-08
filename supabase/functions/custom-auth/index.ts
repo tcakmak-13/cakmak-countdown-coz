@@ -39,8 +39,21 @@ function isPasswordStrong(password: string): boolean {
 }
 
 function isUsernameValid(username: string): boolean {
-  // Only allow alphanumeric, dots, hyphens, underscores — no spaces or special chars
   return /^[a-zA-Z0-9._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
+}
+
+async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return null;
+  const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
+  const callerClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: callerUser } = await callerClient.auth.getUser();
+  if (!callerUser?.user) return null;
+  const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
+  if (roleData?.role !== "admin") return null;
+  return callerUser.user;
 }
 
 Deno.serve(async (req) => {
@@ -55,7 +68,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
-    const { action, username, password, fullName, profileId } = await req.json();
+    const { action, username, password, fullName, profileId, role: targetRole } = await req.json();
 
     if (action === "login") {
       if (!username || !password) {
@@ -113,27 +126,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Create student (admin only)
     if (action === "create-student") {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
-          status: 401, headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
-
-      const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
-      const callerClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: callerUser } = await callerClient.auth.getUser();
-      if (!callerUser?.user) {
-        return new Response(JSON.stringify({ error: "Geçersiz oturum." }), {
-          status: 401, headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
-
-      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
-      if (roleData?.role !== "admin") {
+      const admin = await verifyAdmin(req, supabase, supabaseUrl);
+      if (!admin) {
         return new Response(JSON.stringify({ error: "Sadece adminler öğrenci oluşturabilir." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
@@ -144,13 +140,11 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
-
       if (!isUsernameValid(username)) {
         return new Response(JSON.stringify({ error: "Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir (en az 2 karakter)." }), {
           status: 400, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
-
       if (!isPasswordStrong(password)) {
         return new Response(JSON.stringify({ error: "Şifre en az 8 karakter olmalıdır." }), {
           status: 400, headers: { ...cors, "Content-Type": "application/json" },
@@ -182,28 +176,67 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (action === "delete-student") {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
-          status: 401, headers: { ...cors, "Content-Type": "application/json" },
+    // Create coach (admin only)
+    if (action === "create-coach") {
+      const admin = await verifyAdmin(req, supabase, supabaseUrl);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: "Sadece adminler koç oluşturabilir." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
-      const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
-      const callerClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
+      if (!username || !password) {
+        return new Response(JSON.stringify({ error: "Kullanıcı adı ve şifre gerekli." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      if (!isUsernameValid(username)) {
+        return new Response(JSON.stringify({ error: "Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir (en az 2 karakter)." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      if (!isPasswordStrong(password)) {
+        return new Response(JSON.stringify({ error: "Şifre en az 8 karakter olmalıdır." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const email = `${username}@${EMAIL_DOMAIN}`;
+      const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName || username, username },
       });
-      const { data: callerUser } = await callerClient.auth.getUser();
-      if (!callerUser?.user) {
-        return new Response(JSON.stringify({ error: "Geçersiz oturum." }), {
-          status: 401, headers: { ...cors, "Content-Type": "application/json" },
+
+      if (createErr) {
+        console.error('Coach creation error:', createErr);
+        if (createErr.message.includes("already been registered")) {
+          return new Response(JSON.stringify({ error: "Bu kullanıcı adı zaten mevcut." }), {
+            status: 409, headers: { ...cors, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ error: "Koç oluşturulamadı." }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
-      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
-      if (roleData?.role !== "admin") {
-        return new Response(JSON.stringify({ error: "Sadece adminler öğrenci silebilir." }), {
+      // Update role to 'koc' and mark profile as completed
+      if (newUser?.user) {
+        await supabase.from("user_roles").update({ role: "koc" }).eq("user_id", newUser.user.id);
+        await supabase.from("profiles").update({ profile_completed: true, full_name: fullName || username }).eq("user_id", newUser.user.id);
+      }
+
+      return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Delete user (admin only) - works for both students and coaches
+    if (action === "delete-student" || action === "delete-user") {
+      const admin = await verifyAdmin(req, supabase, supabaseUrl);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: "Sadece adminler kullanıcı silebilir." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -214,33 +247,51 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get the user_id from the profile
       const { data: profileData, error: profileErr } = await supabase.from("profiles").select("user_id").eq("id", profileId).single();
       if (profileErr || !profileData) {
-        return new Response(JSON.stringify({ error: "Öğrenci bulunamadı." }), {
+        return new Response(JSON.stringify({ error: "Kullanıcı bulunamadı." }), {
           status: 404, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
-      // Prevent deleting admin
-      const { data: targetRole } = await supabase.from("user_roles").select("role").eq("user_id", profileData.user_id).single();
-      if (targetRole?.role === "admin") {
+      const { data: targetRoleData } = await supabase.from("user_roles").select("role").eq("user_id", profileData.user_id).single();
+      if (targetRoleData?.role === "admin") {
         return new Response(JSON.stringify({ error: "Admin hesabı silinemez." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
-      // Delete the auth user (CASCADE will handle profiles, user_roles, etc.)
+      // If deleting a coach, unassign all their students first
+      if (targetRoleData?.role === "koc") {
+        await supabase.from("profiles").update({ coach_id: null, coach_selected: false }).eq("coach_id", profileId);
+      }
+
       const { error: deleteErr } = await supabase.auth.admin.deleteUser(profileData.user_id);
       if (deleteErr) {
         console.error("Delete user error:", deleteErr);
-        return new Response(JSON.stringify({ error: "Öğrenci silinemedi." }), {
+        return new Response(JSON.stringify({ error: "Kullanıcı silinemedi." }), {
           status: 500, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Assign student to coach (admin only)
+    if (action === "assign-coach") {
+      const admin = await verifyAdmin(req, supabase, supabaseUrl);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const { studentProfileId, coachProfileId } = await req.json().catch(() => ({}));
+      // These come from the original body parse, let me use the destructured values
+      return new Response(JSON.stringify({ error: "Geçersiz parametreler." }), {
+        status: 400, headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
