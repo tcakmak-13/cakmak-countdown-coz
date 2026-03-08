@@ -129,7 +129,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         estimated_minutes: form.estimatedMinutes, description: form.description,
       });
     }
-    setForm({ subject: '', topic: '', estimatedMinutes: 30, description: '' });
+    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
     setEditingTask(null);
     setDialogOpen(false);
     fetchTasks();
