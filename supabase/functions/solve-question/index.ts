@@ -104,29 +104,44 @@ Soru görseli URL: ${imageUrl}`;
 
     console.log("AI Vision analizi başlatılıyor...");
 
-    // Call Lovable AI with Vision model (gemini-2.5-pro for best image analysis)
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: userPrompt },
-              { type: "image_url", image_url: { url: imageUrl } },
-            ],
-          },
-        ],
-        max_tokens: 2000,
-        temperature: 0.3,
-      }),
-    });
+    // Retry mechanism with exponential backoff
+    const MAX_RETRIES = 3;
+    const callAI = async (retryCount = 0): Promise<Response> => {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: userPrompt },
+                { type: "image_url", image_url: { url: imageUrl } },
+              ],
+            },
+          ],
+          max_tokens: 2000,
+          temperature: 0.3,
+        }),
+      });
+
+      // Retry on 429 (rate limit) with exponential backoff
+      if (response.status === 429 && retryCount < MAX_RETRIES) {
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`Rate limit hit, retrying in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return callAI(retryCount + 1);
+      }
+
+      return response;
+    };
+
+    const response = await callAI();
 
     if (!response.ok) {
       if (response.status === 429) {

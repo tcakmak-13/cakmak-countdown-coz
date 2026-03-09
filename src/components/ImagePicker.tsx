@@ -327,4 +327,6 @@ const ImagePicker = forwardRef<HTMLDivElement, ImagePickerProps>(function ImageP
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+export default ImagePicker;
