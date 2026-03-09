@@ -3,7 +3,7 @@ import { Video, Phone, CalendarIcon, Clock, Check, X, Loader2, Repeat } from 'lu
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, addDays, nextDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -338,7 +338,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 pt-3">
+          <div className="space-y-5 pt-3">
             {/* Recurring info */}
             <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 flex items-center gap-2.5">
               <Repeat className="h-4.5 w-4.5 text-amber-400 shrink-0" />
@@ -352,55 +352,111 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
               </div>
             ) : (
               <>
-                {/* Column day+slot picker */}
                 <div>
                   <p className="text-base font-semibold mb-3 flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5 text-primary" /> Gün ve Saat Seç
+                    <CalendarIcon className="h-5 w-5 text-primary" /> Gün Seç
                   </p>
-                  <div className="grid grid-cols-7 gap-2.5">
-                    {DAY_ORDER.map((dow, idx) => {
+
+                  {/* Day list rows */}
+                  <div className="space-y-2">
+                    {DAY_ORDER.map((dow) => {
                       const daySlots = slotsPerDay[dow] || [];
                       const hasSlots = daySlots.length > 0;
                       const isSelectedDay = selectedDay === dow;
+                      const isFull = availableDays.has(dow) && !hasSlots;
 
                       return (
-                        <div key={dow} className={`rounded-2xl border-2 p-2.5 flex flex-col min-h-[180px] transition-all ${
-                          isSelectedDay ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10' : hasSlots ? 'border-border bg-card hover:border-primary/30' : 'border-border/30 bg-secondary/10 opacity-40'
-                        }`}>
-                          {/* Day header */}
+                        <div key={dow}>
                           <button
                             disabled={!hasSlots}
-                            onClick={() => { setSelectedDay(dow); setSelectedTime(null); }}
-                            className={`text-center py-2.5 rounded-xl mb-2 transition-all font-display ${
-                              isSelectedDay ? 'bg-primary text-primary-foreground shadow-md' : hasSlots ? 'hover:bg-primary/10' : ''
+                            onClick={() => {
+                              if (isSelectedDay) {
+                                setSelectedDay(null);
+                                setSelectedTime(null);
+                              } else {
+                                setSelectedDay(dow);
+                                setSelectedTime(null);
+                              }
+                            }}
+                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 transition-all ${
+                              isSelectedDay
+                                ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'
+                                : hasSlots
+                                  ? 'border-border bg-card hover:border-primary/40 hover:bg-primary/5 cursor-pointer'
+                                  : 'border-border/30 bg-secondary/20 opacity-50 cursor-not-allowed'
                             }`}
                           >
-                            <p className="text-sm font-bold">{DAY_SHORT[idx]}</p>
+                            <div className="flex items-center gap-3">
+                              <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-display font-bold text-sm ${
+                                isSelectedDay
+                                  ? 'bg-primary text-primary-foreground'
+                                  : hasSlots
+                                    ? 'bg-primary/15 text-primary'
+                                    : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {DAY_SHORT[DAY_ORDER.indexOf(dow)]}
+                              </div>
+                              <div className="text-left">
+                                <p className={`font-display font-semibold ${!hasSlots ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                  {DAY_NAMES[dow]}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {hasSlots
+                                    ? `${daySlots.length} saat dilimi müsait`
+                                    : isFull
+                                      ? 'Tüm saatler dolu'
+                                      : 'Müsait değil'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {!hasSlots && isFull && (
+                                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-muted text-muted-foreground">Dolu</span>
+                              )}
+                              {hasSlots && (
+                                <Clock className={`h-4 w-4 transition-transform ${isSelectedDay ? 'text-primary rotate-90' : 'text-muted-foreground'}`} />
+                              )}
+                            </div>
                           </button>
 
-                          {/* Time slots */}
-                          <div className="flex-1 overflow-y-auto space-y-1.5 max-h-48 scrollbar-hide">
-                            {hasSlots ? daySlots.map(t => {
-                              const end = minutesToTime(timeToMinutes(t) + DURATION[selectedType]);
-                              const isSelected = isSelectedDay && selectedTime === t;
-                              return (
-                                <button
-                                  key={t}
-                                  onClick={() => { setSelectedDay(dow); setSelectedTime(t); }}
-                                  className={`w-full rounded-xl py-2 px-1 text-center transition-all ${
-                                    isSelected
-                                      ? 'bg-gradient-orange text-primary-foreground font-bold shadow-md'
-                                      : 'hover:bg-primary/10 text-foreground bg-secondary/40 border border-border/50'
-                                  }`}
-                                >
-                                  <span className="text-xs font-semibold block leading-tight">{t}</span>
-                                  <span className="text-[10px] opacity-70 block leading-tight">{end}</span>
-                                </button>
-                              );
-                            }) : (
-                              <p className="text-xs text-muted-foreground/40 text-center mt-4">—</p>
+                          {/* Expandable time slots panel */}
+                          <AnimatePresence>
+                            {isSelectedDay && hasSlots && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pt-3 pb-1 px-2">
+                                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5" /> Saat seçin — {DAY_NAMES[dow]}
+                                  </p>
+                                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                    {daySlots.map(t => {
+                                      const end = minutesToTime(timeToMinutes(t) + DURATION[selectedType]);
+                                      const isSelected = selectedTime === t;
+                                      return (
+                                        <button
+                                          key={t}
+                                          onClick={() => setSelectedTime(t)}
+                                          className={`rounded-xl py-3 px-2 text-center transition-all border-2 ${
+                                            isSelected
+                                              ? 'border-primary bg-gradient-orange text-primary-foreground font-bold shadow-lg shadow-primary/20'
+                                              : 'border-primary/30 bg-card hover:border-primary hover:bg-primary/5 text-foreground'
+                                          }`}
+                                        >
+                                          <span className="text-sm font-bold block">{t}</span>
+                                          <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{end}'e kadar</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </motion.div>
                             )}
-                          </div>
+                          </AnimatePresence>
                         </div>
                       );
                     })}
@@ -408,24 +464,31 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                 </div>
 
                 {/* Selection summary */}
-                {selectedDay !== null && selectedTime && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl bg-primary/10 border border-primary/30 p-6 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Haftalık Randevu</p>
-                    <p className="font-display font-bold text-xl text-foreground">
-                      Her <span className="text-primary">{DAY_NAMES[selectedDay]}</span>
-                    </p>
-                    <p className="font-display font-black text-4xl text-primary mt-1">{selectedTime} — {endTimeLabel}</p>
-                    <p className="text-sm text-muted-foreground mt-2">{selectedType === 'video' ? 'Görüntülü Görüşme' : 'Sesli Görüşme'}</p>
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {selectedDay !== null && selectedTime && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 12 }}
+                      className="rounded-2xl bg-primary/10 border-2 border-primary/30 p-6 text-center"
+                    >
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">Haftalık Randevu Özeti</p>
+                      <p className="font-display font-bold text-xl text-foreground">
+                        Her <span className="text-primary">{DAY_NAMES[selectedDay]}</span>
+                      </p>
+                      <p className="font-display font-black text-4xl text-primary mt-1">{selectedTime} — {endTimeLabel}</p>
+                      <p className="text-sm text-muted-foreground mt-2">{selectedType === 'video' ? '📹 Görüntülü Görüşme' : '📞 Sesli Görüşme'}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </>
             )}
 
+            {/* Confirm button - sticky at bottom */}
             <Button onClick={handleSubmit} disabled={submitting || selectedDay === null || !selectedTime}
-              className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-14 text-lg font-bold rounded-2xl gap-2">
+              className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-14 text-lg font-bold rounded-2xl gap-2 sticky bottom-0">
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-              {submitting ? 'Gönderiliyor...' : 'Haftalık Randevu Al'}
+              {submitting ? 'Gönderiliyor...' : 'Randevu Onayla'}
             </Button>
           </div>
         </DialogContent>
