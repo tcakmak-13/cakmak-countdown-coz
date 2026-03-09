@@ -919,8 +919,9 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                   </motion.div>
                 )}
 
-                {/* AI Meclis Üyesine Sor Button - only show if no AI solution exists */}
-                {!currentAISolution && !loadingAI && getImageUrl(detailQuestion) && (
+                {/* AI Meclis Üyesine Sor Button - only show if no AI solution exists and not Math/Geometry */}
+                {!currentAISolution && !loadingAI && getImageUrl(detailQuestion) && 
+                 !['Matematik', 'Geometri'].includes(detailQuestion.subject) && (
                   <motion.button
                     onClick={() => handleAISolve(detailQuestion)}
                     disabled={loadingAI}
