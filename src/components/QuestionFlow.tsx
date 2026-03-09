@@ -673,38 +673,100 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
             <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
           )}
           
-          {/* AI Meclis Üyesine Sor Button */}
-          {selectedQuestion.image_url && (
+          {/* AI Meclis Üyesine Sor Button - only show if no AI solution exists */}
+          {selectedQuestion.image_url && !aiSolution && !loadingAI && (
             <motion.button
               onClick={askAI}
               disabled={loadingAI}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
             >
-              {loadingAI ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Yapay Zeka Çözüyor...</span>
-                </>
-              ) : (
-                <>
-                  <Bot className="h-5 w-5" />
-                  <span>AI Meclis Üyesine Sor</span>
-                  <Sparkles className="h-4 w-4" />
-                </>
-              )}
+              <Bot className="h-5 w-5" />
+              <span>AI Meclis Üyesine Sor</span>
+              <Sparkles className="h-4 w-4" />
             </motion.button>
           )}
         </div>
 
-        {/* Answers scroll area - scrolls to bottom */}
+        {/* Answers scroll area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-hide">
+          
+          {/* AI Loading Animation */}
+          {loadingAI && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-2xl p-5 border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 shadow-[0_0_20px_rgba(249,115,22,0.1)]"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 p-0.5 shrink-0"
+                >
+                  <div className="h-full w-full rounded-full bg-card flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-orange-500" />
+                  </div>
+                </motion.div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Yapay Zeka Soruyu Çözüyor...</p>
+                  <p className="text-[11px] text-muted-foreground">Görsel analiz ve adım adım çözüm hazırlanıyor</p>
+                </div>
+              </div>
+              <div className="flex gap-1 ml-13">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="h-2 w-2 rounded-full bg-orange-500"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ delay: i * 0.15, repeat: Infinity, duration: 0.6 }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* AI Solution Card - Inline, visible to everyone */}
+          {aiSolution && !loadingAI && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 border-2 border-orange-500/30 shadow-[0_0_24px_rgba(249,115,22,0.12)]"
+            >
+              {/* AI Badge */}
+              <div className="absolute -top-3 left-4 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                <Bot className="h-3 w-3" />
+                Yapay Zeka Yanıtı
+                <Sparkles className="h-3 w-3" />
+              </div>
+              
+              {/* Solution Content */}
+              <div className="mt-3 prose prose-sm dark:prose-invert max-w-none [&_strong]:text-orange-500 [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-semibold [&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2 [&_li]:text-sm [&_li]:text-muted-foreground [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1">
+                <ReactMarkdown>
+                  {aiSolution.solution_text}
+                </ReactMarkdown>
+              </div>
+
+              {/* Tags */}
+              {aiSolution.tags && aiSolution.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-orange-500/20">
+                  {aiSolution.tags.map((tag, idx) => (
+                    <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {loadingAnswers ? (
             <div className="text-center py-8">
               <div className="h-6 w-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
             </div>
-          ) : sortedAnswers.length === 0 ? (
+          ) : sortedAnswers.length === 0 && !aiSolution && !loadingAI ? (
             <div className="text-center py-12">
               <MessageCircleQuestion className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Henüz yanıt yok. İlk çözümü sen gönder!</p>
