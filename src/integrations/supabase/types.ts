@@ -430,6 +430,7 @@ export type Database = {
       }
       error_questions: {
         Row: {
+          ai_solution: string | null
           created_at: string
           exam_type: string
           id: string
@@ -440,6 +441,7 @@ export type Database = {
           subject: string
         }
         Insert: {
+          ai_solution?: string | null
           created_at?: string
           exam_type?: string
           id?: string
@@ -450,6 +452,7 @@ export type Database = {
           subject: string
         }
         Update: {
+          ai_solution?: string | null
           created_at?: string
           exam_type?: string
           id?: string
