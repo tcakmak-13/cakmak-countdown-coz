@@ -877,7 +877,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 border-2 border-orange-500/30 shadow-[0_0_24px_rgba(249,115,22,0.12)]"
+                    className="relative rounded-2xl p-4 pt-6 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 border-2 border-orange-500/30 shadow-[0_0_24px_rgba(249,115,22,0.12)] overflow-visible"
                   >
                     {/* AI Badge */}
                     <div className="absolute -top-3 left-4 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
