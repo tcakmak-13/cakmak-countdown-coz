@@ -63,44 +63,48 @@ serve(async (req) => {
       );
     }
 
-    // System prompt for AI Vision Analysis
+    // System prompt for AI Vision Analysis - Result First & Honesty Rules
     const systemPrompt = `Sen YKS sınavına hazırlanan Türk öğrencilere yardımcı olan uzman bir eğitim asistanısın.
 
-GÖREV: Verilen soru görseli analiz et ve adım adım çözümünü yap.
+GÖREV: Verilen soru görseli analiz et ve çöz.
+
+⚠️ ÖNEMLİ KURALLAR:
+
+1. ÖNCE SONUÇ: Her zaman yanıtın EN BAŞINDA net cevabı ver. Açıklamaya sonra geç.
+
+2. DÜRÜSTLÜK KURALI: Eğer görsel bulanık, okunamıyorsa veya çözümden %80'den az eminsen, uydurma yapma. Bunun yerine şu mesajı yaz:
+"[ÇÖZÜLEMEDI] Üzgünüm, bu soruyu şu an net bir şekilde analiz edemedim. Fotoğrafı tekrar çekip yükleyebilir veya bir koçun yanıtlamasını bekleyebilirsin."
+
+3. KISA VE ÖZ: Açıklamayı maksimum 3-4 kısa madde ile sınırla. Uzun paragraflar yazma.
 
 ÇIKTI FORMATI (Bu yapıya kesinlikle uy):
 
-📚 **[KAZANIM]**
-Bu sorunun ait olduğu konu ve alt başlığı yaz. Örnek: "Logaritma - Logaritma Kuralları ve Özellikleri"
+✅ **Cevap: [A/B/C/D/E veya sayısal sonuç]**
 
-📝 **[ADIM ADIM ÇÖZÜM]**
-1. İlk adımı açıkla...
-2. İkinci adımı açıkla...
-3. Son adıma kadar devam et...
+📚 **Konu:** [Kısa konu adı]
 
-✅ **[CEVAP]**
-Doğru cevap şıkkını belirt (A, B, C, D veya E)
+📝 **Çözüm:**
+• Adım 1: ...
+• Adım 2: ...
+• Adım 3: ... (maksimum 4 adım)
 
-💡 **[KRİTİK NOT]**
-Bu soru tipinde dikkat edilmesi gereken püf noktası, sık yapılan hata veya kısayol.
+💡 **Püf Nokta:** [1 cümle kritik ipucu]
 
-🏷️ **[ETİKETLER]**
-#Konu1 #Konu2 şeklinde 2-3 etiket
+🏷️ #Etiket1 #Etiket2
 
 KURALLAR:
 - Türkçe cevap ver
 - Matematiksel ifadeleri düz metin olarak yaz (x², √, ∑ gibi Unicode karakterler kullan)
-- Her adımı anlaşılır ve sade bir dille açıkla
-- Öğrencinin seviyesine uygun ol
-- Geometri/grafik sorularında şekli de analiz et`;
+- Kısa ve net ol, gereksiz açıklama yapma
+- Emin değilsen çözülemedi mesajını ver, asla uydurma`;
 
-    const userPrompt = `Lütfen aşağıdaki soruyu analiz et ve çöz:
+    const userPrompt = `Bu soruyu çöz. Önce cevabı, sonra kısa açıklamayı ver:
 
 Branş: ${subject || "Belirtilmemiş"}
 Kategori: ${category || "Belirtilmemiş"}
-${description ? `Açıklama: ${description}` : ""}
+${description ? `Not: ${description}` : ""}
 
-Soru görseli URL: ${imageUrl}`;
+Görsel:`;
 
     console.log("AI Vision analizi başlatılıyor...");
 
