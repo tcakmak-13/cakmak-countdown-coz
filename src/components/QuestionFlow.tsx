@@ -106,7 +106,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   // AI Solution state
   const [aiSolution, setAiSolution] = useState<AISolution | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
+  
 
   // Nickname change state
   const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
