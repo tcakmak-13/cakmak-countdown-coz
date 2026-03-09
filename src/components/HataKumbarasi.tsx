@@ -341,10 +341,6 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     }
   };
 
-  const openDetail = (q: ErrorQuestion) => {
-    setDetailQuestion(q);
-    setEditNote(q.note || '');
-  };
 
   const saveNote = async () => {
     if (!detailQuestion) return;
