@@ -352,9 +352,29 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     }
   }, [loadingAnswers, answers.length, selectedQuestion, scrollToBottom]);
 
+  // Load existing AI solution for a question
+  const loadAISolution = async (questionId: string) => {
+    const { data } = await supabase
+      .from('ai_solutions')
+      .select('*')
+      .eq('question_id', questionId)
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      // Extract tags from solution text
+      const tagMatch = (data.solution_text || '').match(/\[ETİKETLER\]\s*([\s\S]*?)$/i);
+      const tags = tagMatch?.[1]?.match(/#\w+/g) || [];
+      setAiSolution({ ...data, tags, cached: true });
+    } else {
+      setAiSolution(null);
+    }
+  };
+
   const openThread = (q: Question) => {
     setSelectedQuestion(q);
+    setAiSolution(null);
     loadAnswers(q.id);
+    loadAISolution(q.id);
   };
 
   // Submit new question
