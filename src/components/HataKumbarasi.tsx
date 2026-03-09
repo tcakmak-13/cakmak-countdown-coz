@@ -664,6 +664,59 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                       {q.note && (
                         <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">{q.note}</p>
                       )}
+                      
+                      {/* AI Solve Button */}
+                      {!q.ai_solution && (
+                        <button
+                          onClick={() => handleAISolve(q)}
+                          disabled={solvingQuestionId === q.id}
+                          className="w-full text-xs font-semibold py-2 rounded-lg bg-gradient-to-r from-primary to-orange-600 text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_hsl(var(--primary)/0.3)] disabled:opacity-60"
+                        >
+                          {solvingQuestionId === q.id ? (
+                            <>
+                              <div className="h-3 w-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                              Analiz Ediliyor...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-3.5 w-3.5" />
+                              AI ile Çöz
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* AI Solution Accordion */}
+                      {q.ai_solution && (
+                        <div className="border border-primary/30 rounded-lg overflow-hidden bg-primary/5">
+                          <button
+                            onClick={() => toggleSolutionExpand(q.id)}
+                            className="w-full flex items-center justify-between px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Sparkles className="h-3 w-3" />
+                              AI Çözümü
+                            </span>
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandedSolutions[q.id] ? 'rotate-180' : ''}`} />
+                          </button>
+                          <AnimatePresence>
+                            {expandedSolutions[q.id] && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="px-2.5 py-2 text-[10px] leading-relaxed text-foreground/90 border-t border-primary/20 max-h-[200px] overflow-y-auto prose prose-xs prose-invert">
+                                  <ReactMarkdown>{q.ai_solution}</ReactMarkdown>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => toggleStatus(q)}
                         className={`w-full text-xs font-medium py-1.5 rounded-lg transition-colors ${
