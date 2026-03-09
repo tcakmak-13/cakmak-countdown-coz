@@ -8,6 +8,17 @@ import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import YKSCountdown from '@/components/YKSCountdown';
 export default function Landing() {
   const navigate = useNavigate();
+  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
+
+  const handleInstall = async () => {
+    const success = await promptInstall();
+    if (success) {
+      toast({
+        title: "Başarıyla Yüklendi! 🎉",
+        description: "Uygulama ana ekranınıza eklendi.",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -76,7 +87,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="relative z-10"
+          className="relative z-10 flex flex-col sm:flex-row items-center gap-3"
         >
           <Button
             size="lg"
@@ -85,6 +96,31 @@ export default function Landing() {
           >
             Hemen Başla <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
+
+          {/* Install App Button - Only visible when installable and not installed */}
+          {isInstallable && !isInstalled && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleInstall}
+                    className="h-auto py-6 px-6 border-primary/30 hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
+                  >
+                    <Download className="h-5 w-5 mr-2 group-hover:animate-bounce" />
+                    <span className="text-lg">App Olarak İndir</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="bottom" 
+                  className="bg-card border-primary/20"
+                >
+                  <p className="text-sm">Masaüstüne veya Telefona Kur</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </motion.div>
 
         {/* Features */}
