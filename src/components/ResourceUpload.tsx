@@ -28,8 +28,8 @@ export default function ResourceUpload({ coachId, onUploadSuccess }: ResourceUpl
         toast.error('Sadece PDF dosyaları yükleyebilirsiniz');
         return;
       }
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast.error('Dosya boyutu 10MB\'dan küçük olmalıdır');
+      if (selectedFile.size > 50 * 1024 * 1024) {
+        toast.error('Dosya boyutu 50MB\'dan küçük olmalıdır');
         return;
       }
       setFile(selectedFile);
