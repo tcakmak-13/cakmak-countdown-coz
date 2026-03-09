@@ -434,6 +434,8 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   };
 
   const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
+
+  const toggleSolutionExpand = (questionId: string) => {
     setExpandedSolutions(prev => ({ ...prev, [questionId]: !prev[questionId] }));
   };
 
