@@ -218,13 +218,13 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     }, 100);
   }, []);
 
-  // Load questions (ascending = oldest first, newest at bottom)
+  // Load questions (descending = newest first, like social media feed)
   const loadQuestions = useCallback(async () => {
     setLoading(true);
     let query = supabase
       .from('questions')
       .select('*')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (filterCategory) query = query.eq('category', filterCategory);
     if (filterSubject) query = query.eq('subject', filterSubject);
@@ -271,12 +271,12 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
-  // Scroll flow to bottom after questions load
+  // Feed is now newest-first, so scroll to top on load
   useEffect(() => {
     if (!loading && questions.length > 0) {
-      scrollToBottom(flowScrollRef);
+      flowScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [loading, questions.length, scrollToBottom]);
+  }, [loading, questions.length]);
 
   // Realtime subscription
   useEffect(() => {
