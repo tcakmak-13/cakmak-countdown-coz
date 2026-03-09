@@ -418,6 +418,11 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
           prev.map(q => q.id === question.id ? { ...q, ai_solution: solutionText } : q)
         );
         
+        // Update detail question if open
+        setDetailQuestion(prev => 
+          prev && prev.id === question.id ? { ...prev, ai_solution: solutionText } : prev
+        );
+        
         // Auto-expand the solution
         setExpandedSolutions(prev => ({ ...prev, [question.id]: true }));
         
