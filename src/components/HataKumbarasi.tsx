@@ -7,7 +7,7 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, ChevronDown
+  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,7 +15,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ImagePicker from '@/components/ImagePicker';
 import ReactMarkdown from 'react-markdown';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+interface AISolution {
+  solution_text: string;
+  topic_analysis?: string;
+  reasoning_steps?: string[];
+  study_recommendation?: string;
+  tags?: string[];
+  cached?: boolean;
+}
 
 interface ErrorQuestion {
   id: string;
@@ -88,8 +96,9 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [pendingCount, setPendingCount] = useState(0);
-  const [solvingQuestionId, setSolvingQuestionId] = useState<string | null>(null);
-  const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({});
+  
+  const [currentAISolution, setCurrentAISolution] = useState<AISolution | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
 
   // Fetch pending (open) questions count for badge
   useEffect(() => {
@@ -332,10 +341,6 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     }
   };
 
-  const openDetail = (q: ErrorQuestion) => {
-    setDetailQuestion(q);
-    setEditNote(q.note || '');
-  };
 
   const saveNote = async () => {
     if (!detailQuestion) return;
@@ -371,9 +376,9 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     toast.success('Soru silindi.');
   };
 
-  // AI Solution Handler
+  // AI Solution Handler - same as Soru Meclisi
   const handleAISolve = async (question: ErrorQuestion) => {
-    if (solvingQuestionId) return;
+    if (loadingAI) return;
     
     const imageUrl = getImageUrl(question);
     if (!imageUrl) {
@@ -381,10 +386,11 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
       return;
     }
 
-    setSolvingQuestionId(question.id);
+    setLoadingAI(true);
+    setCurrentAISolution(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('solve-question', {
+      const response = await supabase.functions.invoke('solve-question', {
         body: {
           questionId: question.id,
           imageUrl: imageUrl,
@@ -394,55 +400,83 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         },
       });
 
-      if (error) {
-        console.error('AI solve error:', error);
-        toast.error('AI çözümü alınamadı, lütfen tekrar deneyin.');
-        return;
+      if (response.error) {
+        throw new Error(response.error.message || 'AI çözümü alınamadı');
       }
 
-      if (data?.success && data?.solution?.solution_text) {
-        const solutionText = data.solution.solution_text;
-        
-        // Save to database
-        const { error: updateError } = await supabase
-          .from('error_questions')
-          .update({ ai_solution: solutionText })
-          .eq('id', question.id);
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'AI yanıt veremedi');
+      }
 
-        if (updateError) {
-          console.error('Save AI solution error:', updateError);
-        }
+      const sol = response.data.solution;
+      const tagMatch = (sol.solution_text || '').match(/#\w+/g) || [];
+      const tags = sol.tags || tagMatch;
+      
+      const solutionObj: AISolution = {
+        solution_text: sol.solution_text,
+        topic_analysis: sol.topic_analysis,
+        reasoning_steps: Array.isArray(sol.reasoning_steps) ? sol.reasoning_steps : [],
+        study_recommendation: sol.study_recommendation,
+        tags,
+        cached: response.data.cached,
+      };
+      
+      setCurrentAISolution(solutionObj);
+      
+      // Save to database
+      const { error: updateError } = await supabase
+        .from('error_questions')
+        .update({ ai_solution: sol.solution_text })
+        .eq('id', question.id);
 
-        // Update local state
-        setAllQuestions(prev =>
-          prev.map(q => q.id === question.id ? { ...q, ai_solution: solutionText } : q)
-        );
-        
-        // Update detail question if open
-        setDetailQuestion(prev => 
-          prev && prev.id === question.id ? { ...prev, ai_solution: solutionText } : prev
-        );
-        
-        // Auto-expand the solution
-        setExpandedSolutions(prev => ({ ...prev, [question.id]: true }));
-        
-        toast.success('AI çözümü hazır!');
+      if (updateError) {
+        console.error('Save AI solution error:', updateError);
+      }
+
+      // Update local state
+      setAllQuestions(prev =>
+        prev.map(q => q.id === question.id ? { ...q, ai_solution: sol.solution_text } : q)
+      );
+      
+      // Update detail question if open
+      setDetailQuestion(prev => 
+        prev && prev.id === question.id ? { ...prev, ai_solution: sol.solution_text } : prev
+      );
+      
+      if (response.data.cached) {
+        toast.success('Önbellekten çözüm getirildi ⚡');
       } else {
-        toast.error('AI yanıt üretemedi, tekrar deneyin.');
+        toast.success('AI çözümü hazır! 🎉');
       }
-    } catch (err) {
-      console.error('AI solve exception:', err);
-      toast.error('Bir hata oluştu, lütfen tekrar deneyin.');
+    } catch (err: any) {
+      console.error('AI çözüm hatası:', err);
+      toast.error(err.message || 'AI çözümü alınamadı');
     } finally {
-      setSolvingQuestionId(null);
+      setLoadingAI(false);
     }
   };
 
-  const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
-
-  const toggleSolutionExpand = (questionId: string) => {
-    setExpandedSolutions(prev => ({ ...prev, [questionId]: !prev[questionId] }));
+  // Load existing AI solution when opening detail
+  const loadAISolution = (question: ErrorQuestion) => {
+    if (question.ai_solution) {
+      const tagMatch = (question.ai_solution || '').match(/#\w+/g) || [];
+      setCurrentAISolution({
+        solution_text: question.ai_solution,
+        tags: tagMatch,
+        cached: true,
+      });
+    } else {
+      setCurrentAISolution(null);
+    }
   };
+
+  const openDetail = (q: ErrorQuestion) => {
+    setDetailQuestion(q);
+    setEditNote(q.note || '');
+    loadAISolution(q);
+  };
+
+  const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -677,55 +711,12 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                         <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">{q.note}</p>
                       )}
                       
-                      {/* AI Solve Button */}
-                      {!q.ai_solution && (
-                        <button
-                          onClick={() => handleAISolve(q)}
-                          disabled={solvingQuestionId === q.id}
-                          className="w-full text-xs font-semibold py-2 rounded-lg bg-gradient-to-r from-primary to-orange-600 text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_hsl(var(--primary)/0.3)] disabled:opacity-60"
-                        >
-                          {solvingQuestionId === q.id ? (
-                            <>
-                              <div className="h-3 w-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                              Analiz Ediliyor...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-3.5 w-3.5" />
-                              AI ile Çöz
-                            </>
-                          )}
-                        </button>
-                      )}
-
-                      {/* AI Solution Accordion */}
+                      {/* AI Solution indicator - tap card to see full solution */}
                       {q.ai_solution && (
-                        <div className="border border-primary/30 rounded-lg overflow-hidden bg-primary/5">
-                          <button
-                            onClick={() => toggleSolutionExpand(q.id)}
-                            className="w-full flex items-center justify-between px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <Sparkles className="h-3 w-3" />
-                              AI Çözümü
-                            </span>
-                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandedSolutions[q.id] ? 'rotate-180' : ''}`} />
-                          </button>
-                          <AnimatePresence>
-                            {expandedSolutions[q.id] && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="px-2.5 py-2 text-[10px] leading-relaxed text-foreground/90 border-t border-primary/20 max-h-[200px] overflow-y-auto prose prose-xs prose-invert">
-                                  <ReactMarkdown>{q.ai_solution}</ReactMarkdown>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                        <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gradient-to-r from-primary/10 to-orange-600/10 border border-primary/30">
+                          <Bot className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-[10px] font-semibold text-primary">AI Çözümü Hazır</span>
+                          <Sparkles className="h-3 w-3 text-primary/70" />
                         </div>
                       )}
 
@@ -843,36 +834,91 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                 {detailQuestion.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
               </button>
 
-              {/* AI Solution Section */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  AI Çözümü
-                </label>
-                {detailQuestion.ai_solution ? (
-                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 max-h-[300px] overflow-y-auto">
-                    <div className="prose prose-sm prose-invert max-w-none text-foreground/90">
-                      <ReactMarkdown>{detailQuestion.ai_solution}</ReactMarkdown>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => handleAISolve(detailQuestion)}
-                    disabled={solvingQuestionId === detailQuestion.id}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-orange-600 text-primary-foreground border-0 hover:opacity-90 shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
+              {/* AI Solution Section - Same as Soru Meclisi */}
+              <div className="space-y-3">
+                {/* AI Loading Animation */}
+                {loadingAI && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-2xl p-5 border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 shadow-[0_0_20px_rgba(249,115,22,0.1)]"
                   >
-                    {solvingQuestionId === detailQuestion.id ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        Analiz Ediliyor...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        AI ile Çöz
-                      </>
+                    <div className="flex items-center gap-3 mb-4">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 p-0.5 shrink-0"
+                      >
+                        <div className="h-full w-full rounded-full bg-card flex items-center justify-center">
+                          <Bot className="h-5 w-5 text-orange-500" />
+                        </div>
+                      </motion.div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Yapay Zeka Soruyu Çözüyor...</p>
+                        <p className="text-[11px] text-muted-foreground">Görsel analiz ve adım adım çözüm hazırlanıyor</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 ml-13">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="h-2 w-2 rounded-full bg-orange-500"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ delay: i * 0.15, repeat: Infinity, duration: 0.6 }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* AI Solution Card - Inline, same as Soru Meclisi */}
+                {currentAISolution && !loadingAI && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 border-2 border-orange-500/30 shadow-[0_0_24px_rgba(249,115,22,0.12)]"
+                  >
+                    {/* AI Badge */}
+                    <div className="absolute -top-3 left-4 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                      <Bot className="h-3 w-3" />
+                      Yapay Zeka Yanıtı
+                      <Sparkles className="h-3 w-3" />
+                    </div>
+                    
+                    {/* Solution Content */}
+                    <div className="mt-3 prose prose-sm dark:prose-invert max-w-none max-h-[300px] overflow-y-auto [&_strong]:text-orange-500 [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-semibold [&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2 [&_li]:text-sm [&_li]:text-muted-foreground [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1">
+                      <ReactMarkdown>
+                        {currentAISolution.solution_text}
+                      </ReactMarkdown>
+                    </div>
+
+                    {/* Tags */}
+                    {currentAISolution.tags && currentAISolution.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-orange-500/20">
+                        {currentAISolution.tags.map((tag, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     )}
-                  </Button>
+                  </motion.div>
+                )}
+
+                {/* AI Meclis Üyesine Sor Button - only show if no AI solution exists */}
+                {!currentAISolution && !loadingAI && getImageUrl(detailQuestion) && (
+                  <motion.button
+                    onClick={() => handleAISolve(detailQuestion)}
+                    disabled={loadingAI}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
+                  >
+                    <Bot className="h-5 w-5" />
+                    <span>AI ile Çöz</span>
+                    <Sparkles className="h-4 w-4" />
+                  </motion.button>
                 )}
               </div>
 
