@@ -1,16 +1,44 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download } from 'lucide-react';
+import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download, Monitor, Smartphone, X, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { useIsMobile } from '@/hooks/use-mobile';
 import YKSCountdown from '@/components/YKSCountdown';
+
 export default function Landing() {
   const navigate = useNavigate();
-  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
+  const { isInstallable, isInstalled, isIOS, promptInstall } = useInstallPrompt();
+  const isMobile = useIsMobile();
+  const [showIOSModal, setShowIOSModal] = useState(false);
+
+  // Determine if we should show install button
+  // Show for: installable browsers OR iOS (which needs manual instructions)
+  const shouldShowInstallButton = (isInstallable || isIOS) && !isInstalled;
+
+  // Dynamic button text based on device
+  const getInstallButtonText = () => {
+    if (isIOS) return 'iPhone\'a Yükle';
+    if (isMobile) return 'Telefona Yükle';
+    return 'Bilgisayara Kur';
+  };
+
+  // Dynamic tooltip text
+  const getTooltipText = () => {
+    if (isIOS) return 'Safari ile Ana Ekrana Ekle';
+    if (isMobile) return 'Ana ekranına ekle, uygulama gibi kullan';
+    return 'Masaüstüne kısayol olarak ekle';
+  };
 
   const handleInstall = async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+    
     const success = await promptInstall();
     if (success) {
       toast({
@@ -97,8 +125,8 @@ export default function Landing() {
             Hemen Başla <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
 
-          {/* Install App Button - Only visible when installable and not installed */}
-          {isInstallable && !isInstalled && (
+          {/* Cross-Browser Install Button */}
+          {shouldShowInstallButton && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -108,15 +136,19 @@ export default function Landing() {
                     onClick={handleInstall}
                     className="h-auto py-6 px-6 border-primary/30 hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
                   >
-                    <Download className="h-5 w-5 mr-2 group-hover:animate-bounce" />
-                    <span className="text-lg">App Olarak İndir</span>
+                    {isMobile || isIOS ? (
+                      <Smartphone className="h-5 w-5 mr-2 group-hover:animate-bounce" />
+                    ) : (
+                      <Monitor className="h-5 w-5 mr-2 group-hover:animate-bounce" />
+                    )}
+                    <span className="text-lg">{getInstallButtonText()}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent 
                   side="bottom" 
                   className="bg-card border-primary/20"
                 >
-                  <p className="text-sm">Masaüstüne veya Telefona Kur</p>
+                  <p className="text-sm">{getTooltipText()}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
