@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle, Pencil, UserCircle, Bot, Sparkles, Loader2 } from 'lucide-react';
+import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle, Pencil, UserCircle, Bot, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
