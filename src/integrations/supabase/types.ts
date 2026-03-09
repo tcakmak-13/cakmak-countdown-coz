@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_solutions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          image_hash: string
+          model_used: string | null
+          question_id: string
+          reasoning_steps: Json
+          solution_text: string
+          study_recommendation: string | null
+          topic_analysis: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          image_hash: string
+          model_used?: string | null
+          question_id: string
+          reasoning_steps?: Json
+          solution_text: string
+          study_recommendation?: string | null
+          topic_analysis?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          image_hash?: string
+          model_used?: string | null
+          question_id?: string
+          reasoning_steps?: Json
+          solution_text?: string
+          study_recommendation?: string | null
+          topic_analysis?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_solutions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           coach_id: string | null
@@ -792,6 +842,39 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          duration_days: number | null
+          features: string[] | null
+          id: string
+          is_active: boolean | null
+          is_dynamic: boolean | null
+          name: string
+          price_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          duration_days?: number | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_dynamic?: boolean | null
+          name: string
+          price_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          duration_days?: number | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_dynamic?: boolean | null
+          name?: string
+          price_amount?: number
+        }
+        Relationships: []
+      }
       topics: {
         Row: {
           id: string
@@ -910,6 +993,63 @@ export type Database = {
             foreignKeyName: "user_stats_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subscriptions: {
+        Row: {
+          amount_paid: number | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          payment_method: string | null
+          plan_id: string
+          profile_id: string
+          started_at: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          payment_method?: string | null
+          plan_id: string
+          profile_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          payment_method?: string | null
+          plan_id?: string
+          profile_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
