@@ -260,6 +260,18 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
+          {tab === 'kaynaklar' && profileId && (
+            <motion.div key="kaynaklar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="space-y-4">
+                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5 text-primary" /> Kaynaklarım
+                </h2>
+                <p className="text-sm text-muted-foreground">Koçunuz tarafından paylaşılan çalışma materyalleri</p>
+                <ResourceList />
+              </div>
+            </motion.div>
+          )}
+
           {tab === 'mesajlar' && profileId && (
             <motion.div key="mesajlar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={user?.id} coachId={profile?.coach_id} />
