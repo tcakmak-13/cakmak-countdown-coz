@@ -651,6 +651,30 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           {selectedQuestion.description && (
             <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
           )}
+          
+          {/* AI Meclis Üyesine Sor Button */}
+          {selectedQuestion.image_url && (
+            <motion.button
+              onClick={askAI}
+              disabled={loadingAI}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingAI ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Yapay Zeka Çözüyor...</span>
+                </>
+              ) : (
+                <>
+                  <Bot className="h-5 w-5" />
+                  <span>AI Meclis Üyesine Sor</span>
+                  <Sparkles className="h-4 w-4" />
+                </>
+              )}
+            </motion.button>
+          )}
         </div>
 
         {/* Answers scroll area - scrolls to bottom */}
