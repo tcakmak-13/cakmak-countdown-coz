@@ -541,33 +541,66 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     </div>
   );
 
-  const renderChatBubbles = (isSpectator = false, spectatorPair?: ConversationPair) => (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3">
-      {filteredMessages.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok</p>
-      )}
-      {filteredMessages.map(msg => {
-        const isMine = isSpectator
-          ? msg.sender_id === spectatorPair?.coachId
-          : msg.sender_id === currentProfileId;
-        return (
-          <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-            <div className="max-w-[85%]">
-              {isSpectator && spectatorPair && (
-                <p className={`text-[10px] mb-1 ${isMine ? 'text-right text-primary/60' : 'text-muted-foreground'}`}>
-                  {isMine ? spectatorPair.coachName : spectatorPair.studentName}
-                </p>
+  const getDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+    if (isSameDay(date, today)) return 'Bugün';
+    if (isSameDay(date, yesterday)) return 'Dün';
+
+    const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${days[date.getDay()]}`;
+  };
+
+  const renderChatBubbles = (isSpectator = false, spectatorPair?: ConversationPair) => {
+    let lastDateLabel = '';
+    return (
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {filteredMessages.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-12">Henüz mesaj yok</p>
+        )}
+        {filteredMessages.map(msg => {
+          const isMine = isSpectator
+            ? msg.sender_id === spectatorPair?.coachId
+            : msg.sender_id === currentProfileId;
+          const dateLabel = getDateLabel(msg.created_at);
+          const showDateHeader = dateLabel !== lastDateLabel;
+          if (showDateHeader) lastDateLabel = dateLabel;
+
+          return (
+            <div key={msg.id}>
+              {showDateHeader && (
+                <div className="flex justify-center my-4 sticky top-0 z-10">
+                  <span className="px-4 py-1.5 rounded-full text-[11px] font-medium text-muted-foreground bg-card/70 backdrop-blur-md border border-border/50 shadow-sm">
+                    {dateLabel}
+                  </span>
+                </div>
               )}
-              <div className={`px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
-                {renderMessageContent(msg)}
+              <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                <div className="max-w-[85%]">
+                  {isSpectator && spectatorPair && (
+                    <p className={`text-[10px] mb-1 ${isMine ? 'text-right text-primary/60' : 'text-muted-foreground'}`}>
+                      {isMine ? spectatorPair.coachName : spectatorPair.studentName}
+                    </p>
+                  )}
+                  <div className={`px-4 py-2.5 text-sm ${isMine ? 'bg-gradient-orange text-primary-foreground rounded-2xl rounded-br-md shadow-[0_0_12px_-3px_hsl(25_95%_53%/0.5)]' : 'bg-secondary rounded-2xl rounded-bl-md'}`}>
+                    {renderMessageContent(msg)}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-      <div ref={bottomRef} />
-    </div>
-  );
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+    );
+  };
 
   // ─── STUDENT VIEW ───
   if (currentRole === 'student') {
