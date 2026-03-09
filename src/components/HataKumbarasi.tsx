@@ -638,9 +638,16 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                     )}
 
                     {/* Note indicator */}
-                    {q.note && (
+                    {q.note && !q.ai_solution && (
                       <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-amber-500/90 flex items-center justify-center">
                         <StickyNote className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+
+                    {/* AI Solution indicator */}
+                    {q.ai_solution && (
+                      <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-gradient-to-r from-primary to-orange-600 flex items-center justify-center shadow-[0_0_8px_hsl(var(--primary)/0.5)]">
+                        <Sparkles className="h-3 w-3 text-white" />
                       </div>
                     )}
 
