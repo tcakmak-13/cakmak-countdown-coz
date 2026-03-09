@@ -1,24 +1,28 @@
-import { motion } from 'framer-motion';
-import { useCountdown } from '@/hooks/useCountdown';
+import { motion } from "framer-motion";
+import { forwardRef } from "react";
+import { useCountdown } from "@/hooks/useCountdown";
 
-function CountdownUnit({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <motion.div
-        key={value}
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="countdown-digit text-4xl sm:text-7xl md:text-8xl font-bold text-gradient-orange"
-      >
-        {String(value).padStart(2, '0')}
-      </motion.div>
-      <span className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-widest mt-2">
-        {label}
-      </span>
-    </div>
-  );
-}
+const CountdownUnit = forwardRef<HTMLDivElement, { value: number; label: string }>(
+  ({ value, label }, ref) => {
+    return (
+      <div ref={ref} className="flex flex-col items-center">
+        <motion.div
+          key={value}
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="countdown-digit text-4xl sm:text-7xl md:text-8xl font-bold text-gradient-orange"
+        >
+          {String(value).padStart(2, "0")}
+        </motion.div>
+        <span className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-widest mt-2">
+          {label}
+        </span>
+      </div>
+    );
+  },
+);
+CountdownUnit.displayName = "CountdownUnit";
 
 export default function YKSCountdown({ compact = false }: { compact?: boolean }) {
   const { days, hours, minutes, seconds } = useCountdown();
@@ -32,23 +36,17 @@ export default function YKSCountdown({ compact = false }: { compact?: boolean })
         </div>
         <span className="text-muted-foreground">:</span>
         <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">
-            {String(hours).padStart(2, '0')}
-          </span>
+          <span className="countdown-digit text-2xl font-bold text-primary">{String(hours).padStart(2, "0")}</span>
           <span className="text-xs text-muted-foreground">saat</span>
         </div>
         <span className="text-muted-foreground">:</span>
         <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">
-            {String(minutes).padStart(2, '0')}
-          </span>
+          <span className="countdown-digit text-2xl font-bold text-primary">{String(minutes).padStart(2, "0")}</span>
           <span className="text-xs text-muted-foreground">dk</span>
         </div>
         <span className="text-muted-foreground">:</span>
         <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">
-            {String(seconds).padStart(2, '0')}
-          </span>
+          <span className="countdown-digit text-2xl font-bold text-primary">{String(seconds).padStart(2, "0")}</span>
           <span className="text-xs text-muted-foreground">sn</span>
         </div>
       </div>
