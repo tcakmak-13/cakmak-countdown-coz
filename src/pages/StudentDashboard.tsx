@@ -22,6 +22,7 @@ import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 import QuestionFlow from '@/components/QuestionFlow';
+import ResourceList from '@/components/ResourceList';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi';
