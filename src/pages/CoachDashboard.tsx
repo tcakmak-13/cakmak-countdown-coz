@@ -303,6 +303,7 @@ export default function CoachDashboard() {
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+            { key: 'resources', icon: FolderOpen, label: 'Kaynak' },
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
             { key: 'list', icon: Users, label: 'Öğrenci' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },
