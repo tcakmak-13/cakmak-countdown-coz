@@ -834,36 +834,91 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                 {detailQuestion.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
               </button>
 
-              {/* AI Solution Section */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  AI Çözümü
-                </label>
-                {detailQuestion.ai_solution ? (
-                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 max-h-[300px] overflow-y-auto">
-                    <div className="prose prose-sm prose-invert max-w-none text-foreground/90">
-                      <ReactMarkdown>{detailQuestion.ai_solution}</ReactMarkdown>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => handleAISolve(detailQuestion)}
-                    disabled={solvingQuestionId === detailQuestion.id}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-orange-600 text-primary-foreground border-0 hover:opacity-90 shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
+              {/* AI Solution Section - Same as Soru Meclisi */}
+              <div className="space-y-3">
+                {/* AI Loading Animation */}
+                {loadingAI && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-2xl p-5 border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 shadow-[0_0_20px_rgba(249,115,22,0.1)]"
                   >
-                    {solvingQuestionId === detailQuestion.id ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        Analiz Ediliyor...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        AI ile Çöz
-                      </>
+                    <div className="flex items-center gap-3 mb-4">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 p-0.5 shrink-0"
+                      >
+                        <div className="h-full w-full rounded-full bg-card flex items-center justify-center">
+                          <Bot className="h-5 w-5 text-orange-500" />
+                        </div>
+                      </motion.div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Yapay Zeka Soruyu Çözüyor...</p>
+                        <p className="text-[11px] text-muted-foreground">Görsel analiz ve adım adım çözüm hazırlanıyor</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 ml-13">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="h-2 w-2 rounded-full bg-orange-500"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ delay: i * 0.15, repeat: Infinity, duration: 0.6 }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* AI Solution Card - Inline, same as Soru Meclisi */}
+                {currentAISolution && !loadingAI && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 border-2 border-orange-500/30 shadow-[0_0_24px_rgba(249,115,22,0.12)]"
+                  >
+                    {/* AI Badge */}
+                    <div className="absolute -top-3 left-4 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                      <Bot className="h-3 w-3" />
+                      Yapay Zeka Yanıtı
+                      <Sparkles className="h-3 w-3" />
+                    </div>
+                    
+                    {/* Solution Content */}
+                    <div className="mt-3 prose prose-sm dark:prose-invert max-w-none max-h-[300px] overflow-y-auto [&_strong]:text-orange-500 [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-semibold [&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2 [&_li]:text-sm [&_li]:text-muted-foreground [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1">
+                      <ReactMarkdown>
+                        {currentAISolution.solution_text}
+                      </ReactMarkdown>
+                    </div>
+
+                    {/* Tags */}
+                    {currentAISolution.tags && currentAISolution.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-orange-500/20">
+                        {currentAISolution.tags.map((tag, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     )}
-                  </Button>
+                  </motion.div>
+                )}
+
+                {/* AI Meclis Üyesine Sor Button - only show if no AI solution exists */}
+                {!currentAISolution && !loadingAI && getImageUrl(detailQuestion) && (
+                  <motion.button
+                    onClick={() => handleAISolve(detailQuestion)}
+                    disabled={loadingAI}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
+                  >
+                    <Bot className="h-5 w-5" />
+                    <span>AI ile Çöz</span>
+                    <Sparkles className="h-4 w-4" />
+                  </motion.button>
                 )}
               </div>
 
