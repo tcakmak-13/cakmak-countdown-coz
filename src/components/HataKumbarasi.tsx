@@ -7,13 +7,15 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save, Users, ChevronRight
+  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ImagePicker from '@/components/ImagePicker';
+import ReactMarkdown from 'react-markdown';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface ErrorQuestion {
   id: string;
@@ -24,6 +26,7 @@ interface ErrorQuestion {
   status: string;
   note: string;
   created_at: string;
+  ai_solution?: string | null;
 }
 
 interface SubjectDef {
@@ -85,6 +88,8 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [pendingCount, setPendingCount] = useState(0);
+  const [solvingQuestionId, setSolvingQuestionId] = useState<string | null>(null);
+  const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({});
 
   // Fetch pending (open) questions count for badge
   useEffect(() => {
@@ -366,7 +371,78 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     toast.success('Soru silindi.');
   };
 
+  // AI Solution Handler
+  const handleAISolve = async (question: ErrorQuestion) => {
+    if (solvingQuestionId) return;
+    
+    const imageUrl = getImageUrl(question);
+    if (!imageUrl) {
+      toast.error('Görsel yüklenemedi, lütfen tekrar deneyin.');
+      return;
+    }
+
+    setSolvingQuestionId(question.id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('solve-question', {
+        body: {
+          questionId: question.id,
+          imageUrl: imageUrl,
+          subject: question.subject,
+          category: question.exam_type,
+          description: question.note || '',
+        },
+      });
+
+      if (error) {
+        console.error('AI solve error:', error);
+        toast.error('AI çözümü alınamadı, lütfen tekrar deneyin.');
+        return;
+      }
+
+      if (data?.success && data?.solution?.solution_text) {
+        const solutionText = data.solution.solution_text;
+        
+        // Save to database
+        const { error: updateError } = await supabase
+          .from('error_questions')
+          .update({ ai_solution: solutionText })
+          .eq('id', question.id);
+
+        if (updateError) {
+          console.error('Save AI solution error:', updateError);
+        }
+
+        // Update local state
+        setAllQuestions(prev =>
+          prev.map(q => q.id === question.id ? { ...q, ai_solution: solutionText } : q)
+        );
+        
+        // Update detail question if open
+        setDetailQuestion(prev => 
+          prev && prev.id === question.id ? { ...prev, ai_solution: solutionText } : prev
+        );
+        
+        // Auto-expand the solution
+        setExpandedSolutions(prev => ({ ...prev, [question.id]: true }));
+        
+        toast.success('AI çözümü hazır!');
+      } else {
+        toast.error('AI yanıt üretemedi, tekrar deneyin.');
+      }
+    } catch (err) {
+      console.error('AI solve exception:', err);
+      toast.error('Bir hata oluştu, lütfen tekrar deneyin.');
+    } finally {
+      setSolvingQuestionId(null);
+    }
+  };
+
   const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
+
+  const toggleSolutionExpand = (questionId: string) => {
+    setExpandedSolutions(prev => ({ ...prev, [questionId]: !prev[questionId] }));
+  };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -562,9 +638,16 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                     )}
 
                     {/* Note indicator */}
-                    {q.note && (
+                    {q.note && !q.ai_solution && (
                       <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-amber-500/90 flex items-center justify-center">
                         <StickyNote className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+
+                    {/* AI Solution indicator */}
+                    {q.ai_solution && (
+                      <div className="absolute top-2 left-2 h-6 w-6 rounded-full bg-gradient-to-r from-primary to-orange-600 flex items-center justify-center shadow-[0_0_8px_hsl(var(--primary)/0.5)]">
+                        <Sparkles className="h-3 w-3 text-white" />
                       </div>
                     )}
 
@@ -593,6 +676,59 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                       {q.note && (
                         <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed">{q.note}</p>
                       )}
+                      
+                      {/* AI Solve Button */}
+                      {!q.ai_solution && (
+                        <button
+                          onClick={() => handleAISolve(q)}
+                          disabled={solvingQuestionId === q.id}
+                          className="w-full text-xs font-semibold py-2 rounded-lg bg-gradient-to-r from-primary to-orange-600 text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_hsl(var(--primary)/0.3)] disabled:opacity-60"
+                        >
+                          {solvingQuestionId === q.id ? (
+                            <>
+                              <div className="h-3 w-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                              Analiz Ediliyor...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-3.5 w-3.5" />
+                              AI ile Çöz
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* AI Solution Accordion */}
+                      {q.ai_solution && (
+                        <div className="border border-primary/30 rounded-lg overflow-hidden bg-primary/5">
+                          <button
+                            onClick={() => toggleSolutionExpand(q.id)}
+                            className="w-full flex items-center justify-between px-2.5 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Sparkles className="h-3 w-3" />
+                              AI Çözümü
+                            </span>
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandedSolutions[q.id] ? 'rotate-180' : ''}`} />
+                          </button>
+                          <AnimatePresence>
+                            {expandedSolutions[q.id] && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="px-2.5 py-2 text-[10px] leading-relaxed text-foreground/90 border-t border-primary/20 max-h-[200px] overflow-y-auto prose prose-xs prose-invert">
+                                  <ReactMarkdown>{q.ai_solution}</ReactMarkdown>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => toggleStatus(q)}
                         className={`w-full text-xs font-medium py-1.5 rounded-lg transition-colors ${
@@ -706,6 +842,39 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
               >
                 {detailQuestion.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
               </button>
+
+              {/* AI Solution Section */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  AI Çözümü
+                </label>
+                {detailQuestion.ai_solution ? (
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 max-h-[300px] overflow-y-auto">
+                    <div className="prose prose-sm prose-invert max-w-none text-foreground/90">
+                      <ReactMarkdown>{detailQuestion.ai_solution}</ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => handleAISolve(detailQuestion)}
+                    disabled={solvingQuestionId === detailQuestion.id}
+                    className="w-full gap-2 bg-gradient-to-r from-primary to-orange-600 text-primary-foreground border-0 hover:opacity-90 shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
+                  >
+                    {solvingQuestionId === detailQuestion.id ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Analiz Ediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        AI ile Çöz
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
 
               {/* Note editor */}
               <div className="space-y-2">

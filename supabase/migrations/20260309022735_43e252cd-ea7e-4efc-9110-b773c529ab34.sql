@@ -1,0 +1,1 @@
+ALTER TABLE public.error_questions ADD COLUMN ai_solution TEXT DEFAULT NULL;
