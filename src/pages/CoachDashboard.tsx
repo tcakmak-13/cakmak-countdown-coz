@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
-import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -148,7 +147,10 @@ export default function CoachDashboard() {
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => { setSelectedStudent(null); setTab('analytics'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Logo size="sm" showText={true} />
+            <Flame className="h-6 w-6 text-primary" />
+            <span className="font-display text-lg font-bold hidden sm:inline">
+              Çakmak<span className="text-primary">Koçluk</span>
+            </span>
           </button>
           <div className="flex items-center gap-2">
             <YKSCountdown compact />
