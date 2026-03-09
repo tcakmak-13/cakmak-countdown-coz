@@ -88,6 +88,8 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [pendingCount, setPendingCount] = useState(0);
+  const [solvingQuestionId, setSolvingQuestionId] = useState<string | null>(null);
+  const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({});
 
   // Fetch pending (open) questions count for badge
   useEffect(() => {
