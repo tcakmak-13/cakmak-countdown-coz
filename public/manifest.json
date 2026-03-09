@@ -4,7 +4,9 @@
   "description": "YKS sınavına profesyonel koçluk desteği ile hazırlanın. Kişisel program, canlı geri sayım ve uzman rehberlik.",
   "start_url": "/",
   "scope": "/",
+  "id": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#0a0a0a",
   "theme_color": "#f97316",
@@ -71,5 +73,7 @@
       "url": "/student",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "related_applications": [],
+  "handle_links": "preferred"
 }

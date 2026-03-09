@@ -1,16 +1,44 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download } from 'lucide-react';
+import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download, Monitor, Smartphone, X, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { useIsMobile } from '@/hooks/use-mobile';
 import YKSCountdown from '@/components/YKSCountdown';
+
 export default function Landing() {
   const navigate = useNavigate();
-  const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
+  const { isInstallable, isInstalled, isIOS, promptInstall } = useInstallPrompt();
+  const isMobile = useIsMobile();
+  const [showIOSModal, setShowIOSModal] = useState(false);
+
+  // Determine if we should show install button
+  // Show for: installable browsers OR iOS (which needs manual instructions)
+  const shouldShowInstallButton = (isInstallable || isIOS) && !isInstalled;
+
+  // Dynamic button text based on device
+  const getInstallButtonText = () => {
+    if (isIOS) return 'iPhone\'a Yükle';
+    if (isMobile) return 'Telefona Yükle';
+    return 'Bilgisayara Kur';
+  };
+
+  // Dynamic tooltip text
+  const getTooltipText = () => {
+    if (isIOS) return 'Safari ile Ana Ekrana Ekle';
+    if (isMobile) return 'Ana ekranına ekle, uygulama gibi kullan';
+    return 'Masaüstüne kısayol olarak ekle';
+  };
 
   const handleInstall = async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+    
     const success = await promptInstall();
     if (success) {
       toast({
@@ -97,8 +125,8 @@ export default function Landing() {
             Hemen Başla <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
 
-          {/* Install App Button - Only visible when installable and not installed */}
-          {isInstallable && !isInstalled && (
+          {/* Cross-Browser Install Button */}
+          {shouldShowInstallButton && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -108,15 +136,19 @@ export default function Landing() {
                     onClick={handleInstall}
                     className="h-auto py-6 px-6 border-primary/30 hover:border-primary hover:bg-primary/5 transition-all duration-300 group"
                   >
-                    <Download className="h-5 w-5 mr-2 group-hover:animate-bounce" />
-                    <span className="text-lg">App Olarak İndir</span>
+                    {isMobile || isIOS ? (
+                      <Smartphone className="h-5 w-5 mr-2 group-hover:animate-bounce" />
+                    ) : (
+                      <Monitor className="h-5 w-5 mr-2 group-hover:animate-bounce" />
+                    )}
+                    <span className="text-lg">{getInstallButtonText()}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent 
                   side="bottom" 
                   className="bg-card border-primary/20"
                 >
-                  <p className="text-sm">Masaüstüne veya Telefona Kur</p>
+                  <p className="text-sm">{getTooltipText()}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -148,6 +180,87 @@ export default function Landing() {
       <footer className="border-t border-border/50 py-6 text-center text-sm text-muted-foreground">
         © 2026 ÇakmakKoçluk. Tüm hakları saklıdır.
       </footer>
+
+      {/* iOS Install Instructions Modal */}
+      <AnimatePresence>
+        {showIOSModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowIOSModal(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card border border-primary/20 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_40px_rgba(249,115,22,0.15)] mb-4 sm:mb-0"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center">
+                    <Flame className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <h3 className="font-display font-bold text-lg">iPhone'a Yükle</h3>
+                </div>
+                <button
+                  onClick={() => setShowIOSModal(false)}
+                  className="p-2 rounded-full hover:bg-secondary transition-colors"
+                >
+                  <X className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">1</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Safari'de Paylaş butonuna dokun</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <Share className="h-3.5 w-3.5" /> Ekranın alt kısmında
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">2</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">"Ana Ekrana Ekle" seçeneğini bul</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <Plus className="h-3.5 w-3.5" /> Listede aşağı kaydır
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm font-bold text-primary">3</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">"Ekle" butonuna dokun</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uygulama ana ekranına eklenecek ✨
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setShowIOSModal(false)}
+                className="w-full mt-6 bg-gradient-to-r from-primary to-orange-600 text-primary-foreground hover:opacity-90"
+              >
+                Anladım
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
