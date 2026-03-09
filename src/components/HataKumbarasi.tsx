@@ -7,7 +7,7 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, ChevronDown, Bot
+  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
