@@ -24,44 +24,49 @@ const CountdownUnit = forwardRef<HTMLDivElement, { value: number; label: string 
 );
 CountdownUnit.displayName = "CountdownUnit";
 
-export default function YKSCountdown({ compact = false }: { compact?: boolean }) {
-  const { days, hours, minutes, seconds } = useCountdown();
+const YKSCountdown = forwardRef<HTMLDivElement, { compact?: boolean }>(
+  ({ compact = false }, ref) => {
+    const { days, hours, minutes, seconds } = useCountdown();
 
-  if (compact) {
+    if (compact) {
+      return (
+        <div ref={ref} className="flex items-center gap-3">
+          <div className="flex items-baseline gap-1">
+            <span className="countdown-digit text-2xl font-bold text-primary">{days}</span>
+            <span className="text-xs text-muted-foreground">gün</span>
+          </div>
+          <span className="text-muted-foreground">:</span>
+          <div className="flex items-baseline gap-1">
+            <span className="countdown-digit text-2xl font-bold text-primary">{String(hours).padStart(2, "0")}</span>
+            <span className="text-xs text-muted-foreground">saat</span>
+          </div>
+          <span className="text-muted-foreground">:</span>
+          <div className="flex items-baseline gap-1">
+            <span className="countdown-digit text-2xl font-bold text-primary">{String(minutes).padStart(2, "0")}</span>
+            <span className="text-xs text-muted-foreground">dk</span>
+          </div>
+          <span className="text-muted-foreground">:</span>
+          <div className="flex items-baseline gap-1">
+            <span className="countdown-digit text-2xl font-bold text-primary">{String(seconds).padStart(2, "0")}</span>
+            <span className="text-xs text-muted-foreground">sn</span>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex items-center gap-3">
-        <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">{days}</span>
-          <span className="text-xs text-muted-foreground">gün</span>
-        </div>
-        <span className="text-muted-foreground">:</span>
-        <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">{String(hours).padStart(2, "0")}</span>
-          <span className="text-xs text-muted-foreground">saat</span>
-        </div>
-        <span className="text-muted-foreground">:</span>
-        <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">{String(minutes).padStart(2, "0")}</span>
-          <span className="text-xs text-muted-foreground">dk</span>
-        </div>
-        <span className="text-muted-foreground">:</span>
-        <div className="flex items-baseline gap-1">
-          <span className="countdown-digit text-2xl font-bold text-primary">{String(seconds).padStart(2, "0")}</span>
-          <span className="text-xs text-muted-foreground">sn</span>
-        </div>
+      <div ref={ref} className="flex items-center justify-center gap-2 sm:gap-8 md:gap-12">
+        <CountdownUnit value={days} label="Gün" />
+        <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
+        <CountdownUnit value={hours} label="Saat" />
+        <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
+        <CountdownUnit value={minutes} label="Dakika" />
+        <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
+        <CountdownUnit value={seconds} label="Saniye" />
       </div>
     );
   }
+);
+YKSCountdown.displayName = "YKSCountdown";
 
-  return (
-    <div className="flex items-center justify-center gap-2 sm:gap-8 md:gap-12">
-      <CountdownUnit value={days} label="Gün" />
-      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
-      <CountdownUnit value={hours} label="Saat" />
-      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
-      <CountdownUnit value={minutes} label="Dakika" />
-      <div className="text-3xl sm:text-6xl text-primary font-light">:</div>
-      <CountdownUnit value={seconds} label="Saniye" />
-    </div>
-  );
-}
+export default YKSCountdown;
