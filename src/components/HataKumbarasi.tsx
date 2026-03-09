@@ -96,7 +96,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [pendingCount, setPendingCount] = useState(0);
-  const [solvingQuestionId, setSolvingQuestionId] = useState<string | null>(null);
+  
   const [currentAISolution, setCurrentAISolution] = useState<AISolution | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
 
