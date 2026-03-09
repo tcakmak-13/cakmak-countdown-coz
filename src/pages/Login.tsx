@@ -109,12 +109,20 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="flex items-center justify-center gap-2 mb-8 cursor-pointer" onClick={() => navigate('/')}>
-          <Flame className="h-8 w-8 text-primary" />
+        <motion.div
+          className="flex flex-col items-center mb-8 cursor-pointer"
+          onClick={() => navigate('/')}
+          whileHover={{ scale: 1.03 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          <Logo size="xl" showText={false} className="mb-3" />
           <span className="font-display text-2xl font-bold">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>
-        </div>
+          <p className="text-sm text-primary/80 font-medium tracking-widest mt-1 uppercase">
+            Geleceğini Ateşle! 🔥
+          </p>
+        </motion.div>
 
         <motion.form
           initial={{ opacity: 0, y: 10 }}
