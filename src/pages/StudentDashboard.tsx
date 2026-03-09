@@ -69,6 +69,14 @@ export default function StudentDashboard() {
     setCurrentUsername(profile?.username || '');
   }, [profile?.username]);
 
+  // Sync tab from URL query params (for notification deep links)
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && Object.keys(TAB_TITLES).includes(urlTab) && urlTab !== tab) {
+      setTab(urlTab as Tab);
+    }
+  }, [searchParams]);
+
   const handleTabChange = (newTab: Tab) => {
     if (newTab === 'soru-meclisi' && !hasUsername) {
       setUsernameInput('');
@@ -77,6 +85,12 @@ export default function StudentDashboard() {
       return;
     }
     setTab(newTab);
+    // Update URL without navigation for bookmarkability
+    if (newTab === 'ana-menu') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab: newTab });
+    }
   };
 
   const handleUsernameSave = async () => {
