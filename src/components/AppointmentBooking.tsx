@@ -203,7 +203,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
   const activeRecurring = appointments.filter(a => a.status === 'approved' && a.recurring && !a.series_ended_at);
   const pending = appointments.filter(a => a.status === 'pending');
   const ended = appointments.filter(a => a.series_ended_at || a.status === 'rejected' || a.status === 'completed');
-  const endTimeLabel = selectedTime ? minutesToTime(timeToMinutes(selectedTime) + DURATION[selectedType]) : '';
+  
 
   return (
     <div className="space-y-6 pb-24">
@@ -241,7 +241,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           {activeRecurring.map(a => {
             const nextOcc = a.recurring_day != null && a.recurring_time
               ? getNextOccurrenceForDay(a.recurring_day, a.recurring_time) : new Date(a.scheduled_at);
-            const endTime = a.recurring_time ? minutesToTime(timeToMinutes(a.recurring_time) + (a.duration_minutes || 60)) : '';
+            
             return (
               <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="glass-card rounded-2xl p-6 border border-emerald-500/30 relative overflow-hidden">
@@ -258,7 +258,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}{endTime ? ` → ${endTime}` : ''}
+                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
                     </p>
                     <div className="mt-4 rounded-xl bg-primary/10 border border-primary/25 p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bir Sonraki Görüşme</p>
@@ -435,20 +435,18 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                                   </p>
                                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                     {daySlots.map(t => {
-                                      const end = minutesToTime(timeToMinutes(t) + DURATION[selectedType]);
                                       const isSelected = selectedTime === t;
                                       return (
                                         <button
                                           key={t}
                                           onClick={() => setSelectedTime(t)}
-                                          className={`rounded-xl py-3 px-2 text-center transition-all border-2 ${
+                                          className={`rounded-xl py-2.5 px-2 text-center transition-all border-2 ${
                                             isSelected
                                               ? 'border-primary bg-gradient-orange text-primary-foreground font-bold shadow-lg shadow-primary/20'
                                               : 'border-primary/30 bg-card hover:border-primary hover:bg-primary/5 text-foreground'
                                           }`}
                                         >
-                                          <span className="text-sm font-bold block">{t}</span>
-                                          <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{end}'e kadar</span>
+                                          <span className="text-sm font-bold">{t}</span>
                                         </button>
                                       );
                                     })}
@@ -476,7 +474,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                       <p className="font-display font-bold text-xl text-foreground">
                         Her <span className="text-primary">{DAY_NAMES[selectedDay]}</span>
                       </p>
-                      <p className="font-display font-black text-4xl text-primary mt-1">{selectedTime} — {endTimeLabel}</p>
+                      <p className="font-display font-black text-4xl text-primary mt-1">{selectedTime}</p>
                       <p className="text-sm text-muted-foreground mt-2">{selectedType === 'video' ? '📹 Görüntülü Görüşme' : '📞 Sesli Görüşme'}</p>
                     </motion.div>
                   )}
