@@ -871,7 +871,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                   </motion.div>
                 )}
 
-                {/* AI Solution Card - Inline, same as Soru Meclisi */}
+                {/* AI Solution Card - Scrollable & Expandable */}
                 {currentAISolution && !loadingAI && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -886,11 +886,24 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                       <Sparkles className="h-3 w-3" />
                     </div>
                     
-                    {/* Solution Content */}
-                    <div className="mt-3 prose prose-sm dark:prose-invert max-w-none max-h-[300px] overflow-y-auto [&_strong]:text-orange-500 [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-semibold [&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-2 [&_li]:text-sm [&_li]:text-muted-foreground [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1">
-                      <ReactMarkdown>
-                        {currentAISolution.solution_text}
-                      </ReactMarkdown>
+                    {/* Solution Content - Scrollable with better typography */}
+                    <div className="mt-4 max-h-[50vh] overflow-y-auto scrollbar-hide pr-1">
+                      <div className="prose prose-sm dark:prose-invert max-w-none
+                        [&_strong]:text-orange-500 [&_strong]:font-bold
+                        [&_h1]:text-base [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-0
+                        [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mb-1.5 [&_h2]:mt-3
+                        [&_p]:text-[13px] [&_p]:text-foreground/80 [&_p]:leading-[1.6] [&_p]:mb-2
+                        [&_li]:text-[13px] [&_li]:text-foreground/80 [&_li]:leading-[1.6] [&_li]:mb-1
+                        [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_ol]:mb-3
+                        [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ul]:mb-3
+                        [&_code]:text-orange-500 [&_code]:bg-orange-500/10 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded
+                        [&_hr]:border-orange-500/20 [&_hr]:my-3
+                        [&>*:first-child]:mt-0 [&>*:last-child]:mb-0
+                      ">
+                        <ReactMarkdown>
+                          {currentAISolution.solution_text}
+                        </ReactMarkdown>
+                      </div>
                     </div>
 
                     {/* Tags */}
