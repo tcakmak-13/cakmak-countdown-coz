@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft } from 'lucide-react';
+import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft, FolderOpen } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,10 @@ import HataKumbarasi from '@/components/HataKumbarasi';
 import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 import QuestionFlow from '@/components/QuestionFlow';
+import ResourceList from '@/components/ResourceList';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Analizlerim',
@@ -34,6 +35,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
   'soru-meclisi': 'Soru Meclisi',
+  'kaynaklar': 'Kaynaklarım',
 };
 
 const tabVariants = {
@@ -146,6 +148,7 @@ export default function StudentDashboard() {
     { key: 'denemelerim', label: 'Analizlerim', icon: BarChart3 },
     { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
+    { key: 'kaynaklar', label: 'Kaynaklar', icon: FolderOpen },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
   ];
@@ -254,6 +257,18 @@ export default function StudentDashboard() {
                 usernameChangedAt={profile?.username_changed_at}
                 onUsernameChanged={(newName) => setCurrentUsername(newName)}
               />
+            </motion.div>
+          )}
+
+          {tab === 'kaynaklar' && profileId && (
+            <motion.div key="kaynaklar" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="space-y-4">
+                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5 text-primary" /> Kaynaklarım
+                </h2>
+                <p className="text-sm text-muted-foreground">Koçunuz tarafından paylaşılan çalışma materyalleri</p>
+                <ResourceList />
+              </div>
             </motion.div>
           )}
 

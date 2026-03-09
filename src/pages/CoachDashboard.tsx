@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -14,6 +14,8 @@ import AdminAnalytics from '@/components/AdminAnalytics';
 import CoachAppointments from '@/components/CoachAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import QuestionFlow from '@/components/QuestionFlow';
+import ResourceUpload from '@/components/ResourceUpload';
+import ResourceList from '@/components/ResourceList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +39,8 @@ export default function CoachDashboard() {
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
+  const [resourceRefresh, setResourceRefresh] = useState(0);
   const unreadCount = useUnreadMessages(profileId);
 
   // Announcement
@@ -194,6 +197,17 @@ export default function CoachDashboard() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
+        ) : tab === 'resources' ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-primary" /> Kaynak Yönetimi
+            </h2>
+            <ResourceUpload coachId={profileId!} onUploadSuccess={() => setResourceRefresh(prev => prev + 1)} />
+            <div>
+              <h3 className="font-display text-lg font-semibold mb-4">Yüklenen Kaynaklar</h3>
+              <ResourceList isCoach={true} coachId={profileId!} refreshTrigger={resourceRefresh} />
+            </div>
+          </div>
         ) : tab === 'appointments' && profileId ? (
           <CoachAppointments coachProfileId={profileId} />
         ) : tab === 'soru-akisi' && profileId ? (
@@ -289,6 +303,7 @@ export default function CoachDashboard() {
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+            { key: 'resources', icon: FolderOpen, label: 'Kaynak' },
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
             { key: 'list', icon: Users, label: 'Öğrenci' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },

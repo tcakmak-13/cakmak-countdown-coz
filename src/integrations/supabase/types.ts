@@ -726,6 +726,53 @@ export type Database = {
           },
         ]
       }
+      resources: {
+        Row: {
+          coach_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          title: string
+          updated_at: string
+          uploaded_at: string
+          visibility: string
+        }
+        Insert: {
+          coach_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          title: string
+          updated_at?: string
+          uploaded_at?: string
+          visibility?: string
+        }
+        Update: {
+          coach_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          title?: string
+          updated_at?: string
+          uploaded_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_tasks: {
         Row: {
           actual_minutes: number | null
