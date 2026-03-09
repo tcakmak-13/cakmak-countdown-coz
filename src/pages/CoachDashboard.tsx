@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
