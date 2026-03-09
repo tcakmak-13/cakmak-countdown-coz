@@ -226,27 +226,34 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
     <div className="space-y-6 pb-24">
       {/* Booking buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => openDialog('video')}
-          className="glass-card rounded-2xl p-6 flex flex-col items-center gap-4 border border-primary/20 hover:border-primary/50 transition-all group cursor-pointer">
-          <div className="h-16 w-16 rounded-2xl bg-primary/15 flex items-center justify-center group-hover:bg-primary/25 transition-colors">
-            <Video className="h-8 w-8 text-primary" />
-          </div>
-          <div className="text-center">
-            <p className="font-display font-semibold text-lg">Görüntülü Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">Yüz yüze koçluk seansı</p>
-          </div>
-        </motion.button>
-
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => openDialog('voice')}
-          className="glass-card rounded-2xl p-6 flex flex-col items-center gap-4 border border-emerald-500/20 hover:border-emerald-500/50 transition-all group cursor-pointer">
-          <div className="h-16 w-16 rounded-2xl bg-emerald-500/15 flex items-center justify-center group-hover:bg-emerald-500/25 transition-colors">
-            <Phone className="h-8 w-8 text-emerald-400" />
-          </div>
-          <div className="text-center">
-            <p className="font-display font-semibold text-lg">Sesli Görüşme</p>
-            <p className="text-sm text-muted-foreground mt-1">Telefon ile koçluk seansı</p>
-          </div>
-        </motion.button>
+        {(['video', 'voice'] as const).map(type => {
+          const blocked = hasActiveOrPending(type);
+          const isVideo = type === 'video';
+          return (
+            <motion.button key={type} whileHover={blocked ? {} : { scale: 1.02 }} whileTap={blocked ? {} : { scale: 0.98 }}
+              onClick={() => openDialog(type)}
+              className={`glass-card rounded-2xl p-6 flex flex-col items-center gap-4 border transition-all ${
+                blocked
+                  ? 'opacity-50 cursor-not-allowed border-border'
+                  : isVideo
+                    ? 'border-primary/20 hover:border-primary/50 group cursor-pointer'
+                    : 'border-emerald-500/20 hover:border-emerald-500/50 group cursor-pointer'
+              }`}
+            >
+              <div className={`h-16 w-16 rounded-2xl flex items-center justify-center transition-colors ${
+                isVideo ? 'bg-primary/15 group-hover:bg-primary/25' : 'bg-emerald-500/15 group-hover:bg-emerald-500/25'
+              }`}>
+                {isVideo ? <Video className="h-8 w-8 text-primary" /> : <Phone className="h-8 w-8 text-emerald-400" />}
+              </div>
+              <div className="text-center">
+                <p className="font-display font-semibold text-lg">{isVideo ? 'Görüntülü Görüşme' : 'Sesli Görüşme'}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {blocked ? 'Mevcut randevun var' : isVideo ? 'Yüz yüze koçluk seansı' : 'Telefon ile koçluk seansı'}
+                </p>
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Active recurring */}
