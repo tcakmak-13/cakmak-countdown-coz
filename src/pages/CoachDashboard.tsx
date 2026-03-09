@@ -14,6 +14,8 @@ import AdminAnalytics from '@/components/AdminAnalytics';
 import CoachAppointments from '@/components/CoachAppointments';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import QuestionFlow from '@/components/QuestionFlow';
+import ResourceUpload from '@/components/ResourceUpload';
+import ResourceList from '@/components/ResourceList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
