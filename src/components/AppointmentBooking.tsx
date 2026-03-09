@@ -258,7 +258,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}{endTime ? ` → ${endTime}` : ''}
+                      Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
                     </p>
                     <div className="mt-4 rounded-xl bg-primary/10 border border-primary/25 p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bir Sonraki Görüşme</p>
