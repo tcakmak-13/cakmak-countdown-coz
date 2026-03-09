@@ -103,6 +103,11 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'question' | 'answer'; id: string } | null>(null);
 
+  // AI Solution state
+  const [aiSolution, setAiSolution] = useState<AISolution | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+
   // Nickname change state
   const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
   const [nicknameInput, setNicknameInput] = useState('');
