@@ -474,7 +474,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                       <p className="font-display font-bold text-xl text-foreground">
                         Her <span className="text-primary">{DAY_NAMES[selectedDay]}</span>
                       </p>
-                      <p className="font-display font-black text-4xl text-primary mt-1">{selectedTime} — {endTimeLabel}</p>
+                      <p className="font-display font-black text-4xl text-primary mt-1">{selectedTime}</p>
                       <p className="text-sm text-muted-foreground mt-2">{selectedType === 'video' ? '📹 Görüntülü Görüşme' : '📞 Sesli Görüşme'}</p>
                     </motion.div>
                   )}
