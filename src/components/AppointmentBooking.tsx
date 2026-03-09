@@ -241,7 +241,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           {activeRecurring.map(a => {
             const nextOcc = a.recurring_day != null && a.recurring_time
               ? getNextOccurrenceForDay(a.recurring_day, a.recurring_time) : new Date(a.scheduled_at);
-            const endTime = a.recurring_time ? minutesToTime(timeToMinutes(a.recurring_time) + (a.duration_minutes || 60)) : '';
+            
             return (
               <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="glass-card rounded-2xl p-6 border border-emerald-500/30 relative overflow-hidden">
