@@ -197,6 +197,17 @@ export default function CoachDashboard() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
+        ) : tab === 'resources' ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-primary" /> Kaynak Yönetimi
+            </h2>
+            <ResourceUpload coachId={profileId!} onUploadSuccess={() => setResourceRefresh(prev => prev + 1)} />
+            <div>
+              <h3 className="font-display text-lg font-semibold mb-4">Yüklenen Kaynaklar</h3>
+              <ResourceList isCoach={true} coachId={profileId!} refreshTrigger={resourceRefresh} />
+            </div>
+          </div>
         ) : tab === 'appointments' && profileId ? (
           <CoachAppointments coachProfileId={profileId} />
         ) : tab === 'soru-akisi' && profileId ? (
