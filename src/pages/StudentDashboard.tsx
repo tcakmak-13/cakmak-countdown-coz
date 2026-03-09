@@ -148,6 +148,7 @@ export default function StudentDashboard() {
     { key: 'denemelerim', label: 'Analizlerim', icon: BarChart3 },
     { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
+    { key: 'kaynaklar', label: 'Kaynaklar', icon: FolderOpen },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
   ];
