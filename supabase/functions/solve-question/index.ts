@@ -246,10 +246,34 @@ Görsel:`;
 
   } catch (error) {
     console.error("solve-question hatası:", error);
-    const errorMessage = error instanceof Error ? error.message : "Bilinmeyen hata";
+    // Honesty fallback - instead of showing internal error, show friendly message
+    const fallbackSolution = {
+      solution_text: `✅ **Cevap: Belirlenemedi**
+
+📚 **Konu:** Analiz yapılamadı
+
+📝 **Çözüm:**
+• Üzgünüm, bu soruyu şu an net bir şekilde analiz edemedim.
+• İstersen fotoğrafı tekrar çekip yükleyebilirsin.
+• Veya bir koçun yanıtlamasını bekleyebilirsin.
+
+💡 **Püf Nokta:** Fotoğrafın net, iyi aydınlatılmış ve tamamının görünür olduğundan emin ol.
+
+🏷️ #TeknikSorun`,
+      topic_analysis: "Analiz yapılamadı",
+      reasoning_steps: ["Görsel analiz edilemedi", "Fotoğrafı tekrar yükle"],
+      study_recommendation: "Fotoğrafın net olduğundan emin olun",
+      confidence_score: 0,
+    };
+
     return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        success: true,
+        solution: fallbackSolution,
+        cached: false,
+        fallback: true,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
