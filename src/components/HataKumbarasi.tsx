@@ -380,9 +380,9 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     toast.success('Soru silindi.');
   };
 
-  // AI Solution Handler
+  // AI Solution Handler - same as Soru Meclisi
   const handleAISolve = async (question: ErrorQuestion) => {
-    if (solvingQuestionId) return;
+    if (loadingAI) return;
     
     const imageUrl = getImageUrl(question);
     if (!imageUrl) {
@@ -390,10 +390,11 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
       return;
     }
 
-    setSolvingQuestionId(question.id);
+    setLoadingAI(true);
+    setCurrentAISolution(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('solve-question', {
+      const response = await supabase.functions.invoke('solve-question', {
         body: {
           questionId: question.id,
           imageUrl: imageUrl,
@@ -403,55 +404,83 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         },
       });
 
-      if (error) {
-        console.error('AI solve error:', error);
-        toast.error('AI çözümü alınamadı, lütfen tekrar deneyin.');
-        return;
+      if (response.error) {
+        throw new Error(response.error.message || 'AI çözümü alınamadı');
       }
 
-      if (data?.success && data?.solution?.solution_text) {
-        const solutionText = data.solution.solution_text;
-        
-        // Save to database
-        const { error: updateError } = await supabase
-          .from('error_questions')
-          .update({ ai_solution: solutionText })
-          .eq('id', question.id);
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'AI yanıt veremedi');
+      }
 
-        if (updateError) {
-          console.error('Save AI solution error:', updateError);
-        }
+      const sol = response.data.solution;
+      const tagMatch = (sol.solution_text || '').match(/#\w+/g) || [];
+      const tags = sol.tags || tagMatch;
+      
+      const solutionObj: AISolution = {
+        solution_text: sol.solution_text,
+        topic_analysis: sol.topic_analysis,
+        reasoning_steps: Array.isArray(sol.reasoning_steps) ? sol.reasoning_steps : [],
+        study_recommendation: sol.study_recommendation,
+        tags,
+        cached: response.data.cached,
+      };
+      
+      setCurrentAISolution(solutionObj);
+      
+      // Save to database
+      const { error: updateError } = await supabase
+        .from('error_questions')
+        .update({ ai_solution: sol.solution_text })
+        .eq('id', question.id);
 
-        // Update local state
-        setAllQuestions(prev =>
-          prev.map(q => q.id === question.id ? { ...q, ai_solution: solutionText } : q)
-        );
-        
-        // Update detail question if open
-        setDetailQuestion(prev => 
-          prev && prev.id === question.id ? { ...prev, ai_solution: solutionText } : prev
-        );
-        
-        // Auto-expand the solution
-        setExpandedSolutions(prev => ({ ...prev, [question.id]: true }));
-        
-        toast.success('AI çözümü hazır!');
+      if (updateError) {
+        console.error('Save AI solution error:', updateError);
+      }
+
+      // Update local state
+      setAllQuestions(prev =>
+        prev.map(q => q.id === question.id ? { ...q, ai_solution: sol.solution_text } : q)
+      );
+      
+      // Update detail question if open
+      setDetailQuestion(prev => 
+        prev && prev.id === question.id ? { ...prev, ai_solution: sol.solution_text } : prev
+      );
+      
+      if (response.data.cached) {
+        toast.success('Önbellekten çözüm getirildi ⚡');
       } else {
-        toast.error('AI yanıt üretemedi, tekrar deneyin.');
+        toast.success('AI çözümü hazır! 🎉');
       }
-    } catch (err) {
-      console.error('AI solve exception:', err);
-      toast.error('Bir hata oluştu, lütfen tekrar deneyin.');
+    } catch (err: any) {
+      console.error('AI çözüm hatası:', err);
+      toast.error(err.message || 'AI çözümü alınamadı');
     } finally {
-      setSolvingQuestionId(null);
+      setLoadingAI(false);
     }
   };
 
-  const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
-
-  const toggleSolutionExpand = (questionId: string) => {
-    setExpandedSolutions(prev => ({ ...prev, [questionId]: !prev[questionId] }));
+  // Load existing AI solution when opening detail
+  const loadAISolution = (question: ErrorQuestion) => {
+    if (question.ai_solution) {
+      const tagMatch = (question.ai_solution || '').match(/#\w+/g) || [];
+      setCurrentAISolution({
+        solution_text: question.ai_solution,
+        tags: tagMatch,
+        cached: true,
+      });
+    } else {
+      setCurrentAISolution(null);
+    }
   };
+
+  const openDetail = (q: ErrorQuestion) => {
+    setDetailQuestion(q);
+    setEditNote(q.note || '');
+    loadAISolution(q);
+  };
+
+  const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
