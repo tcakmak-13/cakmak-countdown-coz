@@ -46,8 +46,15 @@ const tabVariants = {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile, role, loading, signOut, profileId, user } = useAuth();
-  const [tab, setTab] = useState<Tab>('ana-menu');
+  const [tab, setTab] = useState<Tab>(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && Object.keys(TAB_TITLES).includes(urlTab)) {
+      return urlTab as Tab;
+    }
+    return 'ana-menu';
+  });
   const [studentArea, setStudentArea] = useState<string>('SAY');
   const unreadCount = useUnreadMessages(profileId);
   const [usernameModalOpen, setUsernameModalOpen] = useState(false);
