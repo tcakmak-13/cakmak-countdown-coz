@@ -51,6 +51,17 @@ interface Answer {
   author_name?: string;
   author_avatar?: string;
   is_coach?: boolean;
+  is_ai?: boolean;
+}
+
+interface AISolution {
+  id?: string;
+  solution_text: string;
+  topic_analysis?: string;
+  reasoning_steps?: string[];
+  study_recommendation?: string;
+  tags?: string[];
+  cached?: boolean;
 }
 
 interface QuestionFlowProps {
