@@ -371,7 +371,71 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     toast.success('Soru silindi.');
   };
 
-  const subjects = examType === 'TYT' ? TYT_SUBJECTS : AYT_SUBJECTS;
+  // AI Solution Handler
+  const handleAISolve = async (question: ErrorQuestion) => {
+    if (solvingQuestionId) return;
+    
+    const imageUrl = getImageUrl(question);
+    if (!imageUrl) {
+      toast.error('Görsel yüklenemedi, lütfen tekrar deneyin.');
+      return;
+    }
+
+    setSolvingQuestionId(question.id);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('solve-question', {
+        body: {
+          questionId: question.id,
+          imageUrl: imageUrl,
+          subject: question.subject,
+          category: question.exam_type,
+          description: question.note || '',
+        },
+      });
+
+      if (error) {
+        console.error('AI solve error:', error);
+        toast.error('AI çözümü alınamadı, lütfen tekrar deneyin.');
+        return;
+      }
+
+      if (data?.success && data?.solution?.solution_text) {
+        const solutionText = data.solution.solution_text;
+        
+        // Save to database
+        const { error: updateError } = await supabase
+          .from('error_questions')
+          .update({ ai_solution: solutionText })
+          .eq('id', question.id);
+
+        if (updateError) {
+          console.error('Save AI solution error:', updateError);
+        }
+
+        // Update local state
+        setAllQuestions(prev =>
+          prev.map(q => q.id === question.id ? { ...q, ai_solution: solutionText } : q)
+        );
+        
+        // Auto-expand the solution
+        setExpandedSolutions(prev => ({ ...prev, [question.id]: true }));
+        
+        toast.success('AI çözümü hazır!');
+      } else {
+        toast.error('AI yanıt üretemedi, tekrar deneyin.');
+      }
+    } catch (err) {
+      console.error('AI solve exception:', err);
+      toast.error('Bir hata oluştu, lütfen tekrar deneyin.');
+    } finally {
+      setSolvingQuestionId(null);
+    }
+  };
+
+  const toggleSolutionExpand = (questionId: string) => {
+    setExpandedSolutions(prev => ({ ...prev, [questionId]: !prev[questionId] }));
+  };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
