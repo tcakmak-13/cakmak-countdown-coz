@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft, FolderOpen } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -46,8 +46,15 @@ const tabVariants = {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile, role, loading, signOut, profileId, user } = useAuth();
-  const [tab, setTab] = useState<Tab>('ana-menu');
+  const [tab, setTab] = useState<Tab>(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && Object.keys(TAB_TITLES).includes(urlTab)) {
+      return urlTab as Tab;
+    }
+    return 'ana-menu';
+  });
   const [studentArea, setStudentArea] = useState<string>('SAY');
   const unreadCount = useUnreadMessages(profileId);
   const [usernameModalOpen, setUsernameModalOpen] = useState(false);
@@ -62,6 +69,14 @@ export default function StudentDashboard() {
     setCurrentUsername(profile?.username || '');
   }, [profile?.username]);
 
+  // Sync tab from URL query params (for notification deep links)
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && Object.keys(TAB_TITLES).includes(urlTab) && urlTab !== tab) {
+      setTab(urlTab as Tab);
+    }
+  }, [searchParams]);
+
   const handleTabChange = (newTab: Tab) => {
     if (newTab === 'soru-meclisi' && !hasUsername) {
       setUsernameInput('');
@@ -70,6 +85,12 @@ export default function StudentDashboard() {
       return;
     }
     setTab(newTab);
+    // Update URL without navigation for bookmarkability
+    if (newTab === 'ana-menu') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab: newTab });
+    }
   };
 
   const handleUsernameSave = async () => {
