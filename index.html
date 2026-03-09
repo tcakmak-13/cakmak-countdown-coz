@@ -16,45 +16,202 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="tr_TR" />
     
-    <!-- PWA Configuration -->
+    <!-- PWA Configuration - Cross Browser Support -->
     <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Theme Color - Multiple browser support -->
     <meta name="theme-color" content="#f97316" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f97316" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#f97316" />
+    <meta name="msapplication-TileColor" content="#f97316" />
+    <meta name="msapplication-navbutton-color" content="#f97316" />
+    
+    <!-- Mobile Web App Configuration -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ÇakmakKoçluk" />
+    <meta name="application-name" content="ÇakmakKoçluk" />
     
     <!-- iOS Icons -->
     <link rel="apple-touch-icon" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128x128.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png" />
     
-    <!-- Favicon -->
+    <!-- iOS Splash Screens -->
+    <!-- iPhone X / XS / 11 Pro (1125x2436) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone XR / 11 (828x1792) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone XS Max / 11 Pro Max (1242x2688) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone 12/13 Mini (1080x2340) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone 12/13/14 (1170x2532) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone 12/13/14 Pro Max (1284x2778) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone 14 Pro (1179x2556) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPhone 14 Pro Max (1290x2796) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/icon-512x512.png" />
+    <!-- iPad Pro 12.9" -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" 
+          href="/icons/icon-512x512.png" />
+    
+    <!-- Windows/IE Tile -->
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+    <meta name="msapplication-config" content="none" />
+    
+    <!-- Favicon - Cross Browser -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
     
-    <!-- Splash screens for iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- Safari Pinned Tab -->
+    <link rel="mask-icon" href="/icons/icon-512x512.png" color="#f97316" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Prevent FOUC -->
+    <!-- Splash Screen Styling -->
     <style>
-      html { background-color: #0a0a0a; }
+      html { 
+        background-color: #0a0a0a; 
+      }
+      
+      /* PWA Splash Screen Animation */
+      @keyframes flame-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+      }
+      
+      #pwa-splash {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      #pwa-splash.hide {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      #pwa-splash .logo {
+        width: 80px;
+        height: 80px;
+        animation: flame-pulse 2s ease-in-out infinite;
+      }
+      
+      #pwa-splash .title {
+        margin-top: 16px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+      
+      #pwa-splash .title span {
+        color: #f97316;
+      }
+      
+      #pwa-splash .loading {
+        margin-top: 32px;
+        width: 40px;
+        height: 4px;
+        background: rgba(249, 115, 22, 0.2);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      
+      #pwa-splash .loading::after {
+        content: '';
+        display: block;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, #f97316, #ea580c);
+        border-radius: 2px;
+        animation: loading 1.2s ease-in-out infinite;
+      }
+      
+      @keyframes loading {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(200%); }
+      }
     </style>
   </head>
   <body>
+    <!-- PWA Splash Screen -->
+    <div id="pwa-splash">
+      <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="none"/>
+        <path d="M8.5 14.5L5.5 11.5M12 6V3M12 21v-3M6 12H3M21 12h-3M18.4 5.6l-2.1 2.1M5.6 18.4l2.1-2.1M18.4 18.4l-2.1-2.1M5.6 5.6l2.1 2.1" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M12 18.5a6.5 6.5 0 100-13 6.5 6.5 0 000 13z" fill="#f97316" fill-opacity="0.1"/>
+        <path d="M12 6a1.5 1.5 0 01.75 2.8l-.05 4.7a.75.75 0 01-1.5 0l-.05-4.7A1.5 1.5 0 0112 6z" fill="#f97316"/>
+        <circle cx="12" cy="15.5" r="1" fill="#f97316"/>
+      </svg>
+      <div class="title">Çakmak<span>Koçluk</span></div>
+      <div class="loading"></div>
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Register Service Worker -->
+    <!-- Hide Splash & Register Service Worker -->
     <script>
+      // Hide splash screen after app loads
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const splash = document.getElementById('pwa-splash');
+          if (splash) {
+            splash.classList.add('hide');
+            setTimeout(() => splash.remove(), 500);
+          }
+        }, 800);
+      });
+      
+      // Register Service Worker with scope
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registered'))
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(reg => {
+              console.log('SW registered:', reg.scope);
+              // Check for updates
+              reg.addEventListener('updatefound', () => {
+                console.log('SW update found');
+              });
+            })
             .catch(err => console.warn('SW registration failed:', err));
         });
       }
