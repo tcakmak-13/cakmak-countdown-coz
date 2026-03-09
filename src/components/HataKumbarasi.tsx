@@ -7,7 +7,7 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, ChevronDown
+  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, ChevronDown, Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,7 +15,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ImagePicker from '@/components/ImagePicker';
 import ReactMarkdown from 'react-markdown';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+interface AISolution {
+  solution_text: string;
+  topic_analysis?: string;
+  reasoning_steps?: string[];
+  study_recommendation?: string;
+  tags?: string[];
+  cached?: boolean;
+}
 
 interface ErrorQuestion {
   id: string;
