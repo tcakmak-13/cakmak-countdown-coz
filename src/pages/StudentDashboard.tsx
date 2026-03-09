@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Flame, LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft, FolderOpen } from 'lucide-react';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
