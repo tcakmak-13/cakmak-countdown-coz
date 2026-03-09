@@ -439,6 +439,52 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setSendingAnswer(false);
   };
 
+  // Ask AI to solve the question
+  const askAI = async () => {
+    if (!selectedQuestion || !selectedQuestion.image_url) {
+      toast.error('Bu soru görseli içermiyor');
+      return;
+    }
+
+    setLoadingAI(true);
+    setAiSolution(null);
+    setShowAIModal(true);
+
+    try {
+      const response = await supabase.functions.invoke('solve-question', {
+        body: {
+          questionId: selectedQuestion.id,
+          imageUrl: selectedQuestion.image_url,
+          subject: selectedQuestion.subject,
+          category: selectedQuestion.category,
+          description: selectedQuestion.description,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'AI çözümü alınamadı');
+      }
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'AI yanıt veremedi');
+      }
+
+      setAiSolution(response.data.solution);
+      
+      if (response.data.cached) {
+        toast.success('Önbellekten çözüm getirildi ⚡');
+      } else {
+        toast.success('AI çözümü hazır! 🎉');
+      }
+    } catch (err: any) {
+      console.error('AI çözüm hatası:', err);
+      toast.error(err.message || 'AI çözümü alınamadı');
+      setShowAIModal(false);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
   // Mark best answer
   const markBestAnswer = async (answerId: string) => {
     if (!selectedQuestion || selectedQuestion.student_id !== currentProfileId) return;
