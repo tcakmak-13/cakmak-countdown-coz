@@ -831,6 +831,39 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                 {detailQuestion.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
               </button>
 
+              {/* AI Solution Section */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  AI Çözümü
+                </label>
+                {detailQuestion.ai_solution ? (
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 max-h-[300px] overflow-y-auto">
+                    <div className="prose prose-sm prose-invert max-w-none text-foreground/90">
+                      <ReactMarkdown>{detailQuestion.ai_solution}</ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => handleAISolve(detailQuestion)}
+                    disabled={solvingQuestionId === detailQuestion.id}
+                    className="w-full gap-2 bg-gradient-to-r from-primary to-orange-600 text-primary-foreground border-0 hover:opacity-90 shadow-[0_0_16px_hsl(var(--primary)/0.25)]"
+                  >
+                    {solvingQuestionId === detailQuestion.id ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Analiz Ediliyor...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        AI ile Çöz
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
               {/* Note editor */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold flex items-center gap-2">
