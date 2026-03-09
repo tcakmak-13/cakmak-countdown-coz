@@ -435,20 +435,18 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                                   </p>
                                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                     {daySlots.map(t => {
-                                      const end = minutesToTime(timeToMinutes(t) + DURATION[selectedType]);
                                       const isSelected = selectedTime === t;
                                       return (
                                         <button
                                           key={t}
                                           onClick={() => setSelectedTime(t)}
-                                          className={`rounded-xl py-3 px-2 text-center transition-all border-2 ${
+                                          className={`rounded-xl py-2.5 px-2 text-center transition-all border-2 ${
                                             isSelected
                                               ? 'border-primary bg-gradient-orange text-primary-foreground font-bold shadow-lg shadow-primary/20'
                                               : 'border-primary/30 bg-card hover:border-primary hover:bg-primary/5 text-foreground'
                                           }`}
                                         >
-                                          <span className="text-sm font-bold block">{t}</span>
-                                          <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{end}'e kadar</span>
+                                          <span className="text-sm font-bold">{t}</span>
                                         </button>
                                       );
                                     })}
