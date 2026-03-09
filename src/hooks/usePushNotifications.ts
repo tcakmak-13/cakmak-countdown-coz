@@ -11,24 +11,29 @@ export function usePushNotifications(userId?: string) {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.register('/sw.js')
-      .then(reg => { swReg.current = reg; })
+      .then(reg => {
+        swReg.current = reg;
+        // If permission already granted and userId present, ensure push subscription exists
+        if (Notification.permission === 'granted' && userId) {
+          subscribeToPush(userId, reg).catch(() => {});
+        }
+      })
       .catch(err => console.warn('SW registration failed:', err));
-  }, []);
+  }, [userId]);
 
-  // Request permission and optionally subscribe to server push
+  // Request permission + subscribe
   const requestPermission = useCallback(async () => {
     if (!('Notification' in window)) return 'denied' as NotificationPermission;
     const result = await Notification.requestPermission();
     setPermission(result);
 
-    // If granted and userId available, try to subscribe for server push
-    if (result === 'granted' && userId) {
-      subscribeToPush(userId);
+    if (result === 'granted' && userId && swReg.current) {
+      await subscribeToPush(userId, swReg.current).catch(() => {});
     }
     return result;
   }, [userId]);
 
-  // Show notification via service worker (works in background too)
+  // Show notification via service worker (works when tab is backgrounded)
   const showNotification = useCallback((data: {
     id?: string;
     title: string;
@@ -43,7 +48,6 @@ export function usePushNotifications(userId?: string) {
         ...data,
       });
     } else {
-      // Fallback to Notification API
       try {
         new Notification(data.title, {
           body: data.message,
@@ -57,19 +61,21 @@ export function usePushNotifications(userId?: string) {
   return { permission, requestPermission, showNotification };
 }
 
-// Subscribe to server push (requires VAPID keys to be configured)
-async function subscribeToPush(userId: string) {
+// Subscribe to server push (requires VAPID keys)
+async function subscribeToPush(userId: string, reg: ServiceWorkerRegistration) {
   try {
-    const reg = await navigator.serviceWorker.ready;
-
-    // Get VAPID public key from edge function
     const { data, error } = await supabase.functions.invoke('get-vapid-key');
     if (error || !data?.publicKey) return;
 
-    const subscription = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(data.publicKey),
-    });
+    // Check if already subscribed with same endpoint
+    const existing = await reg.pushManager.getSubscription();
+    let subscription = existing;
+    if (!subscription) {
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(data.publicKey),
+      });
+    }
 
     const subJson = subscription.toJSON();
     if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) return;
@@ -81,7 +87,6 @@ async function subscribeToPush(userId: string) {
       auth_key: subJson.keys.auth,
     }, { onConflict: 'user_id,endpoint' });
   } catch (e) {
-    // VAPID keys not configured or push not supported - silent fail
     console.debug('Push subscription skipped:', e);
   }
 }
