@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle, Pencil, UserCircle } from 'lucide-react';
+import { MessageCircleQuestion, Filter, Send, Camera, ImagePlus, ChevronLeft, CheckCircle2, Crown, X, ArrowUp, Trash2, XCircle, Pencil, UserCircle, Bot, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import ImagePicker from '@/components/ImagePicker';
 import ImageCanvas from '@/components/ImageCanvas';
+import ReactMarkdown from 'react-markdown';
 
 const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
 const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
@@ -50,6 +51,17 @@ interface Answer {
   author_name?: string;
   author_avatar?: string;
   is_coach?: boolean;
+  is_ai?: boolean;
+}
+
+interface AISolution {
+  id?: string;
+  solution_text: string;
+  topic_analysis?: string;
+  reasoning_steps?: string[];
+  study_recommendation?: string;
+  tags?: string[];
+  cached?: boolean;
 }
 
 interface QuestionFlowProps {
@@ -90,6 +102,11 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   // Delete confirm state
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'question' | 'answer'; id: string } | null>(null);
+
+  // AI Solution state
+  const [aiSolution, setAiSolution] = useState<AISolution | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   // Nickname change state
   const [nicknameDialogOpen, setNicknameDialogOpen] = useState(false);
@@ -422,6 +439,52 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setSendingAnswer(false);
   };
 
+  // Ask AI to solve the question
+  const askAI = async () => {
+    if (!selectedQuestion || !selectedQuestion.image_url) {
+      toast.error('Bu soru görseli içermiyor');
+      return;
+    }
+
+    setLoadingAI(true);
+    setAiSolution(null);
+    setShowAIModal(true);
+
+    try {
+      const response = await supabase.functions.invoke('solve-question', {
+        body: {
+          questionId: selectedQuestion.id,
+          imageUrl: selectedQuestion.image_url,
+          subject: selectedQuestion.subject,
+          category: selectedQuestion.category,
+          description: selectedQuestion.description,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'AI çözümü alınamadı');
+      }
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'AI yanıt veremedi');
+      }
+
+      setAiSolution(response.data.solution);
+      
+      if (response.data.cached) {
+        toast.success('Önbellekten çözüm getirildi ⚡');
+      } else {
+        toast.success('AI çözümü hazır! 🎉');
+      }
+    } catch (err: any) {
+      console.error('AI çözüm hatası:', err);
+      toast.error(err.message || 'AI çözümü alınamadı');
+      setShowAIModal(false);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
   // Mark best answer
   const markBestAnswer = async (answerId: string) => {
     if (!selectedQuestion || selectedQuestion.student_id !== currentProfileId) return;
@@ -587,6 +650,30 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           )}
           {selectedQuestion.description && (
             <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
+          )}
+          
+          {/* AI Meclis Üyesine Sor Button */}
+          {selectedQuestion.image_url && (
+            <motion.button
+              onClick={askAI}
+              disabled={loadingAI}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingAI ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Yapay Zeka Çözüyor...</span>
+                </>
+              ) : (
+                <>
+                  <Bot className="h-5 w-5" />
+                  <span>AI Meclis Üyesine Sor</span>
+                  <Sparkles className="h-4 w-4" />
+                </>
+              )}
+            </motion.button>
           )}
         </div>
 
@@ -1060,6 +1147,111 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           }
         }}
       />
+
+      {/* AI Solution Modal */}
+      <Dialog open={showAIModal} onOpenChange={setShowAIModal}>
+        <DialogContent className="bg-card border-border max-w-lg p-0 max-h-[90vh] overflow-hidden">
+          <DialogHeader className="p-5 pb-3 border-b border-border bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-600/10">
+            <DialogTitle className="font-display flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 flex items-center justify-center">
+                <Bot className="h-4 w-4 text-white" />
+              </div>
+              <span>Yapay Zeka Yanıtı</span>
+              <Sparkles className="h-4 w-4 text-orange-500 ml-auto" />
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-5 overflow-y-auto max-h-[calc(90vh-100px)]">
+            {loadingAI ? (
+              <div className="py-12 text-center">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="h-16 w-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 p-0.5"
+                >
+                  <div className="h-full w-full rounded-full bg-card flex items-center justify-center">
+                    <Bot className="h-8 w-8 text-orange-500" />
+                  </div>
+                </motion.div>
+                <p className="text-lg font-semibold text-foreground mb-2">Yapay Zeka Soruyu Çözüyor...</p>
+                <p className="text-sm text-muted-foreground">Görsel analiz ediliyor ve adım adım çözüm hazırlanıyor</p>
+                <motion.div
+                  className="flex justify-center gap-1 mt-4"
+                  initial={{ opacity: 0.5 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ repeat: Infinity, repeatType: "reverse", duration: 0.8 }}
+                >
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="h-2 w-2 rounded-full bg-orange-500"
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ delay: i * 0.15, repeat: Infinity, duration: 0.6 }}
+                    />
+                  ))}
+                </motion.div>
+              </div>
+            ) : aiSolution ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                {/* AI Response Box with Orange Neon Border */}
+                <div className="relative rounded-2xl p-4 bg-gradient-to-br from-orange-500/5 via-amber-500/5 to-orange-600/5 border-2 border-orange-500/30 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
+                  {/* AI Badge */}
+                  <div className="absolute -top-3 left-4 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                    <Bot className="h-3 w-3" />
+                    Yapay Zeka Yanıtı
+                  </div>
+                  
+                  {/* Solution Content */}
+                  <div className="mt-3 prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => <h1 className="text-lg font-bold text-foreground mb-2">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-semibold text-foreground mb-2">{children}</h2>,
+                        strong: ({ children }) => <strong className="font-bold text-orange-500">{children}</strong>,
+                        p: ({ children }) => <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-3">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-3">{children}</ol>,
+                        li: ({ children }) => <li className="text-sm text-muted-foreground">{children}</li>,
+                      }}
+                    >
+                      {aiSolution.solution_text}
+                    </ReactMarkdown>
+                  </div>
+
+                  {/* Tags */}
+                  {aiSolution.tags && aiSolution.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-orange-500/20">
+                      {aiSolution.tags.map((tag, idx) => (
+                        <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-500/20 text-orange-500">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cached indicator */}
+                {aiSolution.cached && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    ⚡ Önbellekten getirildi - aynı soru daha önce çözülmüş
+                  </p>
+                )}
+
+                <Button
+                  onClick={() => setShowAIModal(false)}
+                  className="w-full bg-gradient-orange border-0 hover:opacity-90"
+                >
+                  Tamam
+                </Button>
+              </motion.div>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

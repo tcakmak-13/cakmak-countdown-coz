@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.engagement-notifications]
 verify_jwt = false
+
+[functions.solve-question]
+verify_jwt = false
