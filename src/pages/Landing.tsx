@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle } from 'lucide-react';
+import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from '@/hooks/use-toast';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import YKSCountdown from '@/components/YKSCountdown';
-
 export default function Landing() {
   const navigate = useNavigate();
 
