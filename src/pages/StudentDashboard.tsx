@@ -25,7 +25,7 @@ import QuestionFlow from '@/components/QuestionFlow';
 import ResourceList from '@/components/ResourceList';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Analizlerim',
@@ -35,6 +35,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'mesajlar': 'Mesajlar',
   'profilim': 'Profilim',
   'soru-meclisi': 'Soru Meclisi',
+  'kaynaklar': 'Kaynaklarım',
 };
 
 const tabVariants = {
