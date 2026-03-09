@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ImagePlus, Upload, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ interface ImagePickerProps {
   uploading?: boolean;
 }
 
-export default function ImagePicker({
+const ImagePicker = forwardRef<HTMLDivElement, ImagePickerProps>(function ImagePicker({
   open,
   onOpenChange,
   onUpload,
@@ -35,7 +35,7 @@ export default function ImagePicker({
   title = 'Fotoğraf Seç',
   description = 'Galerinden fotoğraf seç veya kamera ile çek',
   uploading = false,
-}: ImagePickerProps) {
+}, ref) {
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -327,4 +327,6 @@ export default function ImagePicker({
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+export default ImagePicker;
