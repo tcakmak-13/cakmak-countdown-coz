@@ -459,7 +459,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setSendingAnswer(false);
   };
 
-  // Ask AI to solve the question
+  // Ask AI to solve the question - result shown inline
   const askAI = async () => {
     if (!selectedQuestion || !selectedQuestion.image_url) {
       toast.error('Bu soru görseli içermiyor');
@@ -468,7 +468,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
     setLoadingAI(true);
     setAiSolution(null);
-    setShowAIModal(true);
 
     try {
       const response = await supabase.functions.invoke('solve-question', {
@@ -489,7 +488,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         throw new Error(response.data?.error || 'AI yanıt veremedi');
       }
 
-      setAiSolution(response.data.solution);
+      const sol = response.data.solution;
+      const tagMatch = (sol.solution_text || '').match(/\[ETİKETLER\]\s*([\s\S]*?)$/i);
+      const tags = sol.tags || tagMatch?.[1]?.match(/#\w+/g) || [];
+      setAiSolution({ ...sol, reasoning_steps: Array.isArray(sol.reasoning_steps) ? sol.reasoning_steps : [], tags, cached: response.data.cached });
       
       if (response.data.cached) {
         toast.success('Önbellekten çözüm getirildi ⚡');
@@ -499,7 +501,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     } catch (err: any) {
       console.error('AI çözüm hatası:', err);
       toast.error(err.message || 'AI çözümü alınamadı');
-      setShowAIModal(false);
     } finally {
       setLoadingAI(false);
     }
