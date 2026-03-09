@@ -203,7 +203,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
   const activeRecurring = appointments.filter(a => a.status === 'approved' && a.recurring && !a.series_ended_at);
   const pending = appointments.filter(a => a.status === 'pending');
   const ended = appointments.filter(a => a.series_ended_at || a.status === 'rejected' || a.status === 'completed');
-  const endTimeLabel = selectedTime ? minutesToTime(timeToMinutes(selectedTime) + DURATION[selectedType]) : '';
+  
 
   return (
     <div className="space-y-6 pb-24">
