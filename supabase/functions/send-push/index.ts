@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 Deno.serve(async (req) => {
@@ -21,12 +21,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { user_id, title, message, link, icon } = await req.json();
+    const body = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
+    // Desteklenen iki çağrı biçimi:
+    // 1) Doğrudan: { user_id, title, message, link, icon }
+    // 2) DB webhook: { type:'INSERT', table:'notifications', record:{ user_id, title, message, link, icon } }
+    let user_id: string, title: string, message: string, link: string | undefined, icon: string | undefined;
+
+    if (body.type === 'INSERT' && body.record) {
+      const r = body.record;
+      user_id = r.user_id;
+      title = r.title;
+      message = r.message;
+      link = r.link;
+      icon = r.icon;
+    } else {
+      user_id = body.user_id;
+      title = body.title;
+      message = body.message;
+      link = body.link;
+      icon = body.icon;
+    }
+
+    if (!user_id || !title) {
+      return new Response(JSON.stringify({ sent: 0, reason: 'missing fields' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const { data: subscriptions } = await supabase
       .from('push_subscriptions')

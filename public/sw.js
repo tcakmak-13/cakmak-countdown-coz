@@ -1,27 +1,34 @@
-// ÇakmakKoçluk Service Worker - Push Notifications & PWA
+// ÇakmakKoçluk Service Worker — Merkezi Push Bildirim Motoru
 
-// Push event from server (requires VAPID keys)
-self.addEventListener('push', function(event) {
-  var data = {};
-  try { data = event.data ? event.data.json() : {}; } catch(e) { data = {}; }
-  
+// ─── PUSH (sunucudan gelen OS bildirimi) ───────────────────────────────────
+self.addEventListener('push', function (event) {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (_) { data = {}; }
+
+  const options = {
+    body: data.message || '',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    data: { url: data.link || '/' },
+    vibrate: [200, 100, 200],
+    tag: data.id || 'push-' + Date.now(),
+    renotify: true,
+    requireInteraction: false,
+    actions: [
+      { action: 'open', title: 'Aç' },
+      { action: 'dismiss', title: 'Kapat' },
+    ],
+  };
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'ÇakmakKoçluk', {
-      body: data.message || '',
-      icon: '/favicon.ico',
-      badge: '/favicon.ico',
-      data: { url: data.link || '/' },
-      vibrate: [200, 100, 200],
-      tag: data.id || 'push-' + Date.now(),
-      renotify: true,
-    })
+    self.registration.showNotification(data.title || 'ÇakmakKoçluk', options)
   );
 });
 
-// Message from main thread (for realtime notifications)
-self.addEventListener('message', function(event) {
+// ─── MESSAGE (sekme açıkken ana thread'den gelen bildirim) ─────────────────
+self.addEventListener('message', function (event) {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    var d = event.data;
+    const d = event.data;
     self.registration.showNotification(d.title || 'ÇakmakKoçluk', {
       body: d.message || '',
       icon: '/favicon.ico',
@@ -34,35 +41,35 @@ self.addEventListener('message', function(event) {
   }
 });
 
-// Notification click - open app and navigate
-self.addEventListener('notificationclick', function(event) {
+// ─── NOTIFICATION CLICK — uygulamayı ilgili sayfaya yönlendir ─────────────
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  var url = (event.notification.data && event.notification.data.url) || '/';
+
+  if (event.action === 'dismiss') return;
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // Try to focus existing window
-      for (var i = 0; i < clientList.length; i++) {
-        var client = clientList[i];
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+      for (const client of clientList) {
         if (client.url.indexOf(self.location.origin) !== -1 && 'focus' in client) {
-          return client.focus().then(function(c) {
-            if (c.navigate) c.navigate(url);
+          return client.focus().then(function (c) {
+            if (c.navigate) c.navigate(targetUrl);
             return c;
           });
         }
       }
-      // Open new window
-      return clients.openWindow(url);
+      return clients.openWindow(targetUrl);
     })
   );
 });
 
-// Install - activate immediately
-self.addEventListener('install', function() {
+// ─── INSTALL — anında aktif et ─────────────────────────────────────────────
+self.addEventListener('install', function () {
   self.skipWaiting();
 });
 
-// Activate - claim all clients
-self.addEventListener('activate', function(event) {
+// ─── ACTIVATE — tüm istemcileri yakala ────────────────────────────────────
+self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim());
 });
