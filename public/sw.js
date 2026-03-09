@@ -1,9 +1,21 @@
 // ÇakmakKoçluk Service Worker — PWA + Push Notification Engine
-const CACHE_NAME = 'cakmak-v1';
+const CACHE_NAME = 'cakmak-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/favicon.ico'
+];
+
+// Valid app routes for 404 prevention
+const VALID_ROUTES = [
+  '/student',
+  '/coach',
+  '/admin',
+  '/login',
+  '/onboarding',
+  '/select-coach',
+  '/coach-onboarding',
+  '/'
 ];
 
 // ─── INSTALL — Cache static assets ─────────────────────────────────────────
@@ -83,11 +95,17 @@ self.addEventListener('push', (event) => {
     data = {};
   }
 
+  // Normalize URL - ensure it starts with /
+  let targetUrl = data.link || data.url || '/';
+  if (!targetUrl.startsWith('/')) {
+    targetUrl = '/' + targetUrl;
+  }
+
   const options = {
     body: data.message || '',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-96x96.png',
-    data: { url: data.link || '/' },
+    data: { url: targetUrl },
     vibrate: [200, 100, 200],
     tag: data.id || 'push-' + Date.now(),
     renotify: true,
@@ -107,11 +125,16 @@ self.addEventListener('push', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const d = event.data;
+    let targetUrl = d.link || '/';
+    if (!targetUrl.startsWith('/')) {
+      targetUrl = '/' + targetUrl;
+    }
+    
     self.registration.showNotification(d.title || 'ÇakmakKoçluk', {
       body: d.message || '',
       icon: '/icons/icon-192x192.png',
       badge: '/icons/icon-96x96.png',
-      data: { url: d.link || '/' },
+      data: { url: targetUrl },
       vibrate: [200, 100, 200],
       tag: d.id || 'msg-' + Date.now(),
       renotify: true
@@ -130,20 +153,47 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'dismiss') return;
 
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  let targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  
+  // Ensure URL starts with /
+  if (!targetUrl.startsWith('/')) {
+    targetUrl = '/' + targetUrl;
+  }
+
+  // Extract base path for validation (ignore query params)
+  const basePath = targetUrl.split('?')[0];
+  
+  // Validate URL - map to valid routes to prevent 404
+  const isValidRoute = VALID_ROUTES.some(route => basePath === route || basePath.startsWith(route + '/'));
+  
+  // If invalid route, default to appropriate dashboard
+  if (!isValidRoute) {
+    // Try to detect user type from URL hints
+    if (targetUrl.includes('coach')) {
+      targetUrl = '/coach';
+    } else if (targetUrl.includes('admin')) {
+      targetUrl = '/admin';
+    } else {
+      targetUrl = '/student';
+    }
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Focus existing window if available
+      // Try to find an existing window and navigate
       for (const client of clientList) {
         if (client.url.indexOf(self.location.origin) !== -1 && 'focus' in client) {
           return client.focus().then((c) => {
-            if (c.navigate) c.navigate(targetUrl);
+            // Post message to client for in-app navigation
+            c.postMessage({
+              type: 'NOTIFICATION_CLICK',
+              url: targetUrl
+            });
             return c;
           });
         }
       }
-      // Open new window
+      // No existing window - open new one
       return clients.openWindow(targetUrl);
     })
   );
