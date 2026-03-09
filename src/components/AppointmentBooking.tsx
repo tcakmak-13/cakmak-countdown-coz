@@ -140,7 +140,24 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
     return () => { supabase.removeChannel(channel); };
   }, [studentId, coachId]);
 
+  // Check if type already has an active or pending appointment
+  const hasActiveOrPending = (type: 'video' | 'voice') => {
+    return appointments.some(a => 
+      a.type === type && 
+      (a.status === 'approved' || a.status === 'pending') && 
+      !a.series_ended_at
+    );
+  };
+
   const openDialog = (type: 'video' | 'voice') => {
+    if (hasActiveOrPending(type)) {
+      toast.error(
+        type === 'video'
+          ? 'Zaten aktif veya bekleyen bir görüntülü görüşme randevun var.'
+          : 'Zaten aktif veya bekleyen bir sesli görüşme randevun var.'
+      );
+      return;
+    }
     setSelectedType(type);
     setSelectedDay(null);
     setSelectedTime(null);
