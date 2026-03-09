@@ -271,12 +271,12 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
-  // Scroll flow to bottom after questions load
+  // Feed is now newest-first, so scroll to top on load
   useEffect(() => {
     if (!loading && questions.length > 0) {
-      scrollToBottom(flowScrollRef);
+      flowScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [loading, questions.length, scrollToBottom]);
+  }, [loading, questions.length]);
 
   // Realtime subscription
   useEffect(() => {
