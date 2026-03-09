@@ -364,7 +364,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       // Extract tags from solution text
       const tagMatch = (data.solution_text || '').match(/\[ETİKETLER\]\s*([\s\S]*?)$/i);
       const tags = tagMatch?.[1]?.match(/#\w+/g) || [];
-      setAiSolution({ ...data, tags, cached: true });
+      setAiSolution({ ...data, reasoning_steps: Array.isArray(data.reasoning_steps) ? (data.reasoning_steps as string[]) : [], tags, cached: true });
     } else {
       setAiSolution(null);
     }
