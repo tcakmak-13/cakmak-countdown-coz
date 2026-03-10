@@ -268,26 +268,26 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
             
             return (
               <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="glass-card rounded-2xl p-6 border border-emerald-500/30 relative overflow-hidden">
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                className="glass-card rounded-2xl p-4 sm:p-6 border border-emerald-500/30 relative overflow-hidden">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 w-fit mb-3 sm:mb-0 sm:absolute sm:top-3 sm:right-3">
                   <Repeat className="h-3.5 w-3.5 text-emerald-400" />
                   <span className="text-xs font-medium text-emerald-400">Haftalık Tekrar</span>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
-                    {a.type === 'video' ? <Video className="h-7 w-7 text-primary" /> : <Phone className="h-7 w-7 text-emerald-400" />}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                  <div className={`h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
+                    {a.type === 'video' ? <Video className="h-6 w-6 sm:h-7 sm:w-7 text-primary" /> : <Phone className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-400" />}
                   </div>
-                  <div className="flex-1 min-w-0 pt-1">
-                    <p className="font-display font-bold text-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-bold text-base sm:text-lg">
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
                     </p>
-                    <div className="mt-4 rounded-xl bg-primary/10 border border-primary/25 p-4">
+                    <div className="mt-3 sm:mt-4 rounded-xl bg-primary/10 border border-primary/25 p-3 sm:p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bir Sonraki Görüşme</p>
-                      <p className="font-display font-black text-2xl text-primary">{format(nextOcc, 'dd MMMM yyyy', { locale: tr })}</p>
-                      <p className="font-display font-black text-3xl text-foreground">{format(nextOcc, 'HH:mm')}</p>
+                      <p className="font-display font-black text-xl sm:text-2xl text-primary">{format(nextOcc, 'dd MMMM yyyy', { locale: tr })}</p>
+                      <p className="font-display font-black text-2xl sm:text-3xl text-foreground">{format(nextOcc, 'HH:mm')}</p>
                     </div>
                   </div>
                 </div>
