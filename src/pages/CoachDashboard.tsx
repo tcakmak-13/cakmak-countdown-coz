@@ -187,9 +187,6 @@ export default function CoachDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </header>
