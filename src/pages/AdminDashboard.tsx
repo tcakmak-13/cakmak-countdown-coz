@@ -464,7 +464,7 @@ export default function AdminDashboard() {
 
       {/* Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
-        <div className="max-w-7xl mx-auto flex items-center justify-around h-14 sm:h-16">
+        <div className="max-w-7xl mx-auto flex items-center overflow-x-auto scrollbar-hide h-14 sm:h-16">
           {[
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
@@ -478,12 +478,12 @@ export default function AdminDashboard() {
               <button
                 key={item.key}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
-                className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 flex-1 min-h-[48px] transition-colors relative"
+                className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 min-w-[56px] flex-1 min-h-[48px] transition-colors relative px-1"
               >
                 <div className="relative">
                   <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
-                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                <span className={`text-[9px] sm:text-[10px] font-medium transition-colors whitespace-nowrap ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
                   {item.label}
                 </span>
                 {isActive && (

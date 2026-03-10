@@ -184,16 +184,15 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                   <p className="font-display font-semibold text-lg">{a.profiles?.full_name || a.profiles?.username || 'Öğrenci'}</p>
                   <p className="text-sm text-muted-foreground">
                     {a.type === 'video' ? 'Görüntülü' : 'Sesli'} ({a.duration_minutes || 60} dk) — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
-                    {a.recurring_time ? ` → ${endTimeStr(a.recurring_time, a.duration_minutes)}` : ''}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {statusBadge(a.status)}
                   <Button size="sm" onClick={() => updateStatus(a.id, 'approved')} disabled={updatingId === a.id}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 min-h-[44px]">
                     {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Onayla
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => updateStatus(a.id, 'rejected')} disabled={updatingId === a.id} className="gap-1">
+                  <Button size="sm" variant="destructive" onClick={() => updateStatus(a.id, 'rejected')} disabled={updatingId === a.id} className="gap-1 min-h-[44px]">
                     <X className="h-3.5 w-3.5" /> Reddet
                   </Button>
                 </div>
@@ -225,7 +224,6 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                     <p className="font-display font-bold text-lg">{a.profiles?.full_name || 'Öğrenci'}</p>
                     <p className="text-sm text-muted-foreground">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
-                      {a.recurring_time ? ` → ${endTimeStr(a.recurring_time, a.duration_minutes)}` : ''}
                       <span className="ml-1.5 text-xs">({a.duration_minutes || 60} dk)</span>
                     </p>
                     <div className="mt-2 rounded-lg bg-primary/10 border border-primary/20 px-3 py-2 inline-block">
@@ -235,13 +233,13 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
                     <Button size="sm" variant="outline" onClick={() => openEditDialog(a)}
-                      className="gap-1 border-primary/30 text-primary hover:bg-primary/10">
+                      className="gap-1 border-primary/30 text-primary hover:bg-primary/10 min-h-[44px]">
                       <Pencil className="h-3.5 w-3.5" /> Saati Güncelle
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => endSeries(a.id)} disabled={updatingId === a.id}
-                      className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
+                      className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10 min-h-[44px]">
                       {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" />} Seriyi Sonlandır
                     </Button>
                   </div>
@@ -256,11 +254,13 @@ export default function CoachAppointments({ coachProfileId }: Props) {
         <div className="space-y-3">
           <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Geçmiş / Sonlanan</h3>
           {rest.slice(0, 10).map(a => (
-            <div key={a.id} className="glass-card rounded-xl p-4 flex items-center gap-3 opacity-60">
-              {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground" /> : <Phone className="h-5 w-5 text-muted-foreground" />}
-              <span className="text-sm flex-1">{a.profiles?.full_name} — {DAY_NAMES[a.recurring_day ?? 0]} {a.recurring_time}</span>
-              {a.series_ended_at && <span className="text-xs text-muted-foreground">Sonlandırıldı</span>}
-              {statusBadge(a.status)}
+            <div key={a.id} className="glass-card rounded-xl p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 opacity-60">
+              {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground shrink-0" /> : <Phone className="h-5 w-5 text-muted-foreground shrink-0" />}
+              <span className="text-sm flex-1 min-w-0 truncate">{a.profiles?.full_name} — {DAY_NAMES[a.recurring_day ?? 0]} {a.recurring_time}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {a.series_ended_at && <span className="text-xs text-muted-foreground">Sonlandırıldı</span>}
+                {statusBadge(a.status)}
+              </div>
             </div>
           ))}
         </div>

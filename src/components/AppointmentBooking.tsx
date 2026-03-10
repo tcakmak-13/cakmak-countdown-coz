@@ -268,26 +268,26 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
             
             return (
               <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="glass-card rounded-2xl p-6 border border-emerald-500/30 relative overflow-hidden">
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                className="glass-card rounded-2xl p-4 sm:p-6 border border-emerald-500/30 relative overflow-hidden">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 w-fit mb-3 sm:mb-0 sm:absolute sm:top-3 sm:right-3">
                   <Repeat className="h-3.5 w-3.5 text-emerald-400" />
                   <span className="text-xs font-medium text-emerald-400">Haftalık Tekrar</span>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
-                    {a.type === 'video' ? <Video className="h-7 w-7 text-primary" /> : <Phone className="h-7 w-7 text-emerald-400" />}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                  <div className={`h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
+                    {a.type === 'video' ? <Video className="h-6 w-6 sm:h-7 sm:w-7 text-primary" /> : <Phone className="h-6 w-6 sm:h-7 sm:w-7 text-emerald-400" />}
                   </div>
-                  <div className="flex-1 min-w-0 pt-1">
-                    <p className="font-display font-bold text-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-bold text-base sm:text-lg">
                       {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Her <span className="font-semibold text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> — {a.recurring_time}
                     </p>
-                    <div className="mt-4 rounded-xl bg-primary/10 border border-primary/25 p-4">
+                    <div className="mt-3 sm:mt-4 rounded-xl bg-primary/10 border border-primary/25 p-3 sm:p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bir Sonraki Görüşme</p>
-                      <p className="font-display font-black text-2xl text-primary">{format(nextOcc, 'dd MMMM yyyy', { locale: tr })}</p>
-                      <p className="font-display font-black text-3xl text-foreground">{format(nextOcc, 'HH:mm')}</p>
+                      <p className="font-display font-black text-xl sm:text-2xl text-primary">{format(nextOcc, 'dd MMMM yyyy', { locale: tr })}</p>
+                      <p className="font-display font-black text-2xl sm:text-3xl text-foreground">{format(nextOcc, 'HH:mm')}</p>
                     </div>
                   </div>
                 </div>
@@ -306,23 +306,25 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </h3>
           {pending.map(a => (
             <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-5 flex items-center gap-4 border border-amber-500/20">
-              <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
-                {a.type === 'video' ? <Video className="h-6 w-6 text-primary" /> : <Phone className="h-6 w-6 text-emerald-400" />}
+              className="glass-card rounded-2xl p-4 sm:p-5 border border-amber-500/20">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
+                  {a.type === 'video' ? <Video className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> : <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-semibold text-sm sm:text-base">
+                    {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
+                  </p>
+                  <p className="text-amber-400 font-bold text-sm sm:text-lg mt-1">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-display font-semibold">
-                  {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
-                </p>
-                <p className="text-amber-400 font-bold text-lg mt-1">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
-              </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
                 {statusBadge(a.status)}
-                <Button variant="ghost" size="icon" onClick={() => handleCancel(a.id)} className="text-destructive hover:text-destructive h-8 w-8">
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={() => handleCancel(a.id)} className="text-destructive hover:text-destructive h-9 px-3 gap-1">
+                  <X className="h-4 w-4" /> İptal
                 </Button>
               </div>
             </motion.div>
@@ -335,11 +337,13 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
         <div className="space-y-3">
           <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Sona Eren / Geçmiş</h3>
           {ended.slice(0, 5).map(a => (
-            <div key={a.id} className="glass-card rounded-xl p-4 flex items-center gap-3 opacity-60">
-              {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground" /> : <Phone className="h-5 w-5 text-muted-foreground" />}
-              <span className="text-sm flex-1">{DAY_NAMES[a.recurring_day ?? 0]} — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}</span>
-              {a.series_ended_at && <span className="text-xs text-muted-foreground">Seri sonlandırıldı</span>}
-              {statusBadge(a.status)}
+            <div key={a.id} className="glass-card rounded-xl p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 opacity-60">
+              {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground shrink-0" /> : <Phone className="h-5 w-5 text-muted-foreground shrink-0" />}
+              <span className="text-sm flex-1 min-w-0 truncate">{DAY_NAMES[a.recurring_day ?? 0]} — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {a.series_ended_at && <span className="text-xs text-muted-foreground">Seri sonlandırıldı</span>}
+                {statusBadge(a.status)}
+              </div>
             </div>
           ))}
         </div>
@@ -354,7 +358,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
 
       {/* ====== BOOKING DIALOG ====== */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+        <DialogContent className="bg-card border-border sm:max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-8">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-3 text-xl">
               {selectedType === 'video' ? <Video className="h-6 w-6 text-primary" /> : <Phone className="h-6 w-6 text-emerald-400" />}
