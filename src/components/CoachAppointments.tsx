@@ -233,13 +233,13 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto">
                     <Button size="sm" variant="outline" onClick={() => openEditDialog(a)}
-                      className="gap-1 border-primary/30 text-primary hover:bg-primary/10">
+                      className="gap-1 border-primary/30 text-primary hover:bg-primary/10 min-h-[44px]">
                       <Pencil className="h-3.5 w-3.5" /> Saati Güncelle
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => endSeries(a.id)} disabled={updatingId === a.id}
-                      className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10">
+                      className="gap-1 border-destructive/30 text-destructive hover:bg-destructive/10 min-h-[44px]">
                       {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" />} Seriyi Sonlandır
                     </Button>
                   </div>
