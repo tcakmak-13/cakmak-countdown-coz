@@ -306,23 +306,25 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
           </h3>
           {pending.map(a => (
             <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-5 flex items-center gap-4 border border-amber-500/20">
-              <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
-                {a.type === 'video' ? <Video className="h-6 w-6 text-primary" /> : <Phone className="h-6 w-6 text-emerald-400" />}
+              className="glass-card rounded-2xl p-4 sm:p-5 border border-amber-500/20">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center shrink-0 ${a.type === 'video' ? 'bg-primary/15' : 'bg-emerald-500/15'}`}>
+                  {a.type === 'video' ? <Video className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> : <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-semibold text-sm sm:text-base">
+                    {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
+                  </p>
+                  <p className="text-amber-400 font-bold text-sm sm:text-lg mt-1">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-display font-semibold">
-                  {a.type === 'video' ? 'Görüntülü' : 'Sesli'} Görüşme
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? new Date(a.scheduled_at).getDay()]}</span> — {a.recurring_time || format(new Date(a.scheduled_at), 'HH:mm')}
-                </p>
-                <p className="text-amber-400 font-bold text-lg mt-1">{format(new Date(a.scheduled_at), 'dd MMMM yyyy — HH:mm', { locale: tr })}</p>
-              </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
                 {statusBadge(a.status)}
-                <Button variant="ghost" size="icon" onClick={() => handleCancel(a.id)} className="text-destructive hover:text-destructive h-8 w-8">
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={() => handleCancel(a.id)} className="text-destructive hover:text-destructive h-9 px-3 gap-1">
+                  <X className="h-4 w-4" /> İptal
                 </Button>
               </div>
             </motion.div>
