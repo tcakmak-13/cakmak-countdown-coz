@@ -254,11 +254,13 @@ export default function CoachAppointments({ coachProfileId }: Props) {
         <div className="space-y-3">
           <h3 className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Geçmiş / Sonlanan</h3>
           {rest.slice(0, 10).map(a => (
-            <div key={a.id} className="glass-card rounded-xl p-4 flex items-center gap-3 opacity-60">
-              {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground" /> : <Phone className="h-5 w-5 text-muted-foreground" />}
-              <span className="text-sm flex-1">{a.profiles?.full_name} — {DAY_NAMES[a.recurring_day ?? 0]} {a.recurring_time}</span>
-              {a.series_ended_at && <span className="text-xs text-muted-foreground">Sonlandırıldı</span>}
-              {statusBadge(a.status)}
+            <div key={a.id} className="glass-card rounded-xl p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3 opacity-60">
+              {a.type === 'video' ? <Video className="h-5 w-5 text-muted-foreground shrink-0" /> : <Phone className="h-5 w-5 text-muted-foreground shrink-0" />}
+              <span className="text-sm flex-1 min-w-0 truncate">{a.profiles?.full_name} — {DAY_NAMES[a.recurring_day ?? 0]} {a.recurring_time}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {a.series_ended_at && <span className="text-xs text-muted-foreground">Sonlandırıldı</span>}
+                {statusBadge(a.status)}
+              </div>
             </div>
           ))}
         </div>
