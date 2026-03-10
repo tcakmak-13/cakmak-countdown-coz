@@ -471,6 +471,7 @@ export default function AdminDashboard() {
             { key: 'management', icon: Users, label: 'Yönetim' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+            { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
