@@ -325,7 +325,7 @@ export default function CoachDashboard() {
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
             { key: 'list', icon: Users, label: 'Öğrenci' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },
-            { key: 'coach-edit', icon: Settings, label: 'Profil' },
+            { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
