@@ -306,15 +306,15 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
           <div
             key={task.id}
             className={cn(
-              'glass-card rounded-2xl p-5 transition-all duration-300',
+              'glass-card rounded-2xl p-4 sm:p-5 transition-all duration-300',
               task.completed && 'opacity-60'
             )}
           >
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={cn(
-                    'text-lg font-bold font-display',
+                    'text-base sm:text-lg font-bold font-display',
                     task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
                   )}>
                     {task.subject}
@@ -340,26 +340,26 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                 )}
               </div>
               {!readOnly && !isArchive && (
-                <div className="flex gap-1 shrink-0">
+                <div className="flex gap-1.5 flex-wrap">
                   {!task.completed ? (
                     <button
                       onClick={() => openCompleteDialog(task)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-xs font-bold hover:bg-emerald-500/25 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 text-xs font-bold hover:bg-emerald-500/25 transition-colors min-h-[44px]"
                     >
                       <Check className="h-4 w-4" /> Bitirdim
                     </button>
                   ) : (
                     <button
                       onClick={() => handleUncomplete(task.id)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-muted-foreground text-xs font-bold hover:bg-secondary/80 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-secondary text-muted-foreground text-xs font-bold hover:bg-secondary/80 transition-colors min-h-[44px]"
                     >
                       Geri Al
                     </button>
                   )}
-                  <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                  <button onClick={() => openEdit(task)} className="p-2.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                  <button onClick={() => handleDelete(task.id)} className="p-2.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
