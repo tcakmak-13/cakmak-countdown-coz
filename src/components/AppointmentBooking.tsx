@@ -358,7 +358,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
 
       {/* ====== BOOKING DIALOG ====== */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+        <DialogContent className="bg-card border-border sm:max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-8">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-3 text-xl">
               {selectedType === 'video' ? <Video className="h-6 w-6 text-primary" /> : <Phone className="h-6 w-6 text-emerald-400" />}
