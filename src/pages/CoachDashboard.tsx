@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, Settings, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
+import { Flame, LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
@@ -186,9 +187,6 @@ export default function CoachDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </header>
@@ -213,7 +211,27 @@ export default function CoachDashboard() {
         ) : tab === 'soru-akisi' && profileId ? (
           <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
         ) : tab === 'coach-edit' ? (
-          <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} coachProfileId={profileId} />
+          <div className="space-y-6 pb-24">
+            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} coachProfileId={profileId} />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full gap-2">
+                  <LogOut className="h-4 w-4" />
+                  Çıkış Yap
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Çıkış yapmak istediğinize emin misiniz?</AlertDialogTitle>
+                  <AlertDialogDescription>Oturumunuz sonlandırılacak ve giriş sayfasına yönlendirileceksiniz.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>İptal</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleLogout}>Evet, Çıkış Yap</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         ) : tab === 'messages' && profileId ? (
           <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'list' && !selectedStudent ? (
@@ -307,7 +325,7 @@ export default function CoachDashboard() {
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
             { key: 'list', icon: Users, label: 'Öğrenci' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },
-            { key: 'coach-edit', icon: Settings, label: 'Profil' },
+            { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
