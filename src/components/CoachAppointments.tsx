@@ -184,7 +184,6 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                   <p className="font-display font-semibold text-lg">{a.profiles?.full_name || a.profiles?.username || 'Öğrenci'}</p>
                   <p className="text-sm text-muted-foreground">
                     {a.type === 'video' ? 'Görüntülü' : 'Sesli'} ({a.duration_minutes || 60} dk) — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
-                    {a.recurring_time ? ` → ${endTimeStr(a.recurring_time, a.duration_minutes)}` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
