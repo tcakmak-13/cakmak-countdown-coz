@@ -186,13 +186,13 @@ export default function CoachAppointments({ coachProfileId }: Props) {
                     {a.type === 'video' ? 'Görüntülü' : 'Sesli'} ({a.duration_minutes || 60} dk) — Her <span className="font-medium text-foreground">{DAY_NAMES[a.recurring_day ?? 0]}</span> {a.recurring_time}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {statusBadge(a.status)}
                   <Button size="sm" onClick={() => updateStatus(a.id, 'approved')} disabled={updatingId === a.id}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 min-h-[44px]">
                     {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Onayla
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => updateStatus(a.id, 'rejected')} disabled={updatingId === a.id} className="gap-1">
+                  <Button size="sm" variant="destructive" onClick={() => updateStatus(a.id, 'rejected')} disabled={updatingId === a.id} className="gap-1 min-h-[44px]">
                     <X className="h-3.5 w-3.5" /> Reddet
                   </Button>
                 </div>
