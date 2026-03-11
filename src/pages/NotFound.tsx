@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Flame, Home } from "lucide-react";
+import { Home } from "lucide-react";
+import AppLogo from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
@@ -7,8 +8,8 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-600/20 flex items-center justify-center mb-6">
-        <Flame className="h-10 w-10 text-primary" />
+      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-6">
+        <AppLogo size="xl" />
       </div>
       <h1 className="mb-2 text-6xl font-display font-bold text-gradient-orange">404</h1>
       <p className="mb-8 text-lg text-muted-foreground text-center max-w-sm">

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download, Monitor, Smartphone, X, Share, Plus } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, MessageCircle, Download, Monitor, Smartphone, X, Share, Plus } from 'lucide-react';
+import AppLogo from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
@@ -53,7 +54,7 @@ export default function Landing() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <Flame className="h-7 w-7 text-primary" />
+          <AppLogo size="sm" />
           <span className="font-display text-xl font-bold tracking-tight">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>
@@ -78,7 +79,7 @@ export default function Landing() {
           className="text-center max-w-4xl mx-auto relative z-10"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-8">
-            <Flame className="h-4 w-4" />
+            <AppLogo size="xs" />
             YKS 2026'ya Hazır mısın?
           </div>
 
@@ -200,8 +201,8 @@ export default function Landing() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center">
-                    <Flame className="h-5 w-5 text-primary-foreground" />
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                    <AppLogo size="sm" />
                   </div>
                   <h3 className="font-display font-bold text-lg">iPhone'a Yükle</h3>
                 </div>
