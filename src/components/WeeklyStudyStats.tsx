@@ -137,7 +137,7 @@ export default function WeeklyStudyStats({ studentId }: Props) {
         </div>
         <div className="glass-card rounded-2xl p-4 text-center">
           <div className="mx-auto w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center mb-2">
-            <Flame className="h-5 w-5 text-primary" />
+            <AppLogo size="xs" />
           </div>
           <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Aktif Gün</p>
           <p className="text-lg font-bold text-foreground font-display">{activeDays} / 7</p>
