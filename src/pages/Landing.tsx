@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, BookOpen, Clock, MessageCircle, Download, Monitor, Smartphone, X, Share, Plus } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, MessageCircle, Download, Monitor, Smartphone, X, Share, Plus } from 'lucide-react';
+import AppLogo from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Flame, Home } from "lucide-react";
+import { Home } from "lucide-react";
+import AppLogo from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
