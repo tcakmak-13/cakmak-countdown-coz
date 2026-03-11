@@ -11,7 +11,7 @@ const CountdownUnit = forwardRef<HTMLDivElement, { value: number; label: string 
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="countdown-digit text-4xl sm:text-7xl md:text-8xl font-bold text-gradient-orange"
+          className="countdown-digit text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-gradient-orange"
         >
           {String(value).padStart(2, "0")}
         </motion.div>
