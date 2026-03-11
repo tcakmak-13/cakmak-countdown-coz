@@ -110,7 +110,7 @@ export default function Login() {
         className="w-full max-w-md relative z-10"
       >
         <div className="flex items-center justify-center gap-2 mb-8 cursor-pointer" onClick={() => navigate('/')}>
-          <Flame className="h-8 w-8 text-primary" />
+          <AppLogo size="md" />
           <span className="font-display text-2xl font-bold">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>

@@ -91,7 +91,7 @@ export default function CoachOnboarding() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-xl relative z-10">
         {/* Header */}
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Flame className="h-8 w-8 text-primary" />
+          <AppLogo size="md" />
           <span className="font-display text-2xl font-bold">Çakmak<span className="text-primary">Koçluk</span></span>
         </div>
         <div className="text-center mb-8">

@@ -91,7 +91,7 @@ export default function Onboarding() {
         className="w-full max-w-lg relative z-10"
       >
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Flame className="h-8 w-8 text-primary" />
+          <AppLogo size="md" />
           <span className="font-display text-2xl font-bold">
             Çakmak<span className="text-primary">Koçluk</span>
           </span>
