@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Target, TrendingUp, Trophy, Flame, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Target, TrendingUp, Trophy, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import AppLogo from '@/components/AppLogo';
 import { format, startOfWeek, addDays, addWeeks, isToday } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
