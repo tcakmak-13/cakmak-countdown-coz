@@ -77,6 +77,8 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const goToNextWeek = () => setSelectedDate(prev => addWeeks(prev, 1));
   const goToThisWeek = () => setSelectedDate(new Date());
 
+  const [timerLogs, setTimerLogs] = useState<Record<string, number>>({});
+
   const fetchTasks = async () => {
     const { data } = await supabase
       .from('study_tasks')
@@ -86,7 +88,38 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     if (data) setTasks(data);
   };
 
-  useEffect(() => { fetchTasks(); }, [studentId]);
+  const fetchTimerLogs = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('study_timer_logs')
+      .select('task_id, elapsed_seconds')
+      .eq('student_id', studentId)
+      .eq('log_date', today);
+    if (data) {
+      const map: Record<string, number> = {};
+      data.forEach(d => { map[d.task_id] = d.elapsed_seconds; });
+      setTimerLogs(map);
+    }
+  };
+
+  const handleTimerSave = async (taskId: string, seconds: number) => {
+    const today = new Date().toISOString().split('T')[0];
+    const { data: existing } = await supabase
+      .from('study_timer_logs')
+      .select('id')
+      .eq('task_id', taskId)
+      .eq('student_id', studentId)
+      .eq('log_date', today)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      await supabase.from('study_timer_logs').update({ elapsed_seconds: seconds }).eq('id', existing[0].id);
+    } else {
+      await supabase.from('study_timer_logs').insert({ task_id: taskId, student_id: studentId, elapsed_seconds: seconds, log_date: today });
+    }
+    setTimerLogs(prev => ({ ...prev, [taskId]: seconds }));
+  };
+
+  useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId]);
 
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
