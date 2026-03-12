@@ -271,11 +271,12 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   useEffect(() => {
     const fetchMessages = async () => {
-      // Only fetch messages relevant to current user to avoid loading entire table
-      const { data } = await supabase.from('chat_messages').select('*')
-        .or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`)
-        .order('created_at')
-        .limit(500);
+      let query = supabase.from('chat_messages').select('*');
+      // Admin needs all messages for spectator mode
+      if (currentRole !== 'admin') {
+        query = query.or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`);
+      }
+      const { data } = await query.order('created_at').limit(1000);
       if (data) {
         setMessages(data as Message[]);
         for (const msg of data) {
