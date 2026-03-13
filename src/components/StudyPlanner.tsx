@@ -402,27 +402,12 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               </div>
               {/* Turquoise Digital Timer */}
               <div className="shrink-0 flex flex-col items-center">
-                <div className={cn(
-                  'font-mono text-sm sm:text-base font-extrabold tracking-wider px-3 py-2 rounded-xl border transition-all',
-                  'bg-[hsl(175,80%,40%)]/10 border-[hsl(175,80%,40%)]/30 text-[hsl(175,80%,50%)]',
-                  'shadow-[0_0_12px_hsl(175,80%,50%,0.25)]'
-                )}>
-                  ⏱ {(() => {
-                    const secs = timerLogs[task.id] || 0;
-                    const h = Math.floor(secs / 3600);
-                    const m = Math.floor((secs % 3600) / 60);
-                    const s = secs % 60;
-                    const pad = (n: number) => n.toString().padStart(2, '0');
-                    return `${pad(h)}:${pad(m)}:${pad(s)}`;
-                  })()}
-                </div>
-                {!readOnly && !isArchive && !task.completed && (
-                  <TaskTimer
-                    initialElapsed={timerLogs[task.id] || 0}
-                    onSave={(secs) => handleTimerSave(task.id, secs)}
-                    disabled={task.completed}
-                  />
-                )}
+                <TaskTimer
+                  initialElapsed={timerLogs[task.id] || 0}
+                  onElapsedChange={(secs) => setTimerLogs(prev => ({ ...prev, [task.id]: secs }))}
+                  onSave={(secs) => handleTimerSave(task.id, secs)}
+                  disabled={readOnly || isArchive || task.completed}
+                />
               </div>
             </div>
           </div>
