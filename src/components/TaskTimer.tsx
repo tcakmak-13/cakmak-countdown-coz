@@ -24,7 +24,6 @@ export default function TaskTimer({ disabled, initialElapsed = 0, onElapsedChang
   const saveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(initialElapsed);
 
-  // Sync if initialElapsed changes (e.g. data loaded)
   useEffect(() => {
     if (!isRunning) {
       setElapsed(initialElapsed);
@@ -42,7 +41,6 @@ export default function TaskTimer({ disabled, initialElapsed = 0, onElapsedChang
       saveIntervalRef.current = null;
     }
     setIsRunning(false);
-    // Save on stop
     onSave?.(elapsedRef.current);
   }, [onSave]);
 
@@ -56,7 +54,6 @@ export default function TaskTimer({ disabled, initialElapsed = 0, onElapsedChang
         return next;
       });
     }, 1000);
-    // Auto-save every 30 seconds
     saveIntervalRef.current = setInterval(() => {
       onSave?.(elapsedRef.current);
     }, 30000);
@@ -79,24 +76,26 @@ export default function TaskTimer({ disabled, initialElapsed = 0, onElapsedChang
   }, []);
 
   return (
-    <div className="flex items-center gap-2 mt-2.5">
+    <div className="flex flex-col items-center gap-1.5">
+      {/* Turquoise digital display */}
       <div className={cn(
-        'font-mono text-sm font-bold px-3 py-1.5 rounded-xl transition-all',
+        'font-mono text-sm sm:text-base font-extrabold tracking-wider px-3 py-2 rounded-xl border transition-all',
         isRunning
-          ? 'bg-primary/20 text-primary animate-pulse'
+          ? 'bg-[hsl(175,80%,40%)]/20 border-[hsl(175,80%,50%)]/50 text-[hsl(175,80%,55%)] shadow-[0_0_18px_hsl(175,80%,50%,0.4)] animate-pulse'
           : elapsed > 0
-            ? 'bg-emerald-500/15 text-emerald-400'
-            : 'bg-secondary text-muted-foreground'
+            ? 'bg-[hsl(175,80%,40%)]/10 border-[hsl(175,80%,40%)]/30 text-[hsl(175,80%,50%)] shadow-[0_0_12px_hsl(175,80%,50%,0.25)]'
+            : 'bg-[hsl(175,80%,40%)]/5 border-[hsl(175,80%,40%)]/15 text-[hsl(175,80%,50%)]/60'
       )}>
-        {formatTime(elapsed)}
+        ⏱ {formatTime(elapsed)}
       </div>
 
+      {/* Controls */}
       {!disabled && (
         <div className="flex gap-1">
           {!isRunning ? (
             <button
               onClick={start}
-              className="p-1.5 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+              className="p-1.5 rounded-lg bg-[hsl(175,80%,40%)]/15 text-[hsl(175,80%,50%)] hover:bg-[hsl(175,80%,40%)]/25 transition-colors"
               title="Başlat"
             >
               <Play className="h-3.5 w-3.5" />
