@@ -558,7 +558,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       }
       loadQuestions();
     } catch (err: any) {
-      toast.error('Soru silinemedi: ' + (err.message || ''));
+      console.error('Soru silme hatası:', err);
+      toast.error('Soru silinemedi. Lütfen tekrar deneyin.');
     }
     setDeleteTarget(null);
   };
