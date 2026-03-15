@@ -35,7 +35,7 @@ export default function SelectCoach() {
     const loadCoaches = async () => {
       const { data, error } = await supabase.rpc('get_coach_profiles');
       if (data && data.length > 0) setCoaches(data as CoachProfile[]);
-      if (error) console.error('Coach load error:', error.message);
+      if (error) console.error('Coach load error:', error);
       setLoading(false);
     };
     loadCoaches();
