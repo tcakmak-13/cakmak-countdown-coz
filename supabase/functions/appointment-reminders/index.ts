@@ -39,7 +39,8 @@ Deno.serve(async (req) => {
     .eq("recurring_day", currentDay);
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Randevu hatırlatma hatası:', error);
+    return new Response(JSON.stringify({ error: 'Bir hata oluştu.' }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -174,7 +174,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   const handleDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from('deneme_results').delete().eq('id', deleteId);
-    if (error) { toast.error('Silme hatası: ' + error.message); }
+    if (error) { console.error('Deneme silme hatası:', error); toast.error('Silme başarısız. Lütfen tekrar deneyin.'); }
     else { toast.success('Deneme silindi.'); fetchResults(); }
     setDeleteId(null);
   };

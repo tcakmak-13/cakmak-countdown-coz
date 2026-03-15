@@ -152,7 +152,8 @@ export default function AvatarUpload({ size = 'md', className = '', onClick, dis
       .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
 
     if (uploadError) {
-      toast.error('Yükleme hatası: ' + uploadError.message);
+      console.error('Avatar yükleme hatası:', uploadError);
+      toast.error('Fotoğraf yüklenemedi. Lütfen tekrar deneyin.');
       setUploading(false);
       return;
     }

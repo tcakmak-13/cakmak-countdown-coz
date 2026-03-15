@@ -65,8 +65,8 @@ export default function CoachAvailability({ coachProfileId }: { coachProfileId: 
     });
     setAdding(null);
     if (error) {
-      toast.error(error.message.includes('unique') || error.message.includes('duplicate')
-        ? 'Bu aralık zaten ekli.' : 'Eklenemedi.');
+      console.error('Müsaitlik ekleme hatası:', error);
+      toast.error('Müsaitlik eklenemedi. Lütfen tekrar deneyin.');
       return;
     }
     toast.success('Müsaitlik eklendi!');

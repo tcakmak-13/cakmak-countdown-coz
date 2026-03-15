@@ -73,7 +73,8 @@ export default function CoachOnboarding() {
       .eq('id', profileId);
 
     if (profileError) {
-      toast.error('Profil durumu güncellenemedi: ' + profileError.message);
+      console.error('Profil güncelleme hatası:', profileError);
+      toast.error('Profil durumu güncellenemedi. Lütfen tekrar deneyin.');
       setSaving(false);
       return;
     }

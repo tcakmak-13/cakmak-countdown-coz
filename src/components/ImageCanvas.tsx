@@ -291,7 +291,8 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
       onShareAsAnswer(blob);
     } catch (err: any) {
-      toast.error('Görsel oluşturulamadı: ' + (err.message || ''));
+      console.error('Görsel oluşturma hatası:', err);
+      toast.error('Görsel oluşturulamadı. Lütfen tekrar deneyin.');
     }
     setSharing(false);
   }, [onShareAsAnswer]);

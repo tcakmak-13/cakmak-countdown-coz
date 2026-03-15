@@ -243,7 +243,7 @@ Görsel:`;
             tags: tags,
           },
           cached: false,
-          saveError: saveError.message,
+          saveWarning: true,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

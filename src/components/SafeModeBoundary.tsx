@@ -62,8 +62,9 @@ export default class SafeModeBoundary extends Component<Props, State> {
     return { hasError: true, errorMessage: msg, errorStack: stack };
   }
 
-  componentDidCatch(_error: unknown, _info: ErrorInfo) {
-    // Error logged in production monitoring if needed
+  componentDidCatch(error: unknown, info: ErrorInfo) {
+    // Log technical details to console only — never expose to UI in production
+    console.error('[SafeModeBoundary] Uygulama hatası yakalandı:', error, info);
   }
 
   handleGoHome = () => {

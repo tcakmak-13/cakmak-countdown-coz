@@ -124,7 +124,7 @@ export default function CoachAppointments({ coachProfileId }: Props) {
       scheduled_at: nextOcc.toISOString(),
     }).eq('id', editTarget.id);
     setSaving(false);
-    if (error) toast.error('Güncelleme hatası: ' + error.message);
+    if (error) { console.error('Randevu güncelleme hatası:', error); toast.error('Güncelleme başarısız. Lütfen tekrar deneyin.'); }
     else {
       toast.success('Randevu güncellendi!');
       setEditDialog(false);

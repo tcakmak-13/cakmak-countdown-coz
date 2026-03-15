@@ -578,7 +578,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       if (selectedQuestion) loadAnswers(selectedQuestion.id);
       loadQuestions();
     } catch (err: any) {
-      toast.error('Yanıt silinemedi: ' + (err.message || ''));
+      console.error('Yanıt silme hatası:', err);
+      toast.error('Yanıt silinemedi. Lütfen tekrar deneyin.');
     }
     setDeleteTarget(null);
   };

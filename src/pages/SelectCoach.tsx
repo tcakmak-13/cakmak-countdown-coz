@@ -49,7 +49,8 @@ export default function SelectCoach() {
       coach_selected: true,
     }).eq('id', profileId);
     if (error) {
-      toast.error('Koç seçimi kaydedilemedi: ' + error.message);
+      console.error('Koç seçimi hatası:', error);
+      toast.error('Koç seçimi kaydedilemedi. Lütfen tekrar deneyin.');
       setSaving(false);
       return;
     }

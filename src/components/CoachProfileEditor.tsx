@@ -64,7 +64,8 @@ export default function CoachProfileEditor({ adminName, adminAvatarUrl, onAvatar
       .eq('id', data.id);
     setSaving(false);
     if (error) {
-      toast.error('Kaydetme hatası: ' + error.message);
+      console.error('Koç bilgi kaydetme hatası:', error);
+      toast.error('Kaydetme başarısız. Lütfen tekrar deneyin.');
     } else {
       toast.success('Koç bilgileri güncellendi! Tüm öğrencilere yansıyacak.');
     }
