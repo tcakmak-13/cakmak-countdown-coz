@@ -100,7 +100,7 @@ export default function CoachAppointments({ coachProfileId }: Props) {
     setUpdatingId(id);
     const { error } = await supabase.from('appointments').update({ series_ended_at: new Date().toISOString() }).eq('id', id);
     setUpdatingId(null);
-    if (error) toast.error('Hata: ' + error.message);
+    if (error) { console.error('Seri sonlandırma hatası:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); }
     else toast.success('Haftalık seri sonlandırıldı.');
   };
 
