@@ -185,7 +185,7 @@ export default function AdminDashboard() {
     if (!assignDialogStudent) return;
     const coachId = assignCoachId === 'none' ? null : assignCoachId;
     const { error } = await supabase.from('profiles').update({ coach_id: coachId, coach_selected: coachId ? true : false }).eq('id', assignDialogStudent.id);
-    if (error) { toast.error('Koç ataması başarısız: ' + error.message); return; }
+    if (error) { console.error('Koç ataması hatası:', error); toast.error('Koç ataması başarısız. Lütfen tekrar deneyin.'); return; }
     toast.success('Koç ataması güncellendi!');
     setAssignDialogStudent(null);
     setAssignCoachId('');
