@@ -207,7 +207,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       if (selectedQuestion) loadAnswersRef.current?.(selectedQuestion.id);
       loadQuestionsRef.current?.();
     } catch (err: any) {
-      toast.error('Gönderim hatası: ' + (err.message || ''));
+      console.error('Gönderim hatası:', err);
+      toast.error('Gönderim başarısız. Lütfen tekrar deneyin.');
     }
   }, [lightboxQuestionId, selectedQuestion, currentProfileId]);
 
