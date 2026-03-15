@@ -408,7 +408,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       resetWizard();
       loadQuestions();
     } catch (err: any) {
-      toast.error('Soru gönderilemedi: ' + (err.message || ''));
+      console.error('Soru gönderme hatası:', err);
+      toast.error('Soru gönderilemedi. Lütfen tekrar deneyin.');
     }
     setSubmitting(false);
   };
