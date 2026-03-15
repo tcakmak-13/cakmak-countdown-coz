@@ -207,7 +207,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       if (selectedQuestion) loadAnswersRef.current?.(selectedQuestion.id);
       loadQuestionsRef.current?.();
     } catch (err: any) {
-      toast.error('Gönderim hatası: ' + (err.message || ''));
+      console.error('Gönderim hatası:', err);
+      toast.error('Gönderim başarısız. Lütfen tekrar deneyin.');
     }
   }, [lightboxQuestionId, selectedQuestion, currentProfileId]);
 
@@ -407,7 +408,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       resetWizard();
       loadQuestions();
     } catch (err: any) {
-      toast.error('Soru gönderilemedi: ' + (err.message || ''));
+      console.error('Soru gönderme hatası:', err);
+      toast.error('Soru gönderilemedi. Lütfen tekrar deneyin.');
     }
     setSubmitting(false);
   };
@@ -454,7 +456,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       setAnswerImagePreview(null);
       loadAnswers(selectedQuestion.id);
     } catch (err: any) {
-      toast.error('Yanıt gönderilemedi: ' + (err.message || ''));
+      console.error('Yanıt gönderme hatası:', err);
+      toast.error('Yanıt gönderilemedi. Lütfen tekrar deneyin.');
     }
     setSendingAnswer(false);
   };
@@ -500,7 +503,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       }
     } catch (err: any) {
       console.error('AI çözüm hatası:', err);
-      toast.error(err.message || 'AI çözümü alınamadı');
+      toast.error('AI çözümü alınamadı. Lütfen tekrar deneyin.');
     } finally {
       setLoadingAI(false);
     }
@@ -555,7 +558,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       }
       loadQuestions();
     } catch (err: any) {
-      toast.error('Soru silinemedi: ' + (err.message || ''));
+      console.error('Soru silme hatası:', err);
+      toast.error('Soru silinemedi. Lütfen tekrar deneyin.');
     }
     setDeleteTarget(null);
   };
@@ -574,7 +578,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       if (selectedQuestion) loadAnswers(selectedQuestion.id);
       loadQuestions();
     } catch (err: any) {
-      toast.error('Yanıt silinemedi: ' + (err.message || ''));
+      console.error('Yanıt silme hatası:', err);
+      toast.error('Yanıt silinemedi. Lütfen tekrar deneyin.');
     }
     setDeleteTarget(null);
   };

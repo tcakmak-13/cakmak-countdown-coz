@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in engagement-notifications:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Bir hata oluştu. Lütfen daha sonra tekrar deneyin.' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

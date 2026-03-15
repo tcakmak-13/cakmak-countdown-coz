@@ -92,7 +92,7 @@ export default function CoachAppointments({ coachProfileId }: Props) {
     setUpdatingId(id);
     const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
     setUpdatingId(null);
-    if (error) toast.error('Hata: ' + error.message);
+    if (error) { console.error('Randevu durum güncelleme hatası:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); }
     else toast.success(status === 'approved' ? 'Randevu onaylandı!' : 'Randevu reddedildi.');
   };
 
@@ -100,7 +100,7 @@ export default function CoachAppointments({ coachProfileId }: Props) {
     setUpdatingId(id);
     const { error } = await supabase.from('appointments').update({ series_ended_at: new Date().toISOString() }).eq('id', id);
     setUpdatingId(null);
-    if (error) toast.error('Hata: ' + error.message);
+    if (error) { console.error('Seri sonlandırma hatası:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); }
     else toast.success('Haftalık seri sonlandırıldı.');
   };
 
@@ -124,7 +124,7 @@ export default function CoachAppointments({ coachProfileId }: Props) {
       scheduled_at: nextOcc.toISOString(),
     }).eq('id', editTarget.id);
     setSaving(false);
-    if (error) toast.error('Güncelleme hatası: ' + error.message);
+    if (error) { console.error('Randevu güncelleme hatası:', error); toast.error('Güncelleme başarısız. Lütfen tekrar deneyin.'); }
     else {
       toast.success('Randevu güncellendi!');
       setEditDialog(false);

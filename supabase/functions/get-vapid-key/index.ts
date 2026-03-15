@@ -11,7 +11,8 @@ Deno.serve(async (req) => {
   const publicKey = Deno.env.get('VAPID_PUBLIC_KEY') || '';
 
   if (!publicKey) {
-    return new Response(JSON.stringify({ error: 'VAPID key not configured' }), {
+    console.error('VAPID key not configured');
+    return new Response(JSON.stringify({ error: 'Bildirim servisi yapılandırılmamış.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -70,7 +70,7 @@ export default function Onboarding() {
     }).eq('id', profileId);
 
     setSaving(false);
-    if (error) { toast.error('Kaydetme hatası: ' + error.message); return; }
+    if (error) { console.error('Profil kaydetme hatası:', error); toast.error('Kaydetme başarısız. Lütfen tekrar deneyin.'); return; }
 
     toast.success('Profil tamamlandı!');
     window.location.href = '/student';

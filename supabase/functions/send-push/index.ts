@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
   const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
 
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-    return new Response(JSON.stringify({ error: 'VAPID keys not configured' }), {
+    console.error('VAPID keys not configured');
+    return new Response(JSON.stringify({ error: 'Bildirim servisi yapılandırılmamış.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -125,7 +126,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('send-push hatası:', err);
+    return new Response(JSON.stringify({ error: 'Bildirim gönderilemedi.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

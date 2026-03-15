@@ -193,7 +193,7 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
       duration_minutes: DURATION[selectedType],
     });
     setSubmitting(false);
-    if (error) { toast.error('Randevu oluşturulamadı: ' + error.message); return; }
+    if (error) { console.error('Randevu oluşturma hatası:', error); toast.error('Randevu oluşturulamadı. Lütfen tekrar deneyin.'); return; }
     toast.success('Randevu talebin koçuna iletildi!');
     setDialogOpen(false);
     fetchAppointments();

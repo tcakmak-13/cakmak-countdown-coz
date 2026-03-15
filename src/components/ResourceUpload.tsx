@@ -87,7 +87,7 @@ export default function ResourceUpload({ coachId, onUploadSuccess }: ResourceUpl
       onUploadSuccess?.();
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error(error.message || 'Yükleme başarısız oldu');
+      toast.error('Yükleme başarısız oldu. Lütfen tekrar deneyin.');
     } finally {
       setUploading(false);
     }

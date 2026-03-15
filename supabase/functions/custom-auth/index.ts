@@ -304,7 +304,8 @@ Deno.serve(async (req) => {
       }).eq("id", studentProfileId);
 
       if (assignErr) {
-        return new Response(JSON.stringify({ error: "Koç ataması başarısız: " + assignErr.message }), {
+        console.error('Koç ataması hatası:', assignErr);
+        return new Response(JSON.stringify({ error: "Koç ataması başarısız. Lütfen tekrar deneyin." }), {
           status: 500, headers: { ...cors, "Content-Type": "application/json" },
         });
       }

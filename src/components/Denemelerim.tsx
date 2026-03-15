@@ -153,7 +153,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       error = res.error;
     }
     setSaving(false);
-    if (error) { toast.error('Kaydetme hatası: ' + error.message); return; }
+    if (error) { console.error('Deneme kaydetme hatası:', error); toast.error('Kaydetme başarısız. Lütfen tekrar deneyin.'); return; }
     toast.success(editingId ? 'Deneme güncellendi!' : 'Deneme kaydedildi!');
     setOpen(false);
     setEditingId(null);
@@ -174,7 +174,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   const handleDelete = async () => {
     if (!deleteId) return;
     const { error } = await supabase.from('deneme_results').delete().eq('id', deleteId);
-    if (error) { toast.error('Silme hatası: ' + error.message); }
+    if (error) { console.error('Deneme silme hatası:', error); toast.error('Silme başarısız. Lütfen tekrar deneyin.'); }
     else { toast.success('Deneme silindi.'); fetchResults(); }
     setDeleteId(null);
   };

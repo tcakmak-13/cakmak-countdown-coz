@@ -77,7 +77,8 @@ export default function CoachDashboard() {
       }));
       const { error } = await supabase.from('notifications').insert(rows);
       if (error) {
-        toast.error('Duyuru gönderilemedi: ' + error.message);
+        console.error('Duyuru gönderme hatası:', error);
+        toast.error('Duyuru gönderilemedi. Lütfen tekrar deneyin.');
       } else {
         toast.success(`Duyuru ${assignedProfiles.length} öğrenciye gönderildi!`);
         setAnnouncementTitle('');
@@ -132,7 +133,7 @@ export default function CoachDashboard() {
     const ext = file.name.split('.').pop();
     const filePath = `${session.user.id}/avatar.${ext}`;
     const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
-    if (uploadError) { toast.error('Yükleme hatası: ' + uploadError.message); return; }
+    if (uploadError) { console.error('Avatar yükleme hatası:', uploadError); toast.error('Fotoğraf yüklenemedi. Lütfen tekrar deneyin.'); return; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
     const avatarUrl = urlData.publicUrl + '?t=' + Date.now();
     await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', profileId);

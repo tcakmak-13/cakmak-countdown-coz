@@ -86,7 +86,7 @@ export default function AdminDashboard() {
       if (!studentRoles || studentRoles.length === 0) { toast.error('Bildirim gönderilecek öğrenci bulunamadı.'); setSendingAnnouncement(false); return; }
       const rows = studentRoles.map(r => ({ user_id: r.user_id, title: announcementTitle.trim(), message: announcementBody.trim(), type: 'announcement', icon: 'megaphone', link: null }));
       const { error } = await supabase.from('notifications').insert(rows);
-      if (error) { toast.error('Duyuru gönderilemedi: ' + error.message); }
+      if (error) { console.error('Duyuru hatası:', error); toast.error('Duyuru gönderilemedi. Lütfen tekrar deneyin.'); }
       else { toast.success(`Duyuru ${studentRoles.length} öğrenciye gönderildi!`); setAnnouncementTitle(''); setAnnouncementBody(''); setShowAnnouncement(false); }
     } catch { toast.error('Bağlantı hatası.'); }
     setSendingAnnouncement(false);
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
     if (!assignDialogStudent) return;
     const coachId = assignCoachId === 'none' ? null : assignCoachId;
     const { error } = await supabase.from('profiles').update({ coach_id: coachId, coach_selected: coachId ? true : false }).eq('id', assignDialogStudent.id);
-    if (error) { toast.error('Koç ataması başarısız: ' + error.message); return; }
+    if (error) { console.error('Koç ataması hatası:', error); toast.error('Koç ataması başarısız. Lütfen tekrar deneyin.'); return; }
     toast.success('Koç ataması güncellendi!');
     setAssignDialogStudent(null);
     setAssignCoachId('');
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
     const ext = file.name.split('.').pop();
     const filePath = `${session.user.id}/avatar.${ext}`;
     const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
-    if (uploadError) { toast.error('Yükleme hatası: ' + uploadError.message); return; }
+    if (uploadError) { console.error('Avatar yükleme hatası:', uploadError); toast.error('Fotoğraf yüklenemedi. Lütfen tekrar deneyin.'); return; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
     const avatarUrl = urlData.publicUrl + '?t=' + Date.now();
     await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', profileId);
