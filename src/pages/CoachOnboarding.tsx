@@ -61,7 +61,8 @@ export default function CoachOnboarding() {
     }, { onConflict: 'id' });
 
     if (infoError) {
-      toast.error('Profil kaydedilemedi: ' + infoError.message);
+      console.error('Koç profil kayıt hatası:', infoError);
+      toast.error('Profil kaydedilemedi. Lütfen tekrar deneyin.');
       setSaving(false);
       return;
     }
