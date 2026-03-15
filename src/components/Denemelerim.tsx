@@ -153,7 +153,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       error = res.error;
     }
     setSaving(false);
-    if (error) { toast.error('Kaydetme hatası: ' + error.message); return; }
+    if (error) { console.error('Deneme kaydetme hatası:', error); toast.error('Kaydetme başarısız. Lütfen tekrar deneyin.'); return; }
     toast.success(editingId ? 'Deneme güncellendi!' : 'Deneme kaydedildi!');
     setOpen(false);
     setEditingId(null);
