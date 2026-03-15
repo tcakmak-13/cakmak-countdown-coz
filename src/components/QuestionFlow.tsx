@@ -503,7 +503,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       }
     } catch (err: any) {
       console.error('AI çözüm hatası:', err);
-      toast.error(err.message || 'AI çözümü alınamadı');
+      toast.error('AI çözümü alınamadı. Lütfen tekrar deneyin.');
     } finally {
       setLoadingAI(false);
     }
