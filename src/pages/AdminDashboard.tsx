@@ -86,7 +86,7 @@ export default function AdminDashboard() {
       if (!studentRoles || studentRoles.length === 0) { toast.error('Bildirim gönderilecek öğrenci bulunamadı.'); setSendingAnnouncement(false); return; }
       const rows = studentRoles.map(r => ({ user_id: r.user_id, title: announcementTitle.trim(), message: announcementBody.trim(), type: 'announcement', icon: 'megaphone', link: null }));
       const { error } = await supabase.from('notifications').insert(rows);
-      if (error) { toast.error('Duyuru gönderilemedi: ' + error.message); }
+      if (error) { console.error('Duyuru hatası:', error); toast.error('Duyuru gönderilemedi. Lütfen tekrar deneyin.'); }
       else { toast.success(`Duyuru ${studentRoles.length} öğrenciye gönderildi!`); setAnnouncementTitle(''); setAnnouncementBody(''); setShowAnnouncement(false); }
     } catch { toast.error('Bağlantı hatası.'); }
     setSendingAnnouncement(false);
