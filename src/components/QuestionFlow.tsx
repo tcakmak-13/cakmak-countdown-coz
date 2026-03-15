@@ -456,7 +456,8 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       setAnswerImagePreview(null);
       loadAnswers(selectedQuestion.id);
     } catch (err: any) {
-      toast.error('Yanıt gönderilemedi: ' + (err.message || ''));
+      console.error('Yanıt gönderme hatası:', err);
+      toast.error('Yanıt gönderilemedi. Lütfen tekrar deneyin.');
     }
     setSendingAnswer(false);
   };
