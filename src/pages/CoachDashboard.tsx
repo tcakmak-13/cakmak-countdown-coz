@@ -77,7 +77,8 @@ export default function CoachDashboard() {
       }));
       const { error } = await supabase.from('notifications').insert(rows);
       if (error) {
-        toast.error('Duyuru gönderilemedi: ' + error.message);
+        console.error('Duyuru gönderme hatası:', error);
+        toast.error('Duyuru gönderilemedi. Lütfen tekrar deneyin.');
       } else {
         toast.success(`Duyuru ${assignedProfiles.length} öğrenciye gönderildi!`);
         setAnnouncementTitle('');
