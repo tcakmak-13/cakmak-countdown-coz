@@ -92,7 +92,7 @@ export default function CoachAppointments({ coachProfileId }: Props) {
     setUpdatingId(id);
     const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
     setUpdatingId(null);
-    if (error) toast.error('Hata: ' + error.message);
+    if (error) { console.error('Randevu durum güncelleme hatası:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); }
     else toast.success(status === 'approved' ? 'Randevu onaylandı!' : 'Randevu reddedildi.');
   };
 
