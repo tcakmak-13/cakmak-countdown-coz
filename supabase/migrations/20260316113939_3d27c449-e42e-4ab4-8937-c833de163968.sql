@@ -1,0 +1,2 @@
+-- Fix default to use correct Monday calculation (date_trunc('week',...) already returns Monday in PostgreSQL)
+ALTER TABLE public.study_tasks ALTER COLUMN week_start_date SET DEFAULT (date_trunc('week', now())::date);
