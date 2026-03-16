@@ -23,6 +23,7 @@ interface Task {
   id: string;
   student_id: string;
   day_of_week: number;
+  week_start_date: string;
   subject: string;
   topic: string;
   estimated_minutes: number;
