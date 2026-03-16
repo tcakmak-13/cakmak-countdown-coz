@@ -302,7 +302,7 @@ export default function CoachDashboard() {
                 {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
               </h2>
               {tab === 'schedule' ? (
-                <StudyPlanner studentId={selectedStudent.id} />
+                <WeeklyBoardPlanner studentId={selectedStudent.id} />
               ) : (
                 <StudentProfileForm studentId={selectedStudent.id} readOnly />
               )}
