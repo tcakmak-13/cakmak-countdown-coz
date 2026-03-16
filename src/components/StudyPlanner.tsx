@@ -124,7 +124,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     setTimerLogs(prev => ({ ...prev, [taskId]: seconds }));
   };
 
-  useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId]);
+  useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId, weekStartStr, fetchTasks]);
 
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
