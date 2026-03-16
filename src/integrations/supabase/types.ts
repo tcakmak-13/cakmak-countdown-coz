@@ -788,6 +788,7 @@ export type Database = {
           student_id: string
           subject: string
           topic: string
+          week_start_date: string
         }
         Insert: {
           actual_minutes?: number | null
@@ -800,6 +801,7 @@ export type Database = {
           student_id: string
           subject: string
           topic?: string
+          week_start_date?: string
         }
         Update: {
           actual_minutes?: number | null
@@ -812,6 +814,7 @@ export type Database = {
           student_id?: string
           subject?: string
           topic?: string
+          week_start_date?: string
         }
         Relationships: [
           {
