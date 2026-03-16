@@ -23,6 +23,7 @@ interface Task {
   id: string;
   student_id: string;
   day_of_week: number;
+  week_start_date: string;
   subject: string;
   topic: string;
   estimated_minutes: number;
@@ -71,6 +72,9 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   }, [selectedDate]);
 
+  /** Monday of the selected week as YYYY-MM-DD for DB queries */
+  const weekStartStr = useMemo(() => format(weekDates[0], 'yyyy-MM-dd'), [weekDates]);
+
   const isCurrentWeek = isSameWeek(selectedDate, new Date(), { weekStartsOn: 1 });
 
   const goToPrevWeek = () => setSelectedDate(prev => addWeeks(prev, -1));
@@ -79,14 +83,15 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   const [timerLogs, setTimerLogs] = useState<Record<string, number>>({});
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     const { data } = await supabase
       .from('study_tasks')
       .select('*')
       .eq('student_id', studentId)
+      .eq('week_start_date', weekStartStr)
       .order('created_at');
-    if (data) setTasks(data);
-  };
+    if (data) setTasks(data as Task[]);
+  }, [studentId, weekStartStr]);
 
   const fetchTimerLogs = async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -119,7 +124,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     setTimerLogs(prev => ({ ...prev, [taskId]: seconds }));
   };
 
-  useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId]);
+  useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId, weekStartStr, fetchTasks]);
 
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
@@ -136,6 +141,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     } else {
       await supabase.from('study_tasks').insert({
         student_id: studentId, day_of_week: selectedDayIndex,
+        week_start_date: weekStartStr,
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
       });

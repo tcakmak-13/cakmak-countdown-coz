@@ -1,0 +1,1 @@
+ALTER TABLE public.study_tasks ADD COLUMN week_start_date date NOT NULL DEFAULT (date_trunc('week', now())::date + 1);
