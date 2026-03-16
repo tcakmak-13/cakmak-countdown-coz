@@ -72,6 +72,9 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   }, [selectedDate]);
 
+  /** Monday of the selected week as YYYY-MM-DD for DB queries */
+  const weekStartStr = useMemo(() => format(weekDates[0], 'yyyy-MM-dd'), [weekDates]);
+
   const isCurrentWeek = isSameWeek(selectedDate, new Date(), { weekStartsOn: 1 });
 
   const goToPrevWeek = () => setSelectedDate(prev => addWeeks(prev, -1));
