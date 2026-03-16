@@ -141,6 +141,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
     } else {
       await supabase.from('study_tasks').insert({
         student_id: studentId, day_of_week: selectedDayIndex,
+        week_start_date: weekStartStr,
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
       });
