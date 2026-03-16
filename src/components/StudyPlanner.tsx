@@ -83,14 +83,15 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   const [timerLogs, setTimerLogs] = useState<Record<string, number>>({});
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     const { data } = await supabase
       .from('study_tasks')
       .select('*')
       .eq('student_id', studentId)
+      .eq('week_start_date', weekStartStr)
       .order('created_at');
-    if (data) setTasks(data);
-  };
+    if (data) setTasks(data as Task[]);
+  }, [studentId, weekStartStr]);
 
   const fetchTimerLogs = async () => {
     const today = new Date().toISOString().split('T')[0];
