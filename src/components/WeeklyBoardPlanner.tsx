@@ -182,14 +182,6 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
               <RotateCcw className="h-3.5 w-3.5" /> Bu Hafta
             </button>
           )}
-          {/* Copy week to next */}
-          <button
-            onClick={copyWeekToNext}
-            disabled={copying || tasks.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/80 transition-colors disabled:opacity-50"
-          >
-            <CopyPlus className="h-3.5 w-3.5" /> Haftayı Kopyala →
-          </button>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <button className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
