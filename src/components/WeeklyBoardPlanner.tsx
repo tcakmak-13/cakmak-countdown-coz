@@ -132,56 +132,22 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
     toast.success('Görev silindi.');
   };
 
-  // Copy a single day's tasks to another day (same week)
-  const copyDayToDay = async (fromDay: number, toDay: number) => {
-    const sourceTasks = tasksByDay[fromDay];
-    if (sourceTasks.length === 0) { toast.error('Kopyalanacak görev bulunamadı.'); return; }
+  // Copy a single task to another day (same week)
+  const copyTaskToDay = async (task: Task, toDay: number) => {
     setCopying(true);
-    const rows = sourceTasks.map(t => ({
+    const { error } = await supabase.from('study_tasks').insert({
       student_id: studentId,
       day_of_week: toDay,
       week_start_date: weekStartStr,
-      subject: t.subject,
-      topic: t.topic,
-      estimated_minutes: t.estimated_minutes,
-      description: t.description,
-    }));
-    const { error } = await supabase.from('study_tasks').insert(rows);
+      subject: task.subject,
+      topic: task.topic,
+      estimated_minutes: task.estimated_minutes,
+      description: task.description,
+    });
     if (error) { console.error('Copy error:', error); toast.error('Kopyalama başarısız.'); }
-    else { toast.success(`${DAY_LABELS_SHORT[fromDay]} → ${DAY_LABELS_SHORT[toDay]} kopyalandı!`); }
+    else { toast.success(`${task.subject} → ${DAY_LABELS_SHORT[toDay]} kopyalandı!`); }
     setCopying(false);
     fetchTasks();
-  };
-
-  // Copy entire week to next week
-  const copyWeekToNext = async () => {
-    if (tasks.length === 0) { toast.error('Kopyalanacak görev bulunamadı.'); return; }
-    const nextWeekStart = format(addWeeks(weekDates[0], 1), 'yyyy-MM-dd');
-    // Check if next week already has tasks
-    const { data: existing } = await supabase
-      .from('study_tasks')
-      .select('id')
-      .eq('student_id', studentId)
-      .eq('week_start_date', nextWeekStart)
-      .limit(1);
-    if (existing && existing.length > 0) {
-      toast.error('Sonraki haftada zaten görevler var. Önce temizleyin.');
-      return;
-    }
-    setCopying(true);
-    const rows = tasks.map(t => ({
-      student_id: studentId,
-      day_of_week: t.day_of_week,
-      week_start_date: nextWeekStart,
-      subject: t.subject,
-      topic: t.topic,
-      estimated_minutes: t.estimated_minutes,
-      description: t.description,
-    }));
-    const { error } = await supabase.from('study_tasks').insert(rows);
-    if (error) { console.error('Copy week error:', error); toast.error('Kopyalama başarısız.'); }
-    else { toast.success(`${tasks.length} görev sonraki haftaya kopyalandı!`); }
-    setCopying(false);
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
