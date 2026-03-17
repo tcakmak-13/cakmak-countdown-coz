@@ -296,6 +296,25 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                     </div>
                     {/* Hover actions */}
                     <div className="absolute top-1 right-1 hidden group-hover:flex items-center gap-0.5 bg-card/90 backdrop-blur-sm rounded-lg p-0.5 border border-border shadow-sm">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Dersi kopyala">
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-card border-border min-w-[140px]">
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">Kopyala →</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {DAY_LABELS_SHORT.map((label, targetIdx) => {
+                            if (targetIdx === dayIdx) return null;
+                            return (
+                              <DropdownMenuItem key={targetIdx} onClick={() => copyTaskToDay(task, targetIdx)} className="text-sm cursor-pointer">
+                                {label} ({format(weekDates[targetIdx], 'd MMM', { locale: tr })})
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <button onClick={() => openEditDialog(task)} className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                         <Pencil className="h-3 w-3" />
                       </button>
