@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Pencil, Clock, ChevronLeft, ChevronRight, RotateCcw, Copy, CopyPlus, CheckCircle2, CalendarDays, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, ChevronLeft, ChevronRight, RotateCcw, Copy, CheckCircle2, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
