@@ -233,33 +233,6 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  {dayTasks.length > 0 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Günü kopyala">
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-border min-w-[160px]">
-                        <DropdownMenuLabel className="text-xs text-muted-foreground">
-                          {DAY_LABELS_SHORT[dayIdx]} → Kopyala
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {DAY_LABELS_SHORT.map((label, targetIdx) => {
-                          if (targetIdx === dayIdx) return null;
-                          return (
-                            <DropdownMenuItem
-                              key={targetIdx}
-                              onClick={() => copyDayToDay(dayIdx, targetIdx)}
-                              className="text-sm cursor-pointer"
-                            >
-                              {label} ({format(weekDates[targetIdx], 'd MMM', { locale: tr })})
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
                   <button
                     onClick={() => openAddDialog(dayIdx)}
                     className={cn(
