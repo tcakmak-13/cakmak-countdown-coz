@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Pencil, Clock, ChevronLeft, ChevronRight, RotateCcw, Copy, CopyPlus, CheckCircle2, CalendarDays, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Pencil, Clock, ChevronLeft, ChevronRight, RotateCcw, Copy, CheckCircle2, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -132,56 +132,22 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
     toast.success('Görev silindi.');
   };
 
-  // Copy a single day's tasks to another day (same week)
-  const copyDayToDay = async (fromDay: number, toDay: number) => {
-    const sourceTasks = tasksByDay[fromDay];
-    if (sourceTasks.length === 0) { toast.error('Kopyalanacak görev bulunamadı.'); return; }
+  // Copy a single task to another day (same week)
+  const copyTaskToDay = async (task: Task, toDay: number) => {
     setCopying(true);
-    const rows = sourceTasks.map(t => ({
+    const { error } = await supabase.from('study_tasks').insert({
       student_id: studentId,
       day_of_week: toDay,
       week_start_date: weekStartStr,
-      subject: t.subject,
-      topic: t.topic,
-      estimated_minutes: t.estimated_minutes,
-      description: t.description,
-    }));
-    const { error } = await supabase.from('study_tasks').insert(rows);
+      subject: task.subject,
+      topic: task.topic,
+      estimated_minutes: task.estimated_minutes,
+      description: task.description,
+    });
     if (error) { console.error('Copy error:', error); toast.error('Kopyalama başarısız.'); }
-    else { toast.success(`${DAY_LABELS_SHORT[fromDay]} → ${DAY_LABELS_SHORT[toDay]} kopyalandı!`); }
+    else { toast.success(`${task.subject} → ${DAY_LABELS_SHORT[toDay]} kopyalandı!`); }
     setCopying(false);
     fetchTasks();
-  };
-
-  // Copy entire week to next week
-  const copyWeekToNext = async () => {
-    if (tasks.length === 0) { toast.error('Kopyalanacak görev bulunamadı.'); return; }
-    const nextWeekStart = format(addWeeks(weekDates[0], 1), 'yyyy-MM-dd');
-    // Check if next week already has tasks
-    const { data: existing } = await supabase
-      .from('study_tasks')
-      .select('id')
-      .eq('student_id', studentId)
-      .eq('week_start_date', nextWeekStart)
-      .limit(1);
-    if (existing && existing.length > 0) {
-      toast.error('Sonraki haftada zaten görevler var. Önce temizleyin.');
-      return;
-    }
-    setCopying(true);
-    const rows = tasks.map(t => ({
-      student_id: studentId,
-      day_of_week: t.day_of_week,
-      week_start_date: nextWeekStart,
-      subject: t.subject,
-      topic: t.topic,
-      estimated_minutes: t.estimated_minutes,
-      description: t.description,
-    }));
-    const { error } = await supabase.from('study_tasks').insert(rows);
-    if (error) { console.error('Copy week error:', error); toast.error('Kopyalama başarısız.'); }
-    else { toast.success(`${tasks.length} görev sonraki haftaya kopyalandı!`); }
-    setCopying(false);
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
@@ -216,14 +182,6 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
               <RotateCcw className="h-3.5 w-3.5" /> Bu Hafta
             </button>
           )}
-          {/* Copy week to next */}
-          <button
-            onClick={copyWeekToNext}
-            disabled={copying || tasks.length === 0}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/80 transition-colors disabled:opacity-50"
-          >
-            <CopyPlus className="h-3.5 w-3.5" /> Haftayı Kopyala →
-          </button>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <button className="p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground transition-colors">
@@ -275,33 +233,6 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  {dayTasks.length > 0 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Günü kopyala">
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-border min-w-[160px]">
-                        <DropdownMenuLabel className="text-xs text-muted-foreground">
-                          {DAY_LABELS_SHORT[dayIdx]} → Kopyala
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {DAY_LABELS_SHORT.map((label, targetIdx) => {
-                          if (targetIdx === dayIdx) return null;
-                          return (
-                            <DropdownMenuItem
-                              key={targetIdx}
-                              onClick={() => copyDayToDay(dayIdx, targetIdx)}
-                              className="text-sm cursor-pointer"
-                            >
-                              {label} ({format(weekDates[targetIdx], 'd MMM', { locale: tr })})
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
                   <button
                     onClick={() => openAddDialog(dayIdx)}
                     className={cn(
@@ -365,6 +296,25 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                     </div>
                     {/* Hover actions */}
                     <div className="absolute top-1 right-1 hidden group-hover:flex items-center gap-0.5 bg-card/90 backdrop-blur-sm rounded-lg p-0.5 border border-border shadow-sm">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Dersi kopyala">
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-card border-border min-w-[140px]">
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">Kopyala →</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {DAY_LABELS_SHORT.map((label, targetIdx) => {
+                            if (targetIdx === dayIdx) return null;
+                            return (
+                              <DropdownMenuItem key={targetIdx} onClick={() => copyTaskToDay(task, targetIdx)} className="text-sm cursor-pointer">
+                                {label} ({format(weekDates[targetIdx], 'd MMM', { locale: tr })})
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <button onClick={() => openEditDialog(task)} className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                         <Pencil className="h-3 w-3" />
                       </button>
