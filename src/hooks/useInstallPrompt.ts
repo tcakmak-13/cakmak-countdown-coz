@@ -11,7 +11,6 @@ export function useInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isIOSStandalone = ('standalone' in window.navigator) && (window.navigator as any).standalone;
@@ -20,14 +19,12 @@ export function useInstallPrompt() {
     
     checkInstalled();
 
-    // Listen for install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
-    // Listen for app installed
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
       setIsInstallable(false);
@@ -61,13 +58,16 @@ export function useInstallPrompt() {
     }
   }, [deferredPrompt]);
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
   const showIOSInstructions = isIOS && !isInstalled;
 
   return {
     isInstallable,
     isInstalled,
     isIOS,
+    isAndroid,
     showIOSInstructions,
     promptInstall,
   };
