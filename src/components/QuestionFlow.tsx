@@ -644,7 +644,9 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       <div className="flex flex-col h-[calc(100vh-11rem)]">
         {deleteDialog}
         <ImageCanvas src={lightboxSrc} onClose={() => { setLightboxSrc(null); setLightboxQuestionId(null); }} onShareAsAnswer={handleCanvasShareAsAnswer} showShareButton={!!lightboxQuestionId || !!selectedQuestion} />
-        <div className="flex items-center gap-3 pb-4 border-b border-border">
+        
+        {/* Header bar */}
+        <div className="flex items-center gap-3 pb-3 shrink-0">
           <button onClick={() => { setSelectedQuestion(null); setAnswers([]); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -658,7 +660,6 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
             </div>
             <p className="text-sm font-medium truncate mt-1">{selectedQuestion.student_name}</p>
           </div>
-          {/* Delete question from thread header */}
           {canDeleteQuestion(selectedQuestion) && (
             <button
               onClick={() => setDeleteTarget({ type: 'question', id: selectedQuestion.id })}
@@ -669,30 +670,42 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
           )}
         </div>
 
-        {/* Question card at top */}
-        <div className="py-4 border-b border-border">
-          {selectedQuestion.image_url && (
-            <img src={selectedQuestion.image_url} alt="Soru" className="rounded-xl max-h-64 w-full object-contain bg-secondary mb-3 cursor-zoom-in hover:opacity-90 transition-opacity" onClick={() => openCanvas(selectedQuestion.image_url!, selectedQuestion.id)} />
-          )}
-          {selectedQuestion.description && (
-            <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
-          )}
-          
-          {/* AI Meclis Üyesine Sor Button - only show if no AI solution exists */}
-          {selectedQuestion.image_url && !aiSolution && !loadingAI && (
-            <motion.button
-              onClick={askAI}
-              disabled={loadingAI}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
-            >
-              <Bot className="h-5 w-5" />
-              <span>AI Meclis Üyesine Sor</span>
-              <Sparkles className="h-4 w-4" />
-            </motion.button>
-          )}
-        </div>
+        {/* Question image - 40% of viewport, clickable for fullscreen */}
+        {selectedQuestion.image_url && (
+          <div 
+            className="shrink-0 rounded-2xl overflow-hidden bg-secondary border border-border cursor-pointer hover:opacity-95 transition-opacity"
+            style={{ height: '40vh' }}
+            onClick={() => openCanvas(selectedQuestion.image_url!, selectedQuestion.id)}
+          >
+            <img 
+              src={selectedQuestion.image_url} 
+              alt="Soru" 
+              className="w-full h-full object-contain" 
+            />
+          </div>
+        )}
+
+        {/* Description + AI button */}
+        {(selectedQuestion.description || (selectedQuestion.image_url && !aiSolution && !loadingAI)) && (
+          <div className="py-3 border-b border-border shrink-0">
+            {selectedQuestion.description && (
+              <p className="text-sm text-muted-foreground">{selectedQuestion.description}</p>
+            )}
+            {selectedQuestion.image_url && !aiSolution && !loadingAI && (
+              <motion.button
+                onClick={askAI}
+                disabled={loadingAI}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
+              >
+                <Bot className="h-5 w-5" />
+                <span>AI Meclis Üyesine Sor</span>
+                <Sparkles className="h-4 w-4" />
+              </motion.button>
+            )}
+          </div>
+        )}
 
         {/* Answers scroll area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-3 scrollbar-hide">
