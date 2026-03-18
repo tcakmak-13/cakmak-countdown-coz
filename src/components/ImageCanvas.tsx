@@ -44,15 +44,14 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const [eraserSize, setEraserSize] = useState<EraserSize>(32);
   const [colorIndex, setColorIndex] = useState(0);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [showTools, setShowTools] = useState(true);
+  const [showTools, setShowTools] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
 
-  // Two-canvas approach: bgCanvas = image only, drawCanvas = drawing overlay
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasSizeRef = useRef({ w: 0, h: 0 });
-  // History stores drawing layer ImageData snapshots only
   const historyRef = useRef<ImageData[]>([]);
   const imageLoadedRef = useRef(false);
 
@@ -77,7 +76,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     drawCanvas.style.width = `${w}px`;
     drawCanvas.style.height = `${h}px`;
 
-    // Clear drawing layer
     const ctx = drawCanvas.getContext('2d');
     if (ctx) {
       ctx.clearRect(0, 0, w, h);
@@ -85,11 +83,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     }
   }, []);
 
-  // Load image
   useEffect(() => {
     if (!src) return;
     imageLoadedRef.current = false;
     setScale(1);
+    setShowTools(false);
+    setHasDrawn(false);
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -100,7 +99,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     img.src = src;
   }, [src, setupCanvas]);
 
-  // Resize handler
   useEffect(() => {
     if (!src) return;
     const handler = () => { if (imageLoadedRef.current) setupCanvas(); };
@@ -126,6 +124,8 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.putImageData(prev, 0, 0);
+    // Check if canvas is now empty (back to initial state)
+    if (historyRef.current.length <= 1) setHasDrawn(false);
   }, []);
 
   const clearDrawing = useCallback(() => {
@@ -135,6 +135,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     saveHistory();
+    setHasDrawn(false);
   }, [saveHistory]);
 
   const getCanvasPos = useCallback((clientX: number, clientY: number) => {
@@ -158,7 +159,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     ctx.moveTo(x, y);
 
     if (tool === 'eraser') {
-      // Eraser clears the drawing layer only (reveals image underneath)
       ctx.globalCompositeOperation = 'destination-out';
       ctx.lineWidth = eraserSize;
       ctx.strokeStyle = 'rgba(0,0,0,1)';
@@ -172,7 +172,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     }
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-  }, [tool, penSize, colorIndex]);
+  }, [tool, penSize, colorIndex, eraserSize]);
 
   const draw = useCallback((x: number, y: number) => {
     if (!isDrawing) return;
@@ -187,6 +187,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const endDraw = useCallback(() => {
     if (!isDrawing) return;
     setIsDrawing(false);
+    setHasDrawn(true);
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -197,22 +198,20 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     saveHistory();
   }, [isDrawing, saveHistory]);
 
-  // Mouse events
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scale > 1) return;
+    if (scale > 1 || !showTools) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     startDraw(pos.x, pos.y);
-  }, [scale, getCanvasPos, startDraw]);
+  }, [scale, getCanvasPos, startDraw, showTools]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (scale > 1) return;
+    if (scale > 1 || !showTools) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     draw(pos.x, pos.y);
-  }, [scale, getCanvasPos, draw]);
+  }, [scale, getCanvasPos, draw, showTools]);
 
   const handleMouseUp = useCallback(() => endDraw(), [endDraw]);
 
-  // Touch events
   const lastTouchDist = useRef<number | null>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -222,12 +221,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         e.touches[0].clientY - e.touches[1].clientY
       );
       lastTouchDist.current = dist;
-    } else if (e.touches.length === 1 && scale <= 1) {
+    } else if (e.touches.length === 1 && scale <= 1 && showTools) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       startDraw(pos.x, pos.y);
     }
-  }, [scale, getCanvasPos, startDraw]);
+  }, [scale, getCanvasPos, startDraw, showTools]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastTouchDist.current !== null) {
@@ -238,12 +237,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       const delta = (dist - lastTouchDist.current) * 0.008;
       lastTouchDist.current = dist;
       setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
-    } else if (e.touches.length === 1 && scale <= 1) {
+    } else if (e.touches.length === 1 && scale <= 1 && showTools) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       draw(pos.x, pos.y);
     }
-  }, [scale, getCanvasPos, draw]);
+  }, [scale, getCanvasPos, draw, showTools]);
 
   const handleTouchEnd = useCallback(() => {
     lastTouchDist.current = null;
@@ -256,7 +255,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
   }, []);
 
-  // Keyboard shortcuts
   useEffect(() => {
     if (!src) return;
     const handler = (e: KeyboardEvent) => {
@@ -267,7 +265,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     return () => window.removeEventListener('keydown', handler);
   }, [src, onClose, undo]);
 
-  // Share: merge image + drawing into one blob
   const handleShare = useCallback(async () => {
     const drawCanvas = drawCanvasRef.current;
     const img = imageRef.current;
@@ -282,7 +279,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       if (!ctx) throw new Error('Canvas context error');
 
       ctx.drawImage(img, 0, 0);
-      // Scale drawing layer up to full resolution
       ctx.drawImage(drawCanvas, 0, 0, img.naturalWidth, img.naturalHeight);
 
       const blob = await new Promise<Blob>((resolve, reject) => {
@@ -338,15 +334,32 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           </div>
         )}
 
-        {/* Two-layer canvas area: image underneath, drawing on top */}
+        {/* Pen toggle button (top-left, always visible) */}
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+          {scale === 1 && (
+            <button
+              onClick={() => setShowTools(!showTools)}
+              className={`p-2.5 rounded-full backdrop-blur-sm transition-all ${showTools ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+              title={showTools ? 'Çizim modunu kapat' : 'Çizim yap'}
+            >
+              <Pen className="h-5 w-5" />
+            </button>
+          )}
+          {scale !== 1 && (
+            <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium">
+              {Math.round(scale * 100)}%
+            </div>
+          )}
+        </div>
+
+        {/* Canvas area */}
         <div
           ref={containerRef}
           className="relative z-10 flex items-center justify-center overflow-hidden"
           onWheel={handleWheel}
-          style={{ cursor: scale > 1 ? 'grab' : 'crosshair' }}
+          style={{ cursor: showTools && scale <= 1 ? 'crosshair' : scale > 1 ? 'grab' : 'default' }}
         >
           <div style={{ transform: `scale(${scale})`, transition: 'transform 0.15s ease-out', position: 'relative' }}>
-            {/* Background image */}
             {imageRef.current && (
               <img
                 src={src}
@@ -356,7 +369,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
                 style={{ width: w || 'auto', height: h || 'auto' }}
               />
             )}
-            {/* Drawing overlay canvas - positioned exactly on top of image */}
             <canvas
               ref={drawCanvasRef}
               onMouseDown={handleMouseDown}
@@ -372,7 +384,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           </div>
         </div>
 
-        {/* Bottom toolbar */}
+        {/* Bottom toolbar - only when drawing mode is active */}
         <AnimatePresence>
           {showTools && (
             <motion.div
@@ -402,7 +414,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
               <div className="w-px h-6 bg-border mx-0.5" />
 
-              {/* Sizes - show pen sizes or eraser sizes based on active tool */}
+              {/* Sizes */}
               {tool === 'pen' ? PEN_SIZES.map(ps => (
                 <button
                   key={ps.value}
@@ -451,37 +463,32 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               <button onClick={clearDrawing} className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all" title="Tümünü Temizle">
                 <Trash2 className="h-4 w-4" />
               </button>
-
-              {/* Share as answer */}
-              {showShareButton && onShareAsAnswer && (
-                <>
-                  <div className="w-px h-6 bg-border mx-0.5" />
-                  <button
-                    onClick={handleShare}
-                    disabled={sharing}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
-                    title="Çözüm Olarak Gönder"
-                  >
-                    {sharing ? (
-                      <div className="h-3.5 w-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                    <span className="hidden sm:inline">Çözüm Gönder</span>
-                  </button>
-                </>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Toggle tools on mobile */}
-        <button
-          onClick={() => setShowTools(!showTools)}
-          className="absolute bottom-3 right-3 z-20 sm:hidden p-2 rounded-full bg-white/10 text-white backdrop-blur-sm"
-        >
-          {showTools ? <X className="h-4 w-4" /> : <Pen className="h-4 w-4" />}
-        </button>
+        {/* Send Solution button - always visible, disabled until drawing */}
+        {showShareButton && onShareAsAnswer && (
+          <div className="absolute bottom-3 right-3 z-20">
+            <button
+              onClick={handleShare}
+              disabled={!hasDrawn || sharing}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
+                hasDrawn
+                  ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/20'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+              }`}
+              title={hasDrawn ? 'Çözüm Olarak Gönder' : 'Önce görsel üzerinde çizim yapın'}
+            >
+              {sharing ? (
+                <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              <span>Çözümü Gönder</span>
+            </button>
+          </div>
+        )}
       </motion.div>
     </AnimatePresence>
   );
