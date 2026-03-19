@@ -375,15 +375,15 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           )}
         </AnimatePresence>
 
-        {/* Send Solution button */}
+        {/* Send Solution button - bottom center, above toolbar */}
         {showShareButton && onShareAsAnswer && (
-          <div className="absolute bottom-3 right-3 z-20">
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20">
             <button
               onClick={handleShare}
               disabled={!hasDrawn || sharing}
-              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
+              className={`flex items-center gap-1.5 px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-xl ${
                 hasDrawn
-                  ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/20'
+                  ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/30'
                   : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
               }`}
               title={hasDrawn ? 'Çözüm Olarak Gönder' : 'Önce görsel üzerinde çizim yapın'}
