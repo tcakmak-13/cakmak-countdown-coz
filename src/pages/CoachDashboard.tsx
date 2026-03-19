@@ -46,6 +46,7 @@ export default function CoachDashboard() {
   const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
   const [resourceRefresh, setResourceRefresh] = useState(0);
   const unreadCount = useUnreadMessages(profileId);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Announcement
   const [showAnnouncement, setShowAnnouncement] = useState(false);
