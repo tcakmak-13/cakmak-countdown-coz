@@ -258,9 +258,18 @@ export default function CoachDashboard() {
                     onClick={() => { setSelectedStudent(s); setTab('schedule'); }}
                     className="glass-card rounded-2xl p-4 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left"
                   >
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
-                      {s.full_name?.charAt(0) || '?'}
-                    </div>
+                    {s.avatar_url ? (
+                      <img
+                        src={s.avatar_url}
+                        alt={s.full_name}
+                        className="h-12 w-12 rounded-full object-cover shrink-0 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/50 transition-all"
+                        onClick={(e) => { e.stopPropagation(); setLightboxSrc(s.avatar_url); }}
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
+                        {s.full_name?.charAt(0) || '?'}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
                       <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
