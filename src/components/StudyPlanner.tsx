@@ -387,6 +387,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                     <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/15 text-primary">
                       {task.topic}
                     </span>
+                    {task.book_name && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                        📖 {task.book_name}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <div className="flex items-center gap-1.5">

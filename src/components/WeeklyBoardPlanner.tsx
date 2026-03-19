@@ -88,6 +88,17 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { data } = await supabase
+        .from('student_books')
+        .select('id, book_name, subject, exam_type')
+        .eq('student_id', studentId);
+      if (data) setStudentBooks(data as StudentBook[]);
+    };
+    fetchBooks();
+  }, [studentId]);
+
   const tasksByDay = useMemo(() => {
     const map: Record<number, Task[]> = {};
     for (let i = 0; i < 7; i++) map[i] = [];
