@@ -219,141 +219,143 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
       </div>
 
       {/* Board Grid */}
-      <div className="grid grid-cols-7 gap-2 min-h-[400px]">
-        {weekDates.map((date, dayIdx) => {
-          const dayTasks = tasksByDay[dayIdx] || [];
-          const today = isToday(date);
-          const dayMinutes = dayTasks.reduce((s, t) => s + t.estimated_minutes, 0);
-          const dayCompleted = dayTasks.filter(t => t.completed).length;
+      <div className="overflow-x-auto -mx-4 px-4 pb-2">
+        <div className="flex gap-3 min-h-[400px]">
+          {weekDates.map((date, dayIdx) => {
+            const dayTasks = tasksByDay[dayIdx] || [];
+            const today = isToday(date);
+            const dayMinutes = dayTasks.reduce((s, t) => s + t.estimated_minutes, 0);
+            const dayCompleted = dayTasks.filter(t => t.completed).length;
 
-          return (
-            <div
-              key={dayIdx}
-              className={cn(
-                'flex flex-col rounded-2xl border transition-all min-h-[350px]',
-                today
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-border bg-card/50'
-              )}
-            >
-              {/* Day Header */}
-              <div className={cn(
-                'flex items-center justify-between px-3 py-2.5 rounded-t-2xl border-b',
-                today ? 'bg-primary/10 border-primary/20' : 'bg-secondary/50 border-border'
-              )}>
-                <div className="min-w-0">
-                  <p className={cn(
-                    'text-xs font-bold uppercase tracking-wider',
-                    today ? 'text-primary' : 'text-muted-foreground'
-                  )}>
-                    {DAY_LABELS_SHORT[dayIdx]}
-                  </p>
-                  <p className={cn(
-                    'text-lg font-display font-bold leading-tight',
-                    today ? 'text-primary' : 'text-foreground'
-                  )}>
-                    {format(date, 'd')}
-                  </p>
+            return (
+              <div
+                key={dayIdx}
+                className={cn(
+                  'flex flex-col rounded-2xl border transition-all min-h-[380px] min-w-[260px] flex-1',
+                  today
+                    ? 'border-primary/50 bg-primary/5'
+                    : 'border-border bg-card/50'
+                )}
+              >
+                {/* Day Header */}
+                <div className={cn(
+                  'flex items-center justify-between px-4 py-3 rounded-t-2xl border-b',
+                  today ? 'bg-primary/10 border-primary/20' : 'bg-secondary/50 border-border'
+                )}>
+                  <div className="min-w-0">
+                    <p className={cn(
+                      'text-xs font-bold uppercase tracking-wider',
+                      today ? 'text-primary' : 'text-muted-foreground'
+                    )}>
+                      {DAY_LABELS_SHORT[dayIdx]}
+                    </p>
+                    <p className={cn(
+                      'text-lg font-display font-bold leading-tight',
+                      today ? 'text-primary' : 'text-foreground'
+                    )}>
+                      {format(date, 'd')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openAddDialog(dayIdx)}
+                      className={cn(
+                        'p-1.5 rounded-lg transition-colors',
+                        today
+                          ? 'hover:bg-primary/20 text-primary'
+                          : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+                      )}
+                      title="Görev ekle"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => openAddDialog(dayIdx)}
-                    className={cn(
-                      'p-1 rounded-lg transition-colors',
-                      today
-                        ? 'hover:bg-primary/20 text-primary'
-                        : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
+
+                {/* Day Stats */}
+                {dayTasks.length > 0 && (
+                  <div className="px-4 py-2 text-[11px] text-muted-foreground font-medium flex items-center justify-between border-b border-border/50">
+                    <span>{dayTasks.length} görev</span>
+                    <span>{formatDuration(dayMinutes)}</span>
+                    {dayCompleted > 0 && (
+                      <span className="text-emerald-500 font-bold">{dayCompleted}✓</span>
                     )}
-                    title="Görev ekle"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Day Stats */}
-              {dayTasks.length > 0 && (
-                <div className="px-3 py-1.5 text-[10px] text-muted-foreground font-medium flex items-center justify-between border-b border-border/50">
-                  <span>{dayTasks.length} görev</span>
-                  <span>{formatDuration(dayMinutes)}</span>
-                  {dayCompleted > 0 && (
-                    <span className="text-emerald-500 font-bold">{dayCompleted}✓</span>
-                  )}
-                </div>
-              )}
-
-              {/* Task Cards */}
-              <div className="flex-1 p-2 space-y-1.5 overflow-y-auto scrollbar-hide">
-                {dayTasks.length === 0 && (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-[10px] text-muted-foreground/40 text-center">Görev yok</p>
                   </div>
                 )}
-                {dayTasks.map(task => (
-                  <div
-                    key={task.id}
-                    className={cn(
-                      'group relative rounded-xl p-2.5 transition-all border cursor-default',
-                      task.completed
-                        ? 'bg-emerald-500/10 border-emerald-500/20 opacity-70'
-                        : 'bg-background border-border hover:border-primary/30 hover:shadow-sm'
-                    )}
-                  >
-                    <div className="flex items-start gap-1.5">
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          'text-xs font-bold truncate',
-                          task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                        )}>
-                          {task.subject}
-                        </p>
-                        {task.topic && (
-                          <p className="text-[10px] text-primary/80 truncate mt-0.5">{task.topic}</p>
-                        )}
-                        {task.book_name && (
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">📖 {task.book_name}</p>
-                        )}
-                        <div className="flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground font-medium">{formatDuration(task.estimated_minutes)}</span>
-                          {task.completed && <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-auto" />}
+
+                {/* Task Cards */}
+                <div className="flex-1 p-3 space-y-2.5 overflow-y-auto scrollbar-hide">
+                  {dayTasks.length === 0 && (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-[11px] text-muted-foreground/40 text-center">Görev yok</p>
+                    </div>
+                  )}
+                  {dayTasks.map(task => (
+                    <div
+                      key={task.id}
+                      className={cn(
+                        'group relative rounded-xl p-3.5 transition-all border cursor-default',
+                        task.completed
+                          ? 'bg-emerald-500/10 border-emerald-500/20 opacity-70'
+                          : 'bg-background border-border hover:border-primary/30 hover:shadow-sm'
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            'text-sm font-bold break-words',
+                            task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                          )}>
+                            {task.subject}
+                          </p>
+                          {task.topic && (
+                            <p className="text-xs text-primary/80 break-words mt-1">{task.topic}</p>
+                          )}
+                          {task.book_name && (
+                            <p className="text-xs text-muted-foreground break-words mt-1">📖 {task.book_name}</p>
+                          )}
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-[11px] text-muted-foreground font-medium">{formatDuration(task.estimated_minutes)}</span>
+                            {task.completed && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 ml-auto" />}
+                          </div>
                         </div>
                       </div>
+                      {/* Hover actions */}
+                      <div className="absolute top-1.5 right-1.5 hidden group-hover:flex items-center gap-0.5 bg-card/90 backdrop-blur-sm rounded-lg p-0.5 border border-border shadow-sm">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Dersi kopyala">
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-card border-border min-w-[140px]">
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">Kopyala →</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {DAY_LABELS_SHORT.map((label, targetIdx) => {
+                              if (targetIdx === dayIdx) return null;
+                              return (
+                                <DropdownMenuItem key={targetIdx} onClick={() => copyTaskToDay(task, targetIdx)} className="text-sm cursor-pointer">
+                                  {label} ({format(weekDates[targetIdx], 'd MMM', { locale: tr })})
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <button onClick={() => openEditDialog(task)} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    {/* Hover actions */}
-                    <div className="absolute top-1 right-1 hidden group-hover:flex items-center gap-0.5 bg-card/90 backdrop-blur-sm rounded-lg p-0.5 border border-border shadow-sm">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Dersi kopyala">
-                            <Copy className="h-3 w-3" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-border min-w-[140px]">
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">Kopyala →</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          {DAY_LABELS_SHORT.map((label, targetIdx) => {
-                            if (targetIdx === dayIdx) return null;
-                            return (
-                              <DropdownMenuItem key={targetIdx} onClick={() => copyTaskToDay(task, targetIdx)} className="text-sm cursor-pointer">
-                                {label} ({format(weekDates[targetIdx], 'd MMM', { locale: tr })})
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <button onClick={() => openEditDialog(task)} className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      <button onClick={() => handleDelete(task.id)} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Add/Edit Task Dialog */}
