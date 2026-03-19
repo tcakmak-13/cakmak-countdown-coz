@@ -467,6 +467,14 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           )}
         </AnimatePresence>
 
+        {/* Eraser cursor overlay */}
+        <EraserCursor
+          size={eraserSize}
+          canvasRef={drawCanvasRef}
+          containerRef={containerRef}
+          show={showTools && tool === 'eraser' && scale <= 1}
+        />
+
         {/* Send Solution button - adapts to toolbar edge */}
         {showShareButton && onShareAsAnswer && (
           <div style={getSendButtonStyle()}>
