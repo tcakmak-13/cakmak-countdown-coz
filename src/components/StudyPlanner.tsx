@@ -205,7 +205,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   const openEdit = (task: Task) => {
     setEditingTask(task);
-    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
+    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '', bookName: task.book_name ?? '' });
     setDialogOpen(true);
   };
 
