@@ -18,7 +18,6 @@ interface StudentBook {
   subject: string;
   book_name: string;
   is_custom: boolean;
-  total_tests: number;
   current_test: number;
 }
 
