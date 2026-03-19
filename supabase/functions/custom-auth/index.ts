@@ -120,6 +120,15 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Check if account is suspended
+      const { data: profileData } = await supabase.from("profiles").select("is_active").eq("user_id", data.user.id).single();
+      if (profileData && profileData.is_active === false) {
+        await anonClient.auth.signOut();
+        return new Response(JSON.stringify({ error: "Hesabınız admin tarafından dondurulmuştur." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
       clearFailedAttempts(username);
       return new Response(JSON.stringify({ session: data.session, user: data.user }), {
         headers: { ...cors, "Content-Type": "application/json" },
