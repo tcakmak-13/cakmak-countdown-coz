@@ -496,7 +496,6 @@ export default function AdminDashboard() {
             { key: 'management', icon: Users, label: 'Yönetim' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
-            { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
@@ -517,6 +516,14 @@ export default function AdminDashboard() {
               </button>
             );
           })}
+          {/* Çıkış Yap button */}
+          <button
+            onClick={() => setShowLogoutDialog(true)}
+            className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 min-w-[56px] flex-1 min-h-[48px] transition-colors relative px-1"
+          >
+            <LogOut className="h-5 w-5 text-destructive" />
+            <span className="text-[9px] sm:text-[10px] font-medium text-destructive whitespace-nowrap">Çıkış</span>
+          </button>
         </div>
       </nav>
 
