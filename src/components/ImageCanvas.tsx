@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, ZoomOut, RotateCcw, Pen, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import DockableToolbar, { COLORS } from './DockableToolbar';
-import type { Tool, PenSize, EraserSize } from './DockableToolbar';
+import DockableToolbar, { COLORS, TOOLBAR_H, TOOLBAR_W } from './DockableToolbar';
+import type { Tool, PenSize, EraserSize, DockEdge } from './DockableToolbar';
 
 interface ImageCanvasProps {
   src: string | null;
@@ -23,6 +23,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const [showTools, setShowTools] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const [toolbarEdge, setToolbarEdge] = useState<DockEdge>('bottom');
 
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -65,6 +66,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     setScale(1);
     setShowTools(false);
     setHasDrawn(false);
+    setToolbarEdge('bottom');
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -274,6 +276,35 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
   const { w, h } = canvasSizeRef.current;
 
+  // Calculate send button position based on toolbar edge
+  const getSendButtonStyle = (): React.CSSProperties => {
+    const gap = 10;
+    if (!showTools) {
+      return { position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 55 };
+    }
+    switch (toolbarEdge) {
+      case 'bottom':
+        return { position: 'fixed', bottom: TOOLBAR_H + gap, left: '50%', transform: 'translateX(-50%)', zIndex: 55 };
+      case 'top':
+        return { position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 55 };
+      case 'left':
+        return { position: 'fixed', bottom: 24, left: TOOLBAR_W + gap + 50, transform: 'translateX(-50%)', zIndex: 55 };
+      case 'right':
+        return { position: 'fixed', bottom: 24, right: TOOLBAR_W + gap + 50, transform: 'translateX(50%)', zIndex: 55 };
+    }
+  };
+
+  // Calculate canvas area padding based on toolbar edge
+  const getContentPadding = (): React.CSSProperties => {
+    if (!showTools) return {};
+    switch (toolbarEdge) {
+      case 'bottom': return { paddingBottom: TOOLBAR_H };
+      case 'top': return { paddingTop: TOOLBAR_H };
+      case 'left': return { paddingLeft: TOOLBAR_W };
+      case 'right': return { paddingRight: TOOLBAR_W };
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -287,7 +318,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         <div className="absolute inset-0 bg-black/95" onClick={onClose} />
 
         {/* Top controls */}
-        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+        <div className="absolute top-3 right-3 z-[70] flex items-center gap-1.5">
           <button onClick={() => setScale(s => Math.min(MAX_SCALE, s + 0.3))} className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors" title="Yakınlaştır">
             <ZoomIn className="h-4 w-4" />
           </button>
@@ -303,7 +334,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         </div>
 
         {/* Zoom indicator */}
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
+        <div className="absolute top-3 left-3 z-[70] flex items-center gap-2">
           {scale !== 1 && (
             <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium">
               {Math.round(scale * 100)}%
@@ -311,12 +342,16 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           )}
         </div>
 
-        {/* Canvas area */}
+        {/* Canvas area - with padding for toolbar */}
         <div
           ref={containerRef}
-          className="relative z-10 flex items-center justify-center overflow-hidden"
+          className="relative z-10 flex items-center justify-center overflow-hidden w-full h-full"
           onWheel={handleWheel}
-          style={{ cursor: showTools && scale <= 1 ? 'crosshair' : scale > 1 ? 'grab' : 'default' }}
+          style={{
+            cursor: showTools && scale <= 1 ? 'crosshair' : scale > 1 ? 'grab' : 'default',
+            ...getContentPadding(),
+            transition: 'padding 0.3s ease',
+          }}
         >
           <div style={{ transform: `scale(${scale})`, transition: 'transform 0.15s ease-out', position: 'relative' }}>
             {imageRef.current && (
@@ -350,14 +385,14 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
             onClick={() => setShowTools(true)}
-            className="absolute bottom-5 left-5 z-30 p-3.5 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 hover:shadow-primary/60 hover:scale-105 active:scale-95 transition-all"
+            className="absolute bottom-5 left-5 z-[65] p-3.5 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 hover:shadow-primary/60 hover:scale-105 active:scale-95 transition-all"
             title="Çizim yap"
           >
             <Pen className="h-5 w-5" />
           </motion.button>
         )}
 
-        {/* Dockable drawing toolbar */}
+        {/* Dockable drawing toolbar - full edge */}
         <AnimatePresence>
           {showTools && (
             <DockableToolbar
@@ -371,20 +406,21 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               setColorIndex={setColorIndex}
               onUndo={undo}
               onClear={clearDrawing}
+              onDockedEdgeChange={setToolbarEdge}
             />
           )}
         </AnimatePresence>
 
-        {/* Send Solution button - bottom center, above toolbar */}
+        {/* Send Solution button - adapts to toolbar edge */}
         {showShareButton && onShareAsAnswer && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20">
+          <div style={getSendButtonStyle()}>
             <button
               onClick={handleShare}
               disabled={!hasDrawn || sharing}
-              className={`flex items-center gap-1.5 px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-xl ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all shadow-xl ${
                 hasDrawn
                   ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/30'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                  : 'bg-white/10 text-white/40 cursor-not-allowed'
               }`}
               title={hasDrawn ? 'Çözüm Olarak Gönder' : 'Önce görsel üzerinde çizim yapın'}
             >
