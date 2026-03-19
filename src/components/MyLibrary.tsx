@@ -103,7 +103,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
   const resetForm = () => {
     setSelectedSubject('');
     setSelectedBook('');
-    setTotalTests('');
     setIsCustom(false);
     setCustomBookName('');
   };
