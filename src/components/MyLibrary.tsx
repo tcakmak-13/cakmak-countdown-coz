@@ -237,14 +237,11 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {books.map(book => {
-            const pct = book.total_tests > 0 ? Math.round((book.current_test / book.total_tests) * 100) : 0;
-            return (
+          {books.map(book => (
               <Card key={book.id}>
-                <CardContent className="p-4 space-y-3">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <BookOpen className="h-4 w-4 text-primary shrink-0" />
                         <span className="font-medium text-sm truncate">{book.book_name}</span>
@@ -253,6 +250,16 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
                         {book.exam_type} · {book.subject}
                         {book.is_custom && ' · Özel'}
                       </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Kalınan Test:</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={book.current_test}
+                        onChange={e => handleUpdateCurrentTest(book, parseInt(e.target.value) || 0)}
+                        className="h-8 w-16 text-center text-sm"
+                      />
                     </div>
                     <Button
                       size="icon"
@@ -263,37 +270,10 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-
-                  {/* Progress */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">Test:</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={book.total_tests}
-                        value={book.current_test}
-                        onChange={e => handleUpdateProgress(book, parseInt(e.target.value) || 0)}
-                        className="h-8 w-16 text-center text-sm"
-                      />
-                      <span className="text-xs text-muted-foreground">/</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={book.total_tests}
-                        onChange={e => handleUpdateTotalTests(book, parseInt(e.target.value) || 1)}
-                        className="h-8 w-16 text-center text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Progress value={pct} className="h-2.5 flex-1" />
-                      <span className="text-xs font-bold text-primary min-w-[36px] text-right">{pct}%</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
-            );
-          })}
+          ))}
+        </div>
         </div>
       )}
     </div>
