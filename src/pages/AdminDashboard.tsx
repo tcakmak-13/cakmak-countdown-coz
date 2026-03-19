@@ -76,6 +76,7 @@ export default function AdminDashboard() {
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; type: 'student' | 'coach' } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [suspending, setSuspending] = useState<string | null>(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // Coach assignment
   const [assignDialogStudent, setAssignDialogStudent] = useState<StudentProfile | null>(null);
