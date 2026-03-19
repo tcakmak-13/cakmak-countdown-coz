@@ -60,8 +60,9 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addDayIndex, setAddDayIndex] = useState(0);
-  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' });
   const [copying, setCopying] = useState(false);
+  const [studentBooks, setStudentBooks] = useState<StudentBook[]>([]);
 
   const weekDates = useMemo(() => {
     const monday = startOfWeek(selectedDate, { weekStartsOn: 1 });
