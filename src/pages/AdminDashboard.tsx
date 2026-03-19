@@ -79,6 +79,7 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [suspending, setSuspending] = useState<string | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Coach assignment
   const [assignDialogStudent, setAssignDialogStudent] = useState<StudentProfile | null>(null);
