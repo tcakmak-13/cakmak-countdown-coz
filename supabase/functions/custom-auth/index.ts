@@ -120,6 +120,15 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Check if account is suspended
+      const { data: profileData } = await supabase.from("profiles").select("is_active").eq("user_id", data.user.id).single();
+      if (profileData && profileData.is_active === false) {
+        await anonClient.auth.signOut();
+        return new Response(JSON.stringify({ error: "Hesabınız admin tarafından dondurulmuştur." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
       clearFailedAttempts(username);
       return new Response(JSON.stringify({ session: data.session, user: data.user }), {
         headers: { ...cors, "Content-Type": "application/json" },
@@ -311,6 +320,43 @@ Deno.serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ success: true }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Toggle active status (admin only)
+    if (action === "toggle-active") {
+      const admin = await verifyAdmin(req, supabase, supabaseUrl);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      if (!profileId) {
+        return new Response(JSON.stringify({ error: "Profil ID gerekli." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const { data: targetProfile, error: profileErr } = await supabase.from("profiles").select("is_active, user_id").eq("id", profileId).single();
+      if (profileErr || !targetProfile) {
+        return new Response(JSON.stringify({ error: "Kullanıcı bulunamadı." }), {
+          status: 404, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const { data: targetRoleData } = await supabase.from("user_roles").select("role").eq("user_id", targetProfile.user_id).single();
+      if (targetRoleData?.role === "admin") {
+        return new Response(JSON.stringify({ error: "Admin hesabı dondurulamaz." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const newStatus = !targetProfile.is_active;
+      const { error: updateErr } = await supabase.from("profiles").update({ is_active: newStatus }).eq("id", profileId);
+      if (updateErr) {
+        return new Response(JSON.stringify({ error: "İşlem başarısız." }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: true, is_active: newStatus }), {
         headers: { ...cors, "Content-Type": "application/json" },
       });
     }

@@ -523,6 +523,7 @@ export type Database = {
           grade: string | null
           high_school: string | null
           id: string
+          is_active: boolean
           obp: string | null
           parent_phone: string | null
           phone: string | null
@@ -548,6 +549,7 @@ export type Database = {
           grade?: string | null
           high_school?: string | null
           id?: string
+          is_active?: boolean
           obp?: string | null
           parent_phone?: string | null
           phone?: string | null
@@ -573,6 +575,7 @@ export type Database = {
           grade?: string | null
           high_school?: string | null
           id?: string
+          is_active?: boolean
           obp?: string | null
           parent_phone?: string | null
           phone?: string | null

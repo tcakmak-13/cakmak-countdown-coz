@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus } from 'lucide-react';
+import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -33,6 +33,7 @@ interface StudentProfile {
   target_university: string | null;
   target_department: string | null;
   coach_id: string | null;
+  is_active: boolean;
 }
 
 interface CoachProfile {
@@ -40,6 +41,7 @@ interface CoachProfile {
   full_name: string;
   username: string | null;
   avatar_url: string | null;
+  is_active: boolean;
 }
 
 export default function AdminDashboard() {
@@ -70,9 +72,10 @@ export default function AdminDashboard() {
   const [announcementBody, setAnnouncementBody] = useState('');
   const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
 
-  // Deletion
+  // Deletion & Suspend
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; type: 'student' | 'coach' } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [suspending, setSuspending] = useState<string | null>(null);
 
   // Coach assignment
   const [assignDialogStudent, setAssignDialogStudent] = useState<StudentProfile | null>(null);
@@ -93,7 +96,7 @@ export default function AdminDashboard() {
   };
 
   const loadStudents = async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id');
+    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active');
     if (data) {
       const coachIds = new Set(coaches.map(c => c.id));
       setStudents(data.filter((s: any) => s.id !== profileId && !coachIds.has(s.id)) as StudentProfile[]);
@@ -104,7 +107,7 @@ export default function AdminDashboard() {
     const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
     if (!coachRoles || coachRoles.length === 0) { setCoaches([]); return; }
     const coachUserIds = coachRoles.map(r => r.user_id);
-    const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, username, avatar_url').in('user_id', coachUserIds);
+    const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, username, avatar_url, is_active').in('user_id', coachUserIds);
     if (coachProfiles) setCoaches(coachProfiles as CoachProfile[]);
   };
 
@@ -179,6 +182,24 @@ export default function AdminDashboard() {
     } catch { toast.error('Bağlantı hatası.'); }
     setDeleting(false);
     setUserToDelete(null);
+  };
+
+  const handleToggleActive = async (id: string, name: string, currentlyActive: boolean) => {
+    setSuspending(id);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ action: 'toggle-active', profileId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'İşlem başarısız.'); }
+      else {
+        toast.success(data.is_active ? `"${name}" hesabı aktif edildi.` : `"${name}" hesabı donduruldu.`);
+        loadAll();
+      }
+    } catch { toast.error('Bağlantı hatası.'); }
+    setSuspending(null);
   };
 
   const handleAssignCoach = async () => {
@@ -358,13 +379,16 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {students.map(s => (
-                  <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''}`}>
+                  <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''} ${!s.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0 min-h-[44px]">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${s.is_active ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                         {s.full_name?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
+                        <p className="text-sm font-medium truncate flex items-center gap-1">
+                          {s.full_name || s.username || 'İsimsiz'}
+                          {!s.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
                         </p>
@@ -373,6 +397,14 @@ export default function AdminDashboard() {
                     <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
                       <button onClick={() => { setAssignDialogStudent(s); setAssignCoachId(s.coach_id || 'none'); }} className="h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10" title="Koç ata">
                         <UserPlus className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleActive(s.id, s.full_name || s.username || 'Öğrenci', s.is_active)}
+                        disabled={suspending === s.id}
+                        className={`h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center transition-colors ${s.is_active ? 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10'}`}
+                        title={s.is_active ? 'Hesabı Dondur' : 'Hesabı Aktif Et'}
+                      >
+                        {s.is_active ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                       </button>
                       <button onClick={() => setUserToDelete({ id: s.id, name: s.full_name || s.username || 'Öğrenci', type: 'student' })} className="h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Sil">
                         <Trash2 className="h-4 w-4" />
@@ -411,19 +443,32 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {coaches.map(c => (
-                  <div key={c.id} className="glass-card rounded-2xl p-4 flex items-center gap-3 group">
+                  <div key={c.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group ${!c.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedCoach(c); setTab('coach-detail'); }} className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
                         {c.full_name?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0 text-left">
-                        <p className="text-sm font-medium truncate">{c.full_name || c.username}</p>
+                        <p className="text-sm font-medium truncate flex items-center gap-1">
+                          {c.full_name || c.username}
+                          {!c.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
+                        </p>
                         <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
                       </div>
                     </button>
-                    <button onClick={() => setUserToDelete({ id: c.id, name: c.full_name || c.username || 'Koç', type: 'coach' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0" title="Koçu sil">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      <button
+                        onClick={() => handleToggleActive(c.id, c.full_name || c.username || 'Koç', c.is_active)}
+                        disabled={suspending === c.id}
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${c.is_active ? 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10'}`}
+                        title={c.is_active ? 'Hesabı Dondur' : 'Hesabı Aktif Et'}
+                      >
+                        {c.is_active ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                      </button>
+                      <button onClick={() => setUserToDelete({ id: c.id, name: c.full_name || c.username || 'Koç', type: 'coach' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all shrink-0" title="Koçu sil">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {coaches.length === 0 && <p className="text-sm text-muted-foreground py-4">Henüz koç yok.</p>}
