@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Settings, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle } from 'lucide-react';
+import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -13,7 +13,7 @@ import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
 import AdminAppointments from '@/components/AdminAppointments';
-import CoachProfileEditor from '@/components/CoachProfileEditor';
+
 import CoachDetailView from '@/components/CoachDetailView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [coaches, setCoaches] = useState<CoachProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments' | 'coach-detail'>('overview');
+  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'appointments' | 'coach-detail'>('overview');
   const [selectedCoach, setSelectedCoach] = useState<CoachProfile | null>(null);
 
   // Student creation
@@ -76,6 +76,7 @@ export default function AdminDashboard() {
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; type: 'student' | 'coach' } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [suspending, setSuspending] = useState<string | null>(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // Coach assignment
   const [assignDialogStudent, setAssignDialogStudent] = useState<StudentProfile | null>(null);
@@ -272,7 +273,7 @@ export default function AdminDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-            <AvatarUpload size="sm" disableUpload onClick={() => { setSelectedStudent(null); setTab('coach-edit'); }} />
+            <AvatarUpload size="sm" disableUpload />
           </div>
         </div>
       </header>
@@ -326,28 +327,6 @@ export default function AdminDashboard() {
           <AdminAppointments />
         ) : tab === 'coach-detail' && selectedCoach ? (
           <CoachDetailView coachId={selectedCoach.id} coachName={selectedCoach.full_name || selectedCoach.username || 'Koç'} coachAvatar={selectedCoach.avatar_url} onBack={() => { setSelectedCoach(null); setTab('management'); }} />
-        ) : tab === 'coach-edit' ? (
-          <div className="space-y-6 pb-24">
-            <CoachProfileEditor adminName={profile.full_name} adminAvatarUrl={profile.avatar_url} onAvatarUpload={handleAvatarUpload} />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full gap-2">
-                  <LogOut className="h-4 w-4" />
-                  Çıkış Yap
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Çıkış yapmak istediğinize emin misiniz?</AlertDialogTitle>
-                  <AlertDialogDescription>Oturumunuz sonlandırılacak ve giriş sayfasına yönlendirileceksiniz.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>İptal</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>Evet, Çıkış Yap</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
         ) : tab === 'messages' && profileId ? (
           <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'management' && !selectedStudent ? (
@@ -517,7 +496,6 @@ export default function AdminDashboard() {
             { key: 'management', icon: Users, label: 'Yönetim' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
-            { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
@@ -538,6 +516,14 @@ export default function AdminDashboard() {
               </button>
             );
           })}
+          {/* Çıkış Yap button */}
+          <button
+            onClick={() => setShowLogoutDialog(true)}
+            className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 min-w-[56px] flex-1 min-h-[48px] transition-colors relative px-1"
+          >
+            <LogOut className="h-5 w-5 text-destructive" />
+            <span className="text-[9px] sm:text-[10px] font-medium text-destructive whitespace-nowrap">Çıkış</span>
+          </button>
         </div>
       </nav>
 
@@ -586,6 +572,20 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Logout confirmation */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Çıkış yapmak istediğinize emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>Oturumunuz sonlandırılacak ve giriş sayfasına yönlendirileceksiniz.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>Evet, Çıkış Yap</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
