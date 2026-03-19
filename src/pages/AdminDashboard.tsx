@@ -436,9 +436,18 @@ export default function AdminDashboard() {
                 {coaches.map(c => (
                   <div key={c.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group ${!c.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedCoach(c); setTab('coach-detail'); }} className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
-                        {c.full_name?.charAt(0) || '?'}
-                      </div>
+                      {c.avatar_url ? (
+                        <img
+                          src={c.avatar_url}
+                          alt={c.full_name}
+                          className="h-10 w-10 rounded-full object-cover shrink-0 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/50 transition-all shadow-orange"
+                          onClick={(e) => { e.stopPropagation(); setLightboxSrc(c.avatar_url); }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
+                          {c.full_name?.charAt(0) || '?'}
+                        </div>
+                      )}
                       <div className="min-w-0 text-left">
                         <p className="text-sm font-medium truncate flex items-center gap-1">
                           {c.full_name || c.username}
