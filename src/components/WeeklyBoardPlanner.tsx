@@ -405,6 +405,18 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                 allowCustom
               />
             </div>
+            {/* Kaynak Seç */}
+            <div className="space-y-2">
+              <Label className="font-semibold">Kaynak Seç (isteğe bağlı)</Label>
+              <SearchableCombobox
+                options={studentBooks.filter(b => b.subject === form.subject).map(b => b.book_name)}
+                value={form.bookName}
+                onChange={(val) => setForm(f => ({ ...f, bookName: val }))}
+                placeholder={form.subject ? 'Kaynak seçin veya yazın...' : 'Önce ders seçin'}
+                readOnly={!form.subject}
+                allowCustom
+              />
+            </div>
             <div className="space-y-2">
               <Label className="font-semibold">Tahmini Süre (dakika)</Label>
               <Input type="number" value={form.estimatedMinutes} onChange={e => setForm(f => ({ ...f, estimatedMinutes: Number(e.target.value) }))} className="bg-secondary border-border h-11" />
