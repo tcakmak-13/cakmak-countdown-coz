@@ -5,6 +5,57 @@ import { toast } from 'sonner';
 import DockableToolbar, { COLORS, TOOLBAR_H, TOOLBAR_W } from './DockableToolbar';
 import type { Tool, PenSize, EraserSize, DockEdge } from './DockableToolbar';
 
+// Eraser cursor component
+function EraserCursor({ size, canvasRef, containerRef, show }: { size: number; canvasRef: React.RefObject<HTMLCanvasElement>; containerRef: React.RefObject<HTMLDivElement>; show: boolean }) {
+  const [pos, setPos] = useState({ x: 0, y: 0, visible: false });
+
+  useEffect(() => {
+    if (!show) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0]?.clientY : e.clientY;
+      if (clientX == null || clientY == null) return;
+      setPos({ x: clientX, y: clientY, visible: true });
+    };
+    const onLeave = () => setPos(p => ({ ...p, visible: false }));
+
+    container.addEventListener('mousemove', onMove);
+    container.addEventListener('touchmove', onMove as any);
+    container.addEventListener('mouseleave', onLeave);
+    return () => {
+      container.removeEventListener('mousemove', onMove);
+      container.removeEventListener('touchmove', onMove as any);
+      container.removeEventListener('mouseleave', onLeave);
+    };
+  }, [show, containerRef]);
+
+  if (!show || !pos.visible) return null;
+
+  // Scale eraser size based on canvas display ratio
+  const canvas = canvasRef.current;
+  let displaySize = size;
+  if (canvas) {
+    const rect = canvas.getBoundingClientRect();
+    displaySize = size * (rect.width / canvas.width);
+  }
+
+  return (
+    <div
+      className="pointer-events-none fixed z-[200] rounded-full border-2 border-white/80 bg-white/15"
+      style={{
+        width: displaySize,
+        height: displaySize,
+        left: pos.x - displaySize / 2,
+        top: pos.y - displaySize / 2,
+        transition: 'width 0.1s, height 0.1s',
+      }}
+    />
+  );
+}
+
 interface ImageCanvasProps {
   src: string | null;
   alt?: string;
@@ -22,6 +73,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const [isDrawing, setIsDrawing] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const sharingRef = useRef(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [toolbarEdge, setToolbarEdge] = useState<DockEdge>('bottom');
 
@@ -243,10 +295,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   }, [src, onClose, undo]);
 
   const handleShare = useCallback(async () => {
+    if (sharingRef.current) return; // prevent double-tap
     const drawCanvas = drawCanvasRef.current;
     const img = imageRef.current;
     if (!drawCanvas || !img || !onShareAsAnswer) return;
 
+    sharingRef.current = true;
     setSharing(true);
     try {
       const exportCanvas = document.createElement('canvas');
@@ -262,12 +316,14 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         exportCanvas.toBlob(b => b ? resolve(b) : reject(new Error('Blob oluşturulamadı')), 'image/png', 1);
       });
 
-      onShareAsAnswer(blob);
+      await onShareAsAnswer(blob);
     } catch (err: any) {
       console.error('Görsel oluşturma hatası:', err);
       toast.error('Görsel oluşturulamadı. Lütfen tekrar deneyin.');
+      sharingRef.current = false;
+      setSharing(false);
     }
-    setSharing(false);
+    // Don't reset sharing — component will unmount on navigation
   }, [onShareAsAnswer]);
 
   const resetView = useCallback(() => setScale(1), []);
@@ -348,7 +404,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           className="relative z-10 flex items-center justify-center overflow-hidden w-full h-full"
           onWheel={handleWheel}
           style={{
-            cursor: showTools && scale <= 1 ? 'crosshair' : scale > 1 ? 'grab' : 'default',
+            cursor: showTools && scale <= 1 ? (tool === 'eraser' ? 'none' : 'crosshair') : scale > 1 ? 'grab' : 'default',
             ...getContentPadding(),
             transition: 'padding 0.3s ease',
           }}
@@ -410,6 +466,14 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
             />
           )}
         </AnimatePresence>
+
+        {/* Eraser cursor overlay */}
+        <EraserCursor
+          size={eraserSize}
+          canvasRef={drawCanvasRef}
+          containerRef={containerRef}
+          show={showTools && tool === 'eraser' && scale <= 1}
+        />
 
         {/* Send Solution button - adapts to toolbar edge */}
         {showShareButton && onShareAsAnswer && (
