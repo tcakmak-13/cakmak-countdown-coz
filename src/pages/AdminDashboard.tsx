@@ -13,7 +13,7 @@ import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
 import AdminAppointments from '@/components/AdminAppointments';
-import CoachProfileEditor from '@/components/CoachProfileEditor';
+
 import CoachDetailView from '@/components/CoachDetailView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
