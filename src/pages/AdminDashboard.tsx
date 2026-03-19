@@ -238,6 +238,7 @@ export default function AdminDashboard() {
     return students.filter(s => s.coach_id === coachId).length;
   };
 
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management' || tab === 'coach-detail') ? 'management' : tab;
 
   return (
