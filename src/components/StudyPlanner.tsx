@@ -29,8 +29,16 @@ interface Task {
   estimated_minutes: number;
   actual_minutes: number | null;
   description: string | null;
+  book_name: string | null;
   completed: boolean;
   created_at: string;
+}
+
+interface StudentBook {
+  id: string;
+  book_name: string;
+  subject: string;
+  exam_type: string;
 }
 
 interface Props {
@@ -58,7 +66,8 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' });
+  const [studentBooks, setStudentBooks] = useState<StudentBook[]>([]);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
   const [actualMinutes, setActualMinutes] = useState(30);
@@ -126,17 +135,31 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId, weekStartStr, fetchTasks]);
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { data } = await supabase
+        .from('student_books')
+        .select('id, book_name, subject, exam_type')
+        .eq('student_id', studentId);
+      if (data) setStudentBooks(data as StudentBook[]);
+    };
+    fetchBooks();
+  }, [studentId]);
+
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
   const completedMinutes = dayTasks.filter(t => t.completed).reduce((sum, t) => sum + (t.actual_minutes ?? t.estimated_minutes), 0);
 
   const progressPercent = targetMinutes > 0 ? Math.round((completedMinutes / targetMinutes) * 100) : 0;
 
+  const filteredBooks = studentBooks.filter(b => b.subject === form.subject);
+
   const handleSave = async () => {
     if (editingTask) {
       await supabase.from('study_tasks').update({
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       }).eq('id', editingTask.id);
     } else {
       await supabase.from('study_tasks').insert({
@@ -144,9 +167,10 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         week_start_date: weekStartStr,
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       });
     }
-    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
+    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' });
     setEditingTask(null);
     setDialogOpen(false);
     fetchTasks();
@@ -181,7 +205,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   const openEdit = (task: Task) => {
     setEditingTask(task);
-    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
+    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '', bookName: task.book_name ?? '' });
     setDialogOpen(true);
   };
 
@@ -363,6 +387,11 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                     <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/15 text-primary">
                       {task.topic}
                     </span>
+                    {task.book_name && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                        📖 {task.book_name}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <div className="flex items-center gap-1.5">
@@ -422,7 +451,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
       {/* ── Add Task Button + Dialog ── */}
       {!readOnly && !isArchive && (
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' }); } }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' }); } }}>
           <DialogTrigger asChild>
             <Button className="w-full mt-5 bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl">
               <Plus className="h-5 w-5 mr-2" /> Görev Ekle
@@ -471,6 +500,18 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
                   value={form.topic}
                   onChange={(val) => setForm(f => ({ ...f, topic: val }))}
                   placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}
+                  readOnly={!form.subject}
+                  allowCustom
+                />
+              </div>
+              {/* Kaynak Seç */}
+              <div className="space-y-2">
+                <Label className="font-semibold">Kaynak Seç (isteğe bağlı)</Label>
+                <SearchableCombobox
+                  options={filteredBooks.map(b => b.book_name)}
+                  value={form.bookName}
+                  onChange={(val) => setForm(f => ({ ...f, bookName: val }))}
+                  placeholder={form.subject ? 'Kaynak seçin veya yazın...' : 'Önce ders seçin'}
                   readOnly={!form.subject}
                   allowCustom
                 />

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, BookOpen, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { Plus, BookOpen, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { bookCatalog } from '@/data/book_catalog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -18,7 +17,6 @@ interface StudentBook {
   subject: string;
   book_name: string;
   is_custom: boolean;
-  total_tests: number;
   current_test: number;
 }
 
@@ -36,7 +34,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
   const [selectedExam, setSelectedExam] = useState('TYT');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedBook, setSelectedBook] = useState('');
-  const [totalTests, setTotalTests] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [customBookName, setCustomBookName] = useState('');
 
@@ -71,7 +68,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
       toast.error('Lütfen ders ve kitap seçin');
       return;
     }
-    const total = parseInt(totalTests) || 1;
 
     setSaving(true);
     try {
@@ -81,7 +77,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
         subject: selectedSubject,
         book_name: bookName,
         is_custom: isCustom,
-        total_tests: total,
         current_test: 0,
       } as any);
 
@@ -107,13 +102,12 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
   const resetForm = () => {
     setSelectedSubject('');
     setSelectedBook('');
-    setTotalTests('');
     setIsCustom(false);
     setCustomBookName('');
   };
 
-  const handleUpdateProgress = async (book: StudentBook, newTest: number) => {
-    const clamped = Math.max(0, Math.min(newTest, book.total_tests));
+  const handleUpdateCurrentTest = async (book: StudentBook, newTest: number) => {
+    const clamped = Math.max(0, newTest);
     try {
       const { error } = await supabase
         .from('student_books')
@@ -125,26 +119,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
     } catch (err) {
       console.error('Error updating progress:', err);
       toast.error('İlerleme kaydedilemedi');
-    }
-  };
-
-  const handleUpdateTotalTests = async (book: StudentBook, newTotal: number) => {
-    const total = Math.max(1, newTotal);
-    try {
-      const { error } = await supabase
-        .from('student_books')
-        .update({
-          total_tests: total,
-          current_test: Math.min(book.current_test, total),
-          updated_at: new Date().toISOString(),
-        } as any)
-        .eq('id', book.id);
-
-      if (error) throw error;
-      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, total_tests: total, current_test: Math.min(b.current_test, total) } : b));
-    } catch (err) {
-      console.error('Error updating total:', err);
-      toast.error('Güncelleme başarısız');
     }
   };
 
@@ -239,17 +213,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
               )}
             </div>
 
-            {/* Total tests */}
-            <div className="space-y-2">
-              <Label>Toplam Test Sayısı</Label>
-              <Input
-                type="number"
-                min={1}
-                placeholder="Örn: 24"
-                value={totalTests}
-                onChange={e => setTotalTests(e.target.value)}
-              />
-            </div>
 
             <Button
               className="w-full"
@@ -273,14 +236,11 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {books.map(book => {
-            const pct = book.total_tests > 0 ? Math.round((book.current_test / book.total_tests) * 100) : 0;
-            return (
+          {books.map(book => (
               <Card key={book.id}>
-                <CardContent className="p-4 space-y-3">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <BookOpen className="h-4 w-4 text-primary shrink-0" />
                         <span className="font-medium text-sm truncate">{book.book_name}</span>
@@ -289,6 +249,16 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
                         {book.exam_type} · {book.subject}
                         {book.is_custom && ' · Özel'}
                       </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Kalınan Test:</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={book.current_test}
+                        onChange={e => handleUpdateCurrentTest(book, parseInt(e.target.value) || 0)}
+                        className="h-8 w-16 text-center text-sm"
+                      />
                     </div>
                     <Button
                       size="icon"
@@ -299,37 +269,9 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-
-                  {/* Progress */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">Test:</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={book.total_tests}
-                        value={book.current_test}
-                        onChange={e => handleUpdateProgress(book, parseInt(e.target.value) || 0)}
-                        className="h-8 w-16 text-center text-sm"
-                      />
-                      <span className="text-xs text-muted-foreground">/</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={book.total_tests}
-                        onChange={e => handleUpdateTotalTests(book, parseInt(e.target.value) || 1)}
-                        className="h-8 w-16 text-center text-sm"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Progress value={pct} className="h-2.5 flex-1" />
-                      <span className="text-xs font-bold text-primary min-w-[36px] text-right">{pct}%</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>

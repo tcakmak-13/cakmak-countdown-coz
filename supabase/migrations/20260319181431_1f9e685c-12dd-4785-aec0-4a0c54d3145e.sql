@@ -1,0 +1,1 @@
+ALTER TABLE public.study_tasks ADD COLUMN book_name text DEFAULT NULL;

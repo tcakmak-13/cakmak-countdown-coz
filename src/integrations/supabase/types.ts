@@ -826,6 +826,7 @@ export type Database = {
       study_tasks: {
         Row: {
           actual_minutes: number | null
+          book_name: string | null
           completed: boolean
           created_at: string
           day_of_week: number
@@ -839,6 +840,7 @@ export type Database = {
         }
         Insert: {
           actual_minutes?: number | null
+          book_name?: string | null
           completed?: boolean
           created_at?: string
           day_of_week: number
@@ -852,6 +854,7 @@ export type Database = {
         }
         Update: {
           actual_minutes?: number | null
+          book_name?: string | null
           completed?: boolean
           created_at?: string
           day_of_week?: number

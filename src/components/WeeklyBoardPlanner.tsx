@@ -29,8 +29,16 @@ interface Task {
   estimated_minutes: number;
   actual_minutes: number | null;
   description: string | null;
+  book_name: string | null;
   completed: boolean;
   created_at: string;
+}
+
+interface StudentBook {
+  id: string;
+  book_name: string;
+  subject: string;
+  exam_type: string;
 }
 
 interface Props {
@@ -52,8 +60,9 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [addDayIndex, setAddDayIndex] = useState(0);
-  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
+  const [form, setForm] = useState({ examType: 'TYT' as 'TYT' | 'AYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' });
   const [copying, setCopying] = useState(false);
+  const [studentBooks, setStudentBooks] = useState<StudentBook[]>([]);
 
   const weekDates = useMemo(() => {
     const monday = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -79,6 +88,17 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { data } = await supabase
+        .from('student_books')
+        .select('id, book_name, subject, exam_type')
+        .eq('student_id', studentId);
+      if (data) setStudentBooks(data as StudentBook[]);
+    };
+    fetchBooks();
+  }, [studentId]);
+
   const tasksByDay = useMemo(() => {
     const map: Record<number, Task[]> = {};
     for (let i = 0; i < 7; i++) map[i] = [];
@@ -91,14 +111,14 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
   const openAddDialog = (dayIndex: number) => {
     setAddDayIndex(dayIndex);
     setEditingTask(null);
-    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
+    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' });
     setDialogOpen(true);
   };
 
   const openEditDialog = (task: Task) => {
     setEditingTask(task);
     setAddDayIndex(task.day_of_week);
-    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
+    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '', bookName: task.book_name ?? '' });
     setDialogOpen(true);
   };
 
@@ -108,6 +128,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
       const { error } = await supabase.from('study_tasks').update({
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       }).eq('id', editingTask.id);
       if (error) { console.error('Update error:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); return; }
       toast.success('Görev güncellendi!');
@@ -117,6 +138,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
         week_start_date: weekStartStr,
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       });
       if (error) { console.error('Insert error:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); return; }
       toast.success('Görev eklendi!');
@@ -143,6 +165,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
       topic: task.topic,
       estimated_minutes: task.estimated_minutes,
       description: task.description,
+      book_name: task.book_name,
     });
     if (error) { console.error('Copy error:', error); toast.error('Kopyalama başarısız.'); }
     else { toast.success(`${task.subject} → ${DAY_LABELS_SHORT[toDay]} kopyalandı!`); }
@@ -287,6 +310,9 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                         {task.topic && (
                           <p className="text-[10px] text-primary/80 truncate mt-0.5">{task.topic}</p>
                         )}
+                        {task.book_name && (
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">📖 {task.book_name}</p>
+                        )}
                         <div className="flex items-center gap-1 mt-1">
                           <Clock className="h-3 w-3 text-muted-foreground" />
                           <span className="text-[10px] text-muted-foreground font-medium">{formatDuration(task.estimated_minutes)}</span>
@@ -346,7 +372,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setForm(f => ({ ...f, examType: type, subject: '', topic: '' }))}
+                    onClick={() => setForm(f => ({ ...f, examType: type, subject: '', topic: '', bookName: '' }))}
                     className={cn(
                       'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
                       form.examType === type
@@ -376,6 +402,18 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                 value={form.topic}
                 onChange={(val) => setForm(f => ({ ...f, topic: val }))}
                 placeholder={form.subject ? 'Konu seçin...' : 'Önce ders seçin'}
+                readOnly={!form.subject}
+                allowCustom
+              />
+            </div>
+            {/* Kaynak Seç */}
+            <div className="space-y-2">
+              <Label className="font-semibold">Kaynak Seç (isteğe bağlı)</Label>
+              <SearchableCombobox
+                options={studentBooks.filter(b => b.subject === form.subject).map(b => b.book_name)}
+                value={form.bookName}
+                onChange={(val) => setForm(f => ({ ...f, bookName: val }))}
+                placeholder={form.subject ? 'Kaynak seçin veya yazın...' : 'Önce ders seçin'}
                 readOnly={!form.subject}
                 allowCustom
               />
