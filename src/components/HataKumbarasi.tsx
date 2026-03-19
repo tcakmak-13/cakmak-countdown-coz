@@ -80,7 +80,7 @@ interface Props {
   onAskInMeclis?: (data: { imageUrl: string; examType: string; subject: string; note?: string }) => void;
 }
 
-export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi }: Props) {
+export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi, onAskInMeclis }: Props) {
   const { user } = useAuth();
   const [view, setView] = useState<View>('home');
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
