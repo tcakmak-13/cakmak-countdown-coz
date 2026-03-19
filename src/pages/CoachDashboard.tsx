@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
+import ImageLightbox from '@/components/ImageLightbox';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
