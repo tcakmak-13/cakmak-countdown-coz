@@ -418,9 +418,11 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               onClick={handleShare}
               disabled={!hasDrawn || sharing}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all shadow-xl ${
-                hasDrawn
-                  ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/30'
-                  : 'bg-white/10 text-white/40 cursor-not-allowed'
+                sharing
+                  ? 'bg-primary/70 text-primary-foreground cursor-not-allowed opacity-80'
+                  : hasDrawn
+                    ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/30'
+                    : 'bg-white/10 text-white/40 cursor-not-allowed'
               }`}
               title={hasDrawn ? 'Çözüm Olarak Gönder' : 'Önce görsel üzerinde çizim yapın'}
             >
@@ -429,7 +431,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              <span>Çözümü Gönder</span>
+              <span>{sharing ? 'Gönderiliyor...' : 'Çözümü Gönder'}</span>
             </button>
           </div>
         )}
