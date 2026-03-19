@@ -274,7 +274,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
               </Card>
           ))}
         </div>
-        </div>
       )}
     </div>
   );
