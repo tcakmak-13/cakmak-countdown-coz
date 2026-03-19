@@ -311,9 +311,13 @@ export default function AdminDashboard() {
                     return (
                       <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground text-sm font-bold shadow-orange">
-                            {c.full_name?.charAt(0) || '?'}
-                          </div>
+                          {c.avatar_url ? (
+                            <img src={c.avatar_url} alt={c.full_name} className="h-8 w-8 rounded-full object-cover cursor-pointer ring-2 ring-primary/20 hover:ring-primary/50 transition-all" onClick={() => setLightboxSrc(c.avatar_url)} />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground text-sm font-bold shadow-orange">
+                              {c.full_name?.charAt(0) || '?'}
+                            </div>
+                          )}
                           <span className="text-sm font-medium">{c.full_name || c.username}</span>
                         </div>
                         <span className="text-sm text-primary font-semibold">{count} öğrenci</span>
