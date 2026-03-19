@@ -282,6 +282,34 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
 
+  // Handle prefill from Hata Kumbarası
+  useEffect(() => {
+    if (!prefillData) return;
+    const fetchAndPrefill = async () => {
+      try {
+        const response = await fetch(prefillData.imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'prefill_question.jpg', { type: blob.type || 'image/jpeg' });
+        setNewImage(file);
+        setNewImagePreview(URL.createObjectURL(file));
+        setNewCategory(prefillData.examType);
+        setNewSubject(prefillData.subject);
+        setNewDescription(prefillData.note || '');
+        setWizardStep(3);
+        setShowWizard(true);
+      } catch (err) {
+        console.error('Prefill error:', err);
+        setNewCategory(prefillData.examType);
+        setNewSubject(prefillData.subject);
+        setNewDescription(prefillData.note || '');
+        setWizardStep(1);
+        setShowWizard(true);
+      }
+      onPrefillConsumed?.();
+    };
+    fetchAndPrefill();
+  }, [prefillData]);
+
   // Feed is now newest-first, so scroll to top on load
   useEffect(() => {
     if (!loading && questions.length > 0) {
