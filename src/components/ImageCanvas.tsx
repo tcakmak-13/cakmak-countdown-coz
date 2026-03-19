@@ -73,6 +73,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const [isDrawing, setIsDrawing] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const sharingRef = useRef(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [toolbarEdge, setToolbarEdge] = useState<DockEdge>('bottom');
 
