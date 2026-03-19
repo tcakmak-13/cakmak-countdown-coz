@@ -165,6 +165,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
       topic: task.topic,
       estimated_minutes: task.estimated_minutes,
       description: task.description,
+      book_name: task.book_name,
     });
     if (error) { console.error('Copy error:', error); toast.error('Kopyalama başarısız.'); }
     else { toast.success(`${task.subject} → ${DAY_LABELS_SHORT[toDay]} kopyalandı!`); }
