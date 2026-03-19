@@ -1027,33 +1027,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Soru Meclisi - navigation card */}
-      {onOpenSoruMeclisi && (
-        <div className="mt-8">
-          <button
-            onClick={onOpenSoruMeclisi}
-            className="relative w-full flex items-center justify-between px-5 py-4 rounded-xl bg-card border border-primary/20 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.12)] transition-all duration-300 group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div className="text-left">
-                <span className="font-display font-bold text-base text-foreground block leading-tight">Soru Meclisi</span>
-                <span className="text-[11px] text-muted-foreground">Topluluğa soru sor, çözümlere ulaş</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {pendingCount > 0 && (
-                <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-orange animate-scale-in">
-                  {pendingCount > 99 ? '99+' : pendingCount}
-                </span>
-              )}
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-          </button>
-        </div>
-      )}
+      {/* Soru Meclisi card removed from here - only shown on home view */}
     </div>
   );
 }
