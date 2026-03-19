@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import ImagePicker from '@/components/ImagePicker';
 import ImageCanvas from '@/components/ImageCanvas';
 import ReactMarkdown from 'react-markdown';
+import ThreadView from '@/components/ThreadView';
 
 const TYT_SUBJECTS = ['Türkçe', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'];
 const AYT_SUBJECTS_SAY = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
