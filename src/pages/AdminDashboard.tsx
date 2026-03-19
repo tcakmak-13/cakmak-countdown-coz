@@ -363,9 +363,18 @@ export default function AdminDashboard() {
                 {students.map(s => (
                   <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''} ${!s.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0 min-h-[44px]">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${s.is_active ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
-                        {s.full_name?.charAt(0) || '?'}
-                      </div>
+                      {s.avatar_url ? (
+                        <img
+                          src={s.avatar_url}
+                          alt={s.full_name}
+                          className={`h-10 w-10 rounded-full object-cover shrink-0 cursor-pointer ring-2 transition-all ${s.is_active ? 'ring-primary/20 hover:ring-primary/50' : 'ring-destructive/20'}`}
+                          onClick={(e) => { e.stopPropagation(); setLightboxSrc(s.avatar_url); }}
+                        />
+                      ) : (
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${s.is_active ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
+                          {s.full_name?.charAt(0) || '?'}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate flex items-center gap-1">
                           {s.full_name || s.username || 'İsimsiz'}
