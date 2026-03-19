@@ -65,6 +65,13 @@ interface AISolution {
   cached?: boolean;
 }
 
+interface PrefillData {
+  imageUrl: string;
+  examType: string;
+  subject: string;
+  note?: string;
+}
+
 interface QuestionFlowProps {
   currentProfileId: string;
   currentName: string;
@@ -72,6 +79,8 @@ interface QuestionFlowProps {
   username?: string;
   usernameChangedAt?: string | null;
   onUsernameChanged?: (newUsername: string) => void;
+  prefillData?: PrefillData;
+  onPrefillConsumed?: () => void;
 }
 
 export default function QuestionFlow({ currentProfileId, currentName, currentRole, username, usernameChangedAt, onUsernameChanged, prefillData, onPrefillConsumed }: QuestionFlowProps) {
