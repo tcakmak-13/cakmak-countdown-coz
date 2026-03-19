@@ -184,7 +184,24 @@ export default function AdminDashboard() {
     setUserToDelete(null);
   };
 
-  const handleAssignCoach = async () => {
+  const handleToggleActive = async (id: string, name: string, currentlyActive: boolean) => {
+    setSuspending(id);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ action: 'toggle-active', profileId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'İşlem başarısız.'); }
+      else {
+        toast.success(data.is_active ? `"${name}" hesabı aktif edildi.` : `"${name}" hesabı donduruldu.`);
+        loadAll();
+      }
+    } catch { toast.error('Bağlantı hatası.'); }
+    setSuspending(null);
+  };
+
     if (!assignDialogStudent) return;
     const coachId = assignCoachId === 'none' ? null : assignCoachId;
     const { error } = await supabase.from('profiles').update({ coach_id: coachId, coach_selected: coachId ? true : false }).eq('id', assignDialogStudent.id);
