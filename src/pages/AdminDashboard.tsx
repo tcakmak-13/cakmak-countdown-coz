@@ -273,7 +273,7 @@ export default function AdminDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
-            <AvatarUpload size="sm" disableUpload onClick={() => { setSelectedStudent(null); setTab('coach-edit'); }} />
+            <AvatarUpload size="sm" disableUpload />
           </div>
         </div>
       </header>
