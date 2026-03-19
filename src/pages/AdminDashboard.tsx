@@ -608,5 +608,7 @@ export default function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+      <ImageLightbox src={lightboxSrc} alt="Profil Fotoğrafı" onClose={() => setLightboxSrc(null)} />
+    </>
   );
 }
