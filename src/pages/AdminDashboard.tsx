@@ -33,6 +33,7 @@ interface StudentProfile {
   target_university: string | null;
   target_department: string | null;
   coach_id: string | null;
+  is_active: boolean;
 }
 
 interface CoachProfile {
@@ -40,6 +41,7 @@ interface CoachProfile {
   full_name: string;
   username: string | null;
   avatar_url: string | null;
+  is_active: boolean;
 }
 
 export default function AdminDashboard() {
