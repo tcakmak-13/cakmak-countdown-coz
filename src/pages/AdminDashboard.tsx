@@ -107,7 +107,7 @@ export default function AdminDashboard() {
     const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
     if (!coachRoles || coachRoles.length === 0) { setCoaches([]); return; }
     const coachUserIds = coachRoles.map(r => r.user_id);
-    const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, username, avatar_url').in('user_id', coachUserIds);
+    const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, username, avatar_url, is_active').in('user_id', coachUserIds);
     if (coachProfiles) setCoaches(coachProfiles as CoachProfile[]);
   };
 
