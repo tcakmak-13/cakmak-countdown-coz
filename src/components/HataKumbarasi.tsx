@@ -77,6 +77,7 @@ interface Props {
   currentName?: string;
   currentRole?: string;
   onOpenSoruMeclisi?: () => void;
+  onAskInMeclis?: (data: { imageUrl: string; examType: string; subject: string; note?: string }) => void;
 }
 
 export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi }: Props) {
