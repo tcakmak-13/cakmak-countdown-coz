@@ -413,11 +413,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
         {/* Send Solution button - adapts to toolbar edge */}
         {showShareButton && onShareAsAnswer && (
-          <motion.div
-            style={getSendButtonStyle()}
-            animate={getSendButtonStyle()}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          >
+          <div style={getSendButtonStyle()}>
             <button
               onClick={handleShare}
               disabled={!hasDrawn || sharing}
