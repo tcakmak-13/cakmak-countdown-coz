@@ -118,7 +118,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
   const openEditDialog = (task: Task) => {
     setEditingTask(task);
     setAddDayIndex(task.day_of_week);
-    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '' });
+    setForm({ examType: 'TYT', subject: task.subject, topic: task.topic, estimatedMinutes: task.estimated_minutes, description: task.description ?? '', bookName: task.book_name ?? '' });
     setDialogOpen(true);
   };
 
