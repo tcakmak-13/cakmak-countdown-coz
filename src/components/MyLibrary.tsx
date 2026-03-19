@@ -214,17 +214,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
               )}
             </div>
 
-            {/* Total tests */}
-            <div className="space-y-2">
-              <Label>Toplam Test Sayısı</Label>
-              <Input
-                type="number"
-                min={1}
-                placeholder="Örn: 24"
-                value={totalTests}
-                onChange={e => setTotalTests(e.target.value)}
-              />
-            </div>
 
             <Button
               className="w-full"
