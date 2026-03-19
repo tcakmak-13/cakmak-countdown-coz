@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn, ZoomOut, RotateCcw, Undo2, Eraser, Trash2, Pen, Send } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, RotateCcw, Pen, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import DockableToolbar, { COLORS } from './DockableToolbar';
+import type { Tool, PenSize, EraserSize } from './DockableToolbar';
 
 interface ImageCanvasProps {
   src: string | null;
@@ -10,32 +12,6 @@ interface ImageCanvasProps {
   onShareAsAnswer?: (blob: Blob) => void;
   showShareButton?: boolean;
 }
-
-type Tool = 'pen' | 'eraser';
-type PenSize = 4 | 8 | 14;
-type EraserSize = 16 | 32 | 56;
-
-const COLORS = [
-  { name: 'Turuncu', value: '#FF5A01', alpha: 1 },
-  { name: 'Kırmızı', value: '#EF4444', alpha: 1 },
-  { name: 'Mavi', value: '#3B82F6', alpha: 1 },
-  { name: 'Yeşil', value: '#22C55E', alpha: 1 },
-  { name: 'Beyaz', value: '#FFFFFF', alpha: 1 },
-  { name: 'Fosforlu', value: '#FACC15', alpha: 0.5 },
-  { name: 'Siyah', value: '#000000', alpha: 1 },
-];
-
-const PEN_SIZES: { label: string; value: PenSize; dot: number }[] = [
-  { label: 'İnce', value: 4, dot: 8 },
-  { label: 'Orta', value: 8, dot: 13 },
-  { label: 'Kalın', value: 14, dot: 18 },
-];
-
-const ERASER_SIZES: { label: string; value: EraserSize; dot: number }[] = [
-  { label: 'Küçük', value: 16, dot: 12 },
-  { label: 'Orta', value: 32, dot: 18 },
-  { label: 'Büyük', value: 56, dot: 24 },
-];
 
 export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAnswer, showShareButton = false }: ImageCanvasProps) {
   const [scale, setScale] = useState(1);
@@ -124,7 +100,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.putImageData(prev, 0, 0);
-    // Check if canvas is now empty (back to initial state)
     if (historyRef.current.length <= 1) setHasDrawn(false);
   }, []);
 
@@ -328,23 +303,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         </div>
 
         {/* Zoom indicator */}
-        {scale !== 1 && (
-          <div className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium">
-            {Math.round(scale * 100)}%
-          </div>
-        )}
-
-        {/* Pen toggle button (top-left, always visible) */}
         <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
-          {scale === 1 && (
-            <button
-              onClick={() => setShowTools(!showTools)}
-              className={`p-2.5 rounded-full backdrop-blur-sm transition-all ${showTools ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-              title={showTools ? 'Çizim modunu kapat' : 'Çizim yap'}
-            >
-              <Pen className="h-5 w-5" />
-            </button>
-          )}
           {scale !== 1 && (
             <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium">
               {Math.round(scale * 100)}%
@@ -384,90 +343,39 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           </div>
         </div>
 
-        {/* Bottom toolbar - only when drawing mode is active */}
+        {/* Floating pen button - bottom left */}
+        {scale === 1 && !showTools && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            onClick={() => setShowTools(true)}
+            className="absolute bottom-5 left-5 z-30 p-3.5 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 hover:shadow-primary/60 hover:scale-105 active:scale-95 transition-all"
+            title="Çizim yap"
+          >
+            <Pen className="h-5 w-5" />
+          </motion.button>
+        )}
+
+        {/* Dockable drawing toolbar */}
         <AnimatePresence>
           {showTools && (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 30 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-2xl px-3 py-2 shadow-2xl max-w-[95vw] overflow-x-auto scrollbar-hide"
-            >
-              {/* Pen */}
-              <button
-                onClick={() => setTool('pen')}
-                className={`p-2 rounded-xl transition-all ${tool === 'pen' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
-                title="Kalem"
-              >
-                <Pen className="h-4 w-4" />
-              </button>
-
-              {/* Eraser */}
-              <button
-                onClick={() => setTool('eraser')}
-                className={`p-2 rounded-xl transition-all ${tool === 'eraser' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
-                title="Silgi"
-              >
-                <Eraser className="h-4 w-4" />
-              </button>
-
-              <div className="w-px h-6 bg-border mx-0.5" />
-
-              {/* Sizes */}
-              {tool === 'pen' ? PEN_SIZES.map(ps => (
-                <button
-                  key={ps.value}
-                  onClick={() => setPenSize(ps.value)}
-                  className={`p-2 rounded-xl transition-all flex items-center justify-center ${penSize === ps.value ? 'bg-primary/20 ring-2 ring-primary' : 'text-muted-foreground hover:bg-secondary'}`}
-                  title={ps.label}
-                >
-                  <div className="rounded-full bg-current" style={{ width: ps.dot, height: ps.dot }} />
-                </button>
-              )) : ERASER_SIZES.map(es => (
-                <button
-                  key={es.value}
-                  onClick={() => setEraserSize(es.value)}
-                  className={`p-2 rounded-xl transition-all flex items-center justify-center ${eraserSize === es.value ? 'bg-primary/20 ring-2 ring-primary' : 'text-muted-foreground hover:bg-secondary'}`}
-                  title={es.label}
-                >
-                  <div className="rounded-full border-2 border-current" style={{ width: es.dot, height: es.dot }} />
-                </button>
-              ))}
-
-              <div className="w-px h-6 bg-border mx-0.5" />
-
-              {/* Colors */}
-              {COLORS.map((c, i) => (
-                <button
-                  key={c.name}
-                  onClick={() => { setColorIndex(i); setTool('pen'); }}
-                  className={`rounded-xl p-1 transition-all ${colorIndex === i && tool === 'pen' ? 'ring-2 ring-white/80 scale-110' : 'hover:scale-105'}`}
-                  title={c.name}
-                >
-                  <div
-                    className="w-6 h-6 rounded-lg border border-white/20"
-                    style={{ backgroundColor: c.value, opacity: c.alpha }}
-                  />
-                </button>
-              ))}
-
-              <div className="w-px h-6 bg-border mx-0.5" />
-
-              {/* Undo */}
-              <button onClick={undo} className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all" title="Geri Al (Ctrl+Z)">
-                <Undo2 className="h-4 w-4" />
-              </button>
-
-              {/* Clear */}
-              <button onClick={clearDrawing} className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all" title="Tümünü Temizle">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </motion.div>
+            <DockableToolbar
+              tool={tool}
+              setTool={setTool}
+              penSize={penSize}
+              setPenSize={setPenSize}
+              eraserSize={eraserSize}
+              setEraserSize={setEraserSize}
+              colorIndex={colorIndex}
+              setColorIndex={setColorIndex}
+              onUndo={undo}
+              onClear={clearDrawing}
+            />
           )}
         </AnimatePresence>
 
-        {/* Send Solution button - always visible, disabled until drawing */}
+        {/* Send Solution button */}
         {showShareButton && onShareAsAnswer && (
           <div className="absolute bottom-3 right-3 z-20">
             <button
