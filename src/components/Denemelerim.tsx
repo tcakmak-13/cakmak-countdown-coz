@@ -184,20 +184,20 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     if (!val) { setEditingId(null); setScores(emptyScores(activeSubjects)); setErrors({}); }
   };
 
-  // ─── Progress Circles Data (last result) ─────────────
-  const lastResult = useMemo(() => {
-    const filtered = results.filter(r => r.exam_type === examType);
-    return filtered.length > 0 ? filtered[filtered.length - 1] : null;
-  }, [results, examType]);
-
+  // ─── Progress Circles Data (AVERAGE across ALL exams) ─────────────
   const progressData = useMemo(() => {
-    if (!lastResult) return [];
-    const subs = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[lastResult.student_area || studentArea] || AYT_BY_AREA['SAY']);
-    return subs.map(s => ({
-      label: s.label,
-      percentage: s.maxQ > 0 ? ((Number(lastResult[`${s.key}_dogru`]) || 0) / s.maxQ) * 100 : 0,
-    }));
-  }, [lastResult, examType, studentArea]);
+    const filtered = results.filter(r => r.exam_type === examType);
+    if (filtered.length === 0) return [];
+    const subs = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[studentArea] || AYT_BY_AREA['SAY']);
+    return subs.map(s => {
+      const totalCorrect = filtered.reduce((sum, r) => sum + (Number(r[`${s.key}_dogru`]) || 0), 0);
+      const avgCorrect = totalCorrect / filtered.length;
+      return {
+        label: s.label,
+        percentage: s.maxQ > 0 ? (avgCorrect / s.maxQ) * 100 : 0,
+      };
+    });
+  }, [results, examType, studentArea]);
 
   // ─── Chart Data ──────────────────────────────────────
   const filteredResults = results.filter(r => r.exam_type === examType);
@@ -271,19 +271,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
         ))}
       </div>
 
-      {/* Progress Circles */}
-      {progressData.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-5 border border-primary/20">
-          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-4">Son Deneme — Başarı Oranı</h3>
-          <div className="flex flex-wrap justify-center gap-4">
-            {progressData.map(p => (
-              <ProgressCircle key={p.label} label={p.label} percentage={p.percentage} />
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Charts */}
+      {/* ════════ 1) NET GRAFİĞİ — EN ÜSTTE ════════ */}
       {chartData.length > 0 ? (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-5 border border-primary/20 shadow-orange space-y-4">
           <div className="flex items-center justify-between">
@@ -331,6 +319,20 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
           <p className="text-sm">Henüz {examType} deneme sonucun yok.</p>
           <p className="text-xs mt-1">Yeni deneme eklemek için + butonuna tıkla.</p>
         </div>
+      )}
+
+      {/* ════════ 2) GENEL BAŞARI ORANI — GRAFİĞİN ALTINDA ════════ */}
+      {progressData.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-5 border border-primary/20">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-4">
+            Genel Başarı Oranı — {filteredResults.length} Deneme Ortalaması
+          </h3>
+          <div className="flex flex-wrap justify-center gap-4">
+            {progressData.map(p => (
+              <ProgressCircle key={p.label} label={p.label} percentage={p.percentage} />
+            ))}
+          </div>
+        </motion.div>
       )}
 
       {/* Recent results */}

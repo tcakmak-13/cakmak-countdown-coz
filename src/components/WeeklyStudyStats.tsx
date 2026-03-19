@@ -20,16 +20,23 @@ function formatHM(minutes: number): string {
   return `${h} sa ${m} dk`;
 }
 
+function toDateStr(d: Date): string {
+  return format(d, 'yyyy-MM-dd');
+}
+
 export default function WeeklyStudyStats({ studentId }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [weekData, setWeekData] = useState<{ day: string; minutes: number; date: string; isToday: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const weekDates = useMemo(() => {
+  const weekMonday = useMemo(() => {
     const base = addWeeks(new Date(), weekOffset);
-    const monday = startOfWeek(base, { weekStartsOn: 1 });
-    return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+    return startOfWeek(base, { weekStartsOn: 1 });
   }, [weekOffset]);
+
+  const weekDates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => addDays(weekMonday, i));
+  }, [weekMonday]);
 
   const isCurrentWeek = weekOffset === 0;
 
@@ -37,13 +44,15 @@ export default function WeeklyStudyStats({ studentId }: Props) {
     const fetchWeekStats = async () => {
       setLoading(true);
 
+      const weekStartStr = toDateStr(weekMonday);
+
       const { data } = await supabase
         .from('study_tasks')
         .select('day_of_week, estimated_minutes, actual_minutes, completed')
         .eq('student_id', studentId)
+        .eq('week_start_date', weekStartStr)
         .eq('completed', true);
 
-      // day_of_week: 0=Mon … 6=Sun
       const dayMap: Record<number, number> = {};
       data?.forEach((row: any) => {
         dayMap[row.day_of_week] = (dayMap[row.day_of_week] || 0) + (row.actual_minutes ?? row.estimated_minutes ?? 0);
@@ -52,7 +61,7 @@ export default function WeeklyStudyStats({ studentId }: Props) {
       const result = weekDates.map((date, i) => ({
         day: DAY_LABELS[i],
         minutes: dayMap[i] || 0,
-        date: format(date, 'yyyy-MM-dd'),
+        date: toDateStr(date),
         isToday: isToday(date),
       }));
 
@@ -61,7 +70,7 @@ export default function WeeklyStudyStats({ studentId }: Props) {
     };
 
     fetchWeekStats();
-  }, [studentId, weekDates]);
+  }, [studentId, weekMonday, weekDates]);
 
   const totalMinutes = weekData.reduce((s, d) => s + d.minutes, 0);
   const activeDays = weekData.filter(d => d.minutes > 0).length;
