@@ -371,7 +371,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setForm(f => ({ ...f, examType: type, subject: '', topic: '' }))}
+                    onClick={() => setForm(f => ({ ...f, examType: type, subject: '', topic: '', bookName: '' }))}
                     className={cn(
                       'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
                       form.examType === type
