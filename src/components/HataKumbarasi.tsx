@@ -577,6 +577,39 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                 </div>
               </div>
             </div>
+
+            {/* SORU MECLİSİ - Prominent panel, only on home */}
+            {onOpenSoruMeclisi && (
+              <button
+                onClick={onOpenSoruMeclisi}
+                className="relative w-full overflow-hidden rounded-2xl p-6 sm:p-8 text-left transition-all hover:scale-[1.02] active:scale-[0.98] group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 opacity-95" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.18),transparent_60%)]" />
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+                  {pendingCount > 0 && (
+                    <span className="h-7 min-w-[28px] px-2 rounded-full bg-white text-violet-700 text-xs font-bold flex items-center justify-center shadow-lg animate-pulse">
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
+                </div>
+                <div className="relative z-10">
+                  <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                    <Users className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="font-display text-2xl sm:text-3xl font-bold text-white mb-1 tracking-tight">
+                    SORU MECLİSİ
+                  </h3>
+                  <p className="text-sm text-white/70 max-w-xs">
+                    Topluluğa soru sor, diğer öğrencilerin çözümlerine ulaş ve birlikte öğren.
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium group-hover:bg-white/30 transition-colors">
+                    <span>Keşfet</span>
+                    <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              </button>
+            )}
           </motion.div>
         )}
 
