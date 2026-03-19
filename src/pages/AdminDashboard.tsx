@@ -202,6 +202,7 @@ export default function AdminDashboard() {
     setSuspending(null);
   };
 
+  const handleAssignCoach = async () => {
     if (!assignDialogStudent) return;
     const coachId = assignCoachId === 'none' ? null : assignCoachId;
     const { error } = await supabase.from('profiles').update({ coach_id: coachId, coach_selected: coachId ? true : false }).eq('id', assignDialogStudent.id);
