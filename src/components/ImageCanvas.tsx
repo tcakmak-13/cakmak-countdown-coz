@@ -5,6 +5,57 @@ import { toast } from 'sonner';
 import DockableToolbar, { COLORS, TOOLBAR_H, TOOLBAR_W } from './DockableToolbar';
 import type { Tool, PenSize, EraserSize, DockEdge } from './DockableToolbar';
 
+// Eraser cursor component
+function EraserCursor({ size, canvasRef, containerRef, show }: { size: number; canvasRef: React.RefObject<HTMLCanvasElement>; containerRef: React.RefObject<HTMLDivElement>; show: boolean }) {
+  const [pos, setPos] = useState({ x: 0, y: 0, visible: false });
+
+  useEffect(() => {
+    if (!show) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0]?.clientY : e.clientY;
+      if (clientX == null || clientY == null) return;
+      setPos({ x: clientX, y: clientY, visible: true });
+    };
+    const onLeave = () => setPos(p => ({ ...p, visible: false }));
+
+    container.addEventListener('mousemove', onMove);
+    container.addEventListener('touchmove', onMove as any);
+    container.addEventListener('mouseleave', onLeave);
+    return () => {
+      container.removeEventListener('mousemove', onMove);
+      container.removeEventListener('touchmove', onMove as any);
+      container.removeEventListener('mouseleave', onLeave);
+    };
+  }, [show, containerRef]);
+
+  if (!show || !pos.visible) return null;
+
+  // Scale eraser size based on canvas display ratio
+  const canvas = canvasRef.current;
+  let displaySize = size;
+  if (canvas) {
+    const rect = canvas.getBoundingClientRect();
+    displaySize = size * (rect.width / canvas.width);
+  }
+
+  return (
+    <div
+      className="pointer-events-none fixed z-[200] rounded-full border-2 border-white/80 bg-white/15"
+      style={{
+        width: displaySize,
+        height: displaySize,
+        left: pos.x - displaySize / 2,
+        top: pos.y - displaySize / 2,
+        transition: 'width 0.1s, height 0.1s',
+      }}
+    />
+  );
+}
+
 interface ImageCanvasProps {
   src: string | null;
   alt?: string;
