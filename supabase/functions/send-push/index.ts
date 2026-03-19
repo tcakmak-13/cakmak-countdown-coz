@@ -22,26 +22,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authorization: only allow calls from DB trigger (service role) or with service role key
+    // Authorization: only allow calls with service role key
     const authHeader = req.headers.get('Authorization');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    
-    // Allow: service_role bearer token OR anon key from DB trigger (forward_notification_to_push)
     const token = authHeader?.replace('Bearer ', '') || '';
-    if (token !== serviceRoleKey && token !== anonKey) {
-      // If using anon key, verify it came from a trusted source (DB webhook)
-      // For extra safety, we could check origin but DB triggers don't send origin
-    }
-    // For non-service-role tokens, verify the request has the webhook shape
     if (token !== serviceRoleKey) {
-      const body = await req.clone().json();
-      if (body.type !== 'INSERT' || !body.record) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const body = await req.json();
