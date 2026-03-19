@@ -776,6 +776,53 @@ export type Database = {
           },
         ]
       }
+      student_books: {
+        Row: {
+          book_name: string
+          created_at: string
+          current_test: number
+          exam_type: string
+          id: string
+          is_custom: boolean
+          student_id: string
+          subject: string
+          total_tests: number
+          updated_at: string
+        }
+        Insert: {
+          book_name: string
+          created_at?: string
+          current_test?: number
+          exam_type?: string
+          id?: string
+          is_custom?: boolean
+          student_id: string
+          subject: string
+          total_tests?: number
+          updated_at?: string
+        }
+        Update: {
+          book_name?: string
+          created_at?: string
+          current_test?: number
+          exam_type?: string
+          id?: string
+          is_custom?: boolean
+          student_id?: string
+          subject?: string
+          total_tests?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_books_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_tasks: {
         Row: {
           actual_minutes: number | null
