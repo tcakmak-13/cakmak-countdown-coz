@@ -128,6 +128,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
       const { error } = await supabase.from('study_tasks').update({
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       }).eq('id', editingTask.id);
       if (error) { console.error('Update error:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); return; }
       toast.success('Görev güncellendi!');
@@ -137,6 +138,7 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
         week_start_date: weekStartStr,
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       });
       if (error) { console.error('Insert error:', error); toast.error('İşlem başarısız. Lütfen tekrar deneyin.'); return; }
       toast.success('Görev eklendi!');
