@@ -300,8 +300,19 @@ export default function StudentDashboard() {
                 <h2 className="font-display text-xl font-semibold flex items-center gap-2">
                   <FolderOpen className="h-5 w-5 text-primary" /> Kaynaklarım
                 </h2>
-                <p className="text-sm text-muted-foreground">Koçunuz tarafından paylaşılan çalışma materyalleri</p>
-                <ResourceList />
+                <Tabs defaultValue="coach" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="coach">Koçların Paylaştıkları</TabsTrigger>
+                    <TabsTrigger value="library">Kitaplığım</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="coach" className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-4">Koçunuz tarafından paylaşılan çalışma materyalleri</p>
+                    <ResourceList />
+                  </TabsContent>
+                  <TabsContent value="library" className="mt-4">
+                    <MyLibrary profileId={profileId} />
+                  </TabsContent>
+                </Tabs>
               </div>
             </motion.div>
           )}
