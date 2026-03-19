@@ -404,7 +404,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           className="relative z-10 flex items-center justify-center overflow-hidden w-full h-full"
           onWheel={handleWheel}
           style={{
-            cursor: showTools && scale <= 1 ? 'crosshair' : scale > 1 ? 'grab' : 'default',
+            cursor: showTools && scale <= 1 ? (tool === 'eraser' ? 'none' : 'crosshair') : scale > 1 ? 'grab' : 'default',
             ...getContentPadding(),
             transition: 'padding 0.3s ease',
           }}
