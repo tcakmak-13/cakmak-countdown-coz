@@ -577,6 +577,39 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                 </div>
               </div>
             </div>
+
+            {/* SORU MECLİSİ - Prominent panel, only on home */}
+            {onOpenSoruMeclisi && (
+              <button
+                onClick={onOpenSoruMeclisi}
+                className="relative w-full overflow-hidden rounded-2xl p-6 sm:p-8 text-left transition-all hover:scale-[1.02] active:scale-[0.98] group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 opacity-95" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.18),transparent_60%)]" />
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+                  {pendingCount > 0 && (
+                    <span className="h-7 min-w-[28px] px-2 rounded-full bg-white text-violet-700 text-xs font-bold flex items-center justify-center shadow-lg animate-pulse">
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
+                </div>
+                <div className="relative z-10">
+                  <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4">
+                    <Users className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="font-display text-2xl sm:text-3xl font-bold text-white mb-1 tracking-tight">
+                    SORU MECLİSİ
+                  </h3>
+                  <p className="text-sm text-white/70 max-w-xs">
+                    Topluluğa soru sor, diğer öğrencilerin çözümlerine ulaş ve birlikte öğren.
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium group-hover:bg-white/30 transition-colors">
+                    <span>Keşfet</span>
+                    <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              </button>
+            )}
           </motion.div>
         )}
 
@@ -994,33 +1027,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Soru Meclisi - navigation card */}
-      {onOpenSoruMeclisi && (
-        <div className="mt-8">
-          <button
-            onClick={onOpenSoruMeclisi}
-            className="relative w-full flex items-center justify-between px-5 py-4 rounded-xl bg-card border border-primary/20 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.12)] transition-all duration-300 group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div className="text-left">
-                <span className="font-display font-bold text-base text-foreground block leading-tight">Soru Meclisi</span>
-                <span className="text-[11px] text-muted-foreground">Topluluğa soru sor, çözümlere ulaş</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {pendingCount > 0 && (
-                <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-orange animate-scale-in">
-                  {pendingCount > 99 ? '99+' : pendingCount}
-                </span>
-              )}
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-          </button>
-        </div>
-      )}
+      {/* Soru Meclisi card removed from here - only shown on home view */}
     </div>
   );
 }
