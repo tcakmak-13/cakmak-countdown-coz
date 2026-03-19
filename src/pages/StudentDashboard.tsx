@@ -24,7 +24,9 @@ import WeeklyStudyStats from '@/components/WeeklyStudyStats';
 import ThemeToggle from '@/components/ThemeToggle';
 import QuestionFlow from '@/components/QuestionFlow';
 import ResourceList from '@/components/ResourceList';
+import MyLibrary from '@/components/MyLibrary';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MeclisPrefill {
   imageUrl: string;
