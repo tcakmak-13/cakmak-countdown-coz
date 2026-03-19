@@ -369,6 +369,6 @@ export default function CoachDashboard() {
       </nav>
     </div>
       <ImageLightbox src={lightboxSrc} alt="Profil Fotoğrafı" onClose={() => setLightboxSrc(null)} />
-    </div>
+    </>
   );
 }

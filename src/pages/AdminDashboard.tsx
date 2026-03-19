@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   };
 
   const loadStudents = async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active');
+    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active, avatar_url');
     if (data) {
       const coachIds = new Set(coaches.map(c => c.id));
       setStudents(data.filter((s: any) => s.id !== profileId && !coachIds.has(s.id)) as StudentProfile[]);
