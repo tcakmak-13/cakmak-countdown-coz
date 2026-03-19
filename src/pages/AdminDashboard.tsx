@@ -50,7 +50,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [coaches, setCoaches] = useState<CoachProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'coach-edit' | 'appointments' | 'coach-detail'>('overview');
+  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'appointments' | 'coach-detail'>('overview');
   const [selectedCoach, setSelectedCoach] = useState<CoachProfile | null>(null);
 
   // Student creation
