@@ -69,7 +69,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
       toast.error('Lütfen ders ve kitap seçin');
       return;
     }
-    const total = parseInt(totalTests) || 1;
 
     setSaving(true);
     try {
@@ -79,7 +78,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
         subject: selectedSubject,
         book_name: bookName,
         is_custom: isCustom,
-        total_tests: total,
         current_test: 0,
       } as any);
 
