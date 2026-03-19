@@ -266,7 +266,7 @@ export default function StudentDashboard() {
 
           {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => handleTabChange('soru-meclisi')} />
+              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => handleTabChange('soru-meclisi')} onAskInMeclis={(data) => { setMeclisPrefill(data); handleTabChange('soru-meclisi'); }} />
             </motion.div>
           )}
 
