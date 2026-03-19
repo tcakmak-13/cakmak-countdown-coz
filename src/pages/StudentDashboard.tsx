@@ -71,6 +71,7 @@ export default function StudentDashboard() {
   const [usernameSaving, setUsernameSaving] = useState(false);
   const [hasUsername, setHasUsername] = useState<boolean>(!!profile?.username);
   const [currentUsername, setCurrentUsername] = useState<string>(profile?.username || '');
+  const [meclisPrefill, setMeclisPrefill] = useState<MeclisPrefill | null>(null);
 
   useEffect(() => {
     setHasUsername(!!profile?.username);
