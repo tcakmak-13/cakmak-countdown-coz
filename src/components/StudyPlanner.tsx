@@ -152,11 +152,14 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   const progressPercent = targetMinutes > 0 ? Math.round((completedMinutes / targetMinutes) * 100) : 0;
 
+  const filteredBooks = studentBooks.filter(b => b.subject === form.subject);
+
   const handleSave = async () => {
     if (editingTask) {
       await supabase.from('study_tasks').update({
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       }).eq('id', editingTask.id);
     } else {
       await supabase.from('study_tasks').insert({
@@ -164,9 +167,10 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
         week_start_date: weekStartStr,
         subject: form.subject, topic: form.topic,
         estimated_minutes: form.estimatedMinutes, description: form.description,
+        book_name: form.bookName || null,
       });
     }
-    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' });
+    setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' });
     setEditingTask(null);
     setDialogOpen(false);
     fetchTasks();
