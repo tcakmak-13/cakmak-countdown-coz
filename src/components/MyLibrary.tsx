@@ -35,7 +35,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
   const [selectedExam, setSelectedExam] = useState('TYT');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedBook, setSelectedBook] = useState('');
-  const [totalTests, setTotalTests] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [customBookName, setCustomBookName] = useState('');
 
