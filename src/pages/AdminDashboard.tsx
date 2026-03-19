@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ImageLightbox from '@/components/ImageLightbox';
 import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -34,6 +35,7 @@ interface StudentProfile {
   target_department: string | null;
   coach_id: string | null;
   is_active: boolean;
+  avatar_url: string | null;
 }
 
 interface CoachProfile {
@@ -77,6 +79,7 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [suspending, setSuspending] = useState<string | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Coach assignment
   const [assignDialogStudent, setAssignDialogStudent] = useState<StudentProfile | null>(null);
@@ -97,7 +100,7 @@ export default function AdminDashboard() {
   };
 
   const loadStudents = async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active');
+    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active, avatar_url');
     if (data) {
       const coachIds = new Set(coaches.map(c => c.id));
       setStudents(data.filter((s: any) => s.id !== profileId && !coachIds.has(s.id)) as StudentProfile[]);
@@ -242,7 +245,7 @@ export default function AdminDashboard() {
   const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management' || tab === 'coach-detail') ? 'management' : tab;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <><div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -308,9 +311,13 @@ export default function AdminDashboard() {
                     return (
                       <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground text-sm font-bold shadow-orange">
-                            {c.full_name?.charAt(0) || '?'}
-                          </div>
+                          {c.avatar_url ? (
+                            <img src={c.avatar_url} alt={c.full_name} className="h-8 w-8 rounded-full object-cover cursor-pointer ring-2 ring-primary/20 hover:ring-primary/50 transition-all" onClick={() => setLightboxSrc(c.avatar_url)} />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground text-sm font-bold shadow-orange">
+                              {c.full_name?.charAt(0) || '?'}
+                            </div>
+                          )}
                           <span className="text-sm font-medium">{c.full_name || c.username}</span>
                         </div>
                         <span className="text-sm text-primary font-semibold">{count} öğrenci</span>
@@ -360,9 +367,18 @@ export default function AdminDashboard() {
                 {students.map(s => (
                   <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''} ${!s.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0 min-h-[44px]">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${s.is_active ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
-                        {s.full_name?.charAt(0) || '?'}
-                      </div>
+                      {s.avatar_url ? (
+                        <img
+                          src={s.avatar_url}
+                          alt={s.full_name}
+                          className={`h-10 w-10 rounded-full object-cover shrink-0 cursor-pointer ring-2 transition-all ${s.is_active ? 'ring-primary/20 hover:ring-primary/50' : 'ring-destructive/20'}`}
+                          onClick={(e) => { e.stopPropagation(); setLightboxSrc(s.avatar_url); }}
+                        />
+                      ) : (
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${s.is_active ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
+                          {s.full_name?.charAt(0) || '?'}
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate flex items-center gap-1">
                           {s.full_name || s.username || 'İsimsiz'}
@@ -424,9 +440,18 @@ export default function AdminDashboard() {
                 {coaches.map(c => (
                   <div key={c.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group ${!c.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedCoach(c); setTab('coach-detail'); }} className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
-                        {c.full_name?.charAt(0) || '?'}
-                      </div>
+                      {c.avatar_url ? (
+                        <img
+                          src={c.avatar_url}
+                          alt={c.full_name}
+                          className="h-10 w-10 rounded-full object-cover shrink-0 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/50 transition-all shadow-orange"
+                          onClick={(e) => { e.stopPropagation(); setLightboxSrc(c.avatar_url); }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
+                          {c.full_name?.charAt(0) || '?'}
+                        </div>
+                      )}
                       <div className="min-w-0 text-left">
                         <p className="text-sm font-medium truncate flex items-center gap-1">
                           {c.full_name || c.username}
@@ -587,5 +612,7 @@ export default function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+      <ImageLightbox src={lightboxSrc} alt="Profil Fotoğrafı" onClose={() => setLightboxSrc(null)} />
+    </>
   );
 }

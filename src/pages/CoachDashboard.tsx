@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
+import ImageLightbox from '@/components/ImageLightbox';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -34,6 +35,7 @@ interface StudentProfile {
   username: string | null;
   target_university: string | null;
   target_department: string | null;
+  avatar_url: string | null;
 }
 
 export default function CoachDashboard() {
@@ -44,6 +46,7 @@ export default function CoachDashboard() {
   const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
   const [resourceRefresh, setResourceRefresh] = useState(0);
   const unreadCount = useUnreadMessages(profileId);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Announcement
   const [showAnnouncement, setShowAnnouncement] = useState(false);
@@ -95,7 +98,7 @@ export default function CoachDashboard() {
     if (!profileId) return;
     supabase
       .from('profiles')
-      .select('id, full_name, area, grade, username, target_university, target_department')
+      .select('id, full_name, area, grade, username, target_university, target_department, avatar_url')
       .eq('coach_id', profileId)
       .then(({ data }) => {
         if (data) setStudents(data as StudentProfile[]);
@@ -145,7 +148,7 @@ export default function CoachDashboard() {
   const activeNav = (tab === 'schedule' || tab === 'profile') ? 'list' : tab;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <><div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -255,9 +258,18 @@ export default function CoachDashboard() {
                     onClick={() => { setSelectedStudent(s); setTab('schedule'); }}
                     className="glass-card rounded-2xl p-4 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left"
                   >
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
-                      {s.full_name?.charAt(0) || '?'}
-                    </div>
+                    {s.avatar_url ? (
+                      <img
+                        src={s.avatar_url}
+                        alt={s.full_name}
+                        className="h-12 w-12 rounded-full object-cover shrink-0 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/50 transition-all"
+                        onClick={(e) => { e.stopPropagation(); setLightboxSrc(s.avatar_url); }}
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
+                        {s.full_name?.charAt(0) || '?'}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
                       <p className="text-xs text-muted-foreground">{s.username ? `@${s.username}` : ''} — {s.area ?? 'SAY'} — {s.grade ?? '12. Sınıf'}</p>
@@ -356,5 +368,7 @@ export default function CoachDashboard() {
         </div>
       </nav>
     </div>
+      <ImageLightbox src={lightboxSrc} alt="Profil Fotoğrafı" onClose={() => setLightboxSrc(null)} />
+    </>
   );
 }
