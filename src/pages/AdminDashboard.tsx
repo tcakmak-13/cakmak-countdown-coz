@@ -379,13 +379,16 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {students.map(s => (
-                  <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''}`}>
+                  <div key={s.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group transition-colors ${selectedStudent?.id === s.id ? 'bg-primary/10 border border-primary/30' : ''} ${!s.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedStudent(s); setTab('schedule'); }} className="flex items-center gap-3 flex-1 min-w-0 min-h-[44px]">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${s.is_active ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                         {s.full_name?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{s.full_name || s.username || 'İsimsiz'}</p>
+                        <p className="text-sm font-medium truncate flex items-center gap-1">
+                          {s.full_name || s.username || 'İsimsiz'}
+                          {!s.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
                         </p>
@@ -394,6 +397,14 @@ export default function AdminDashboard() {
                     <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
                       <button onClick={() => { setAssignDialogStudent(s); setAssignCoachId(s.coach_id || 'none'); }} className="h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10" title="Koç ata">
                         <UserPlus className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleActive(s.id, s.full_name || s.username || 'Öğrenci', s.is_active)}
+                        disabled={suspending === s.id}
+                        className={`h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center transition-colors ${s.is_active ? 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10'}`}
+                        title={s.is_active ? 'Hesabı Dondur' : 'Hesabı Aktif Et'}
+                      >
+                        {s.is_active ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                       </button>
                       <button onClick={() => setUserToDelete({ id: s.id, name: s.full_name || s.username || 'Öğrenci', type: 'student' })} className="h-10 w-10 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Sil">
                         <Trash2 className="h-4 w-4" />
