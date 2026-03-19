@@ -245,7 +245,7 @@ export default function AdminDashboard() {
   const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management' || tab === 'coach-detail') ? 'management' : tab;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <><div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
