@@ -135,6 +135,17 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
   useEffect(() => { fetchTasks(); fetchTimerLogs(); }, [studentId, weekStartStr, fetchTasks]);
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      const { data } = await supabase
+        .from('student_books')
+        .select('id, book_name, subject, exam_type')
+        .eq('student_id', studentId);
+      if (data) setStudentBooks(data as StudentBook[]);
+    };
+    fetchBooks();
+  }, [studentId]);
+
   const dayTasks = tasks.filter(t => t.day_of_week === selectedDayIndex);
   const targetMinutes = dayTasks.reduce((sum, t) => sum + t.estimated_minutes, 0);
   const completedMinutes = dayTasks.filter(t => t.completed).reduce((sum, t) => sum + (t.actual_minutes ?? t.estimated_minutes), 0);
