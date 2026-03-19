@@ -443,19 +443,32 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {coaches.map(c => (
-                  <div key={c.id} className="glass-card rounded-2xl p-4 flex items-center gap-3 group">
+                  <div key={c.id} className={`glass-card rounded-2xl p-4 flex items-center gap-3 group ${!c.is_active ? 'opacity-60' : ''}`}>
                     <button onClick={() => { setSelectedCoach(c); setTab('coach-detail'); }} className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0 shadow-orange">
                         {c.full_name?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0 text-left">
-                        <p className="text-sm font-medium truncate">{c.full_name || c.username}</p>
+                        <p className="text-sm font-medium truncate flex items-center gap-1">
+                          {c.full_name || c.username}
+                          {!c.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
+                        </p>
                         <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
                       </div>
                     </button>
-                    <button onClick={() => setUserToDelete({ id: c.id, name: c.full_name || c.username || 'Koç', type: 'coach' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0" title="Koçu sil">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      <button
+                        onClick={() => handleToggleActive(c.id, c.full_name || c.username || 'Koç', c.is_active)}
+                        disabled={suspending === c.id}
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${c.is_active ? 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10'}`}
+                        title={c.is_active ? 'Hesabı Dondur' : 'Hesabı Aktif Et'}
+                      >
+                        {c.is_active ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                      </button>
+                      <button onClick={() => setUserToDelete({ id: c.id, name: c.full_name || c.username || 'Koç', type: 'coach' })} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all shrink-0" title="Koçu sil">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {coaches.length === 0 && <p className="text-sm text-muted-foreground py-4">Henüz koç yok.</p>}
