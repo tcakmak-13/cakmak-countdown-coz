@@ -446,7 +446,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
 
       {/* ── Add Task Button + Dialog ── */}
       {!readOnly && !isArchive && (
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '' }); } }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingTask(null); setForm({ examType: 'TYT', subject: '', topic: '', estimatedMinutes: 30, description: '', bookName: '' }); } }}>
           <DialogTrigger asChild>
             <Button className="w-full mt-5 bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 h-12 text-base font-bold rounded-2xl">
               <Plus className="h-5 w-5 mr-2" /> Görev Ekle
