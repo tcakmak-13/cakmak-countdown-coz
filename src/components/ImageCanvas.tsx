@@ -295,10 +295,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   }, [src, onClose, undo]);
 
   const handleShare = useCallback(async () => {
+    if (sharingRef.current) return; // prevent double-tap
     const drawCanvas = drawCanvasRef.current;
     const img = imageRef.current;
     if (!drawCanvas || !img || !onShareAsAnswer) return;
 
+    sharingRef.current = true;
     setSharing(true);
     try {
       const exportCanvas = document.createElement('canvas');
@@ -314,12 +316,14 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         exportCanvas.toBlob(b => b ? resolve(b) : reject(new Error('Blob oluşturulamadı')), 'image/png', 1);
       });
 
-      onShareAsAnswer(blob);
+      await onShareAsAnswer(blob);
     } catch (err: any) {
       console.error('Görsel oluşturma hatası:', err);
       toast.error('Görsel oluşturulamadı. Lütfen tekrar deneyin.');
+      sharingRef.current = false;
+      setSharing(false);
     }
-    setSharing(false);
+    // Don't reset sharing — component will unmount on navigation
   }, [onShareAsAnswer]);
 
   const resetView = useCallback(() => setScale(1), []);
