@@ -65,6 +65,13 @@ interface AISolution {
   cached?: boolean;
 }
 
+interface PrefillData {
+  imageUrl: string;
+  examType: string;
+  subject: string;
+  note?: string;
+}
+
 interface QuestionFlowProps {
   currentProfileId: string;
   currentName: string;
@@ -72,9 +79,11 @@ interface QuestionFlowProps {
   username?: string;
   usernameChangedAt?: string | null;
   onUsernameChanged?: (newUsername: string) => void;
+  prefillData?: PrefillData;
+  onPrefillConsumed?: () => void;
 }
 
-export default function QuestionFlow({ currentProfileId, currentName, currentRole, username, usernameChangedAt, onUsernameChanged }: QuestionFlowProps) {
+export default function QuestionFlow({ currentProfileId, currentName, currentRole, username, usernameChangedAt, onUsernameChanged, prefillData, onPrefillConsumed }: QuestionFlowProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -272,6 +281,34 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   loadQuestionsRef.current = loadQuestions;
 
   useEffect(() => { loadQuestions(); }, [loadQuestions]);
+
+  // Handle prefill from Hata Kumbarası
+  useEffect(() => {
+    if (!prefillData) return;
+    const fetchAndPrefill = async () => {
+      try {
+        const response = await fetch(prefillData.imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'prefill_question.jpg', { type: blob.type || 'image/jpeg' });
+        setNewImage(file);
+        setNewImagePreview(URL.createObjectURL(file));
+        setNewCategory(prefillData.examType);
+        setNewSubject(prefillData.subject);
+        setNewDescription(prefillData.note || '');
+        setWizardStep(3);
+        setShowWizard(true);
+      } catch (err) {
+        console.error('Prefill error:', err);
+        setNewCategory(prefillData.examType);
+        setNewSubject(prefillData.subject);
+        setNewDescription(prefillData.note || '');
+        setWizardStep(1);
+        setShowWizard(true);
+      }
+      onPrefillConsumed?.();
+    };
+    fetchAndPrefill();
+  }, [prefillData]);
 
   // Feed is now newest-first, so scroll to top on load
   useEffect(() => {

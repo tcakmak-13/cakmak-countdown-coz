@@ -7,7 +7,7 @@ import {
   ArrowLeft, Plus, Check, X, Trash2, ZoomIn,
   BookOpen, Calculator, Atom, FlaskConical, Dna, Globe2,
   Landmark, ScrollText, Brain, BookMarked, Languages, PenTool,
-  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, Bot
+  Triangle, Clock, StickyNote, Save, Users, ChevronRight, Sparkles, Bot, MessageCircleQuestion
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -77,9 +77,10 @@ interface Props {
   currentName?: string;
   currentRole?: string;
   onOpenSoruMeclisi?: () => void;
+  onAskInMeclis?: (data: { imageUrl: string; examType: string; subject: string; note?: string }) => void;
 }
 
-export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi }: Props) {
+export default function HataKumbarasi({ studentId, currentProfileId, currentName, currentRole, onOpenSoruMeclisi, onAskInMeclis }: Props) {
   const { user } = useAuth();
   const [view, setView] = useState<View>('home');
   const [examType, setExamType] = useState<'TYT' | 'AYT'>('TYT');
@@ -763,6 +764,25 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                       >
                         {q.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
                       </button>
+
+                      {/* Soru Meclisine Sor button */}
+                      {onAskInMeclis && getImageUrl(q) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAskInMeclis({
+                              imageUrl: getImageUrl(q),
+                              examType: q.exam_type,
+                              subject: q.subject,
+                              note: q.note || undefined,
+                            });
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-lg bg-violet-500/15 text-violet-500 dark:text-violet-400 hover:bg-violet-500/25 transition-colors"
+                        >
+                          <MessageCircleQuestion className="h-3.5 w-3.5" />
+                          Meclise Sor
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

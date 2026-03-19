@@ -26,6 +26,13 @@ import QuestionFlow from '@/components/QuestionFlow';
 import ResourceList from '@/components/ResourceList';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
+interface MeclisPrefill {
+  imageUrl: string;
+  examType: string;
+  subject: string;
+  note?: string;
+}
+
 type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar';
 
 const TAB_TITLES: Record<Tab, string> = {
@@ -64,6 +71,7 @@ export default function StudentDashboard() {
   const [usernameSaving, setUsernameSaving] = useState(false);
   const [hasUsername, setHasUsername] = useState<boolean>(!!profile?.username);
   const [currentUsername, setCurrentUsername] = useState<string>(profile?.username || '');
+  const [meclisPrefill, setMeclisPrefill] = useState<MeclisPrefill | null>(null);
 
   useEffect(() => {
     setHasUsername(!!profile?.username);
@@ -258,7 +266,7 @@ export default function StudentDashboard() {
 
           {tab === 'hata-kumbarasi' && profileId && (
             <motion.div key="hata-kumbarasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => handleTabChange('soru-meclisi')} />
+              <HataKumbarasi studentId={profileId} currentProfileId={profileId} currentName={profile.full_name} currentRole={role} onOpenSoruMeclisi={() => handleTabChange('soru-meclisi')} onAskInMeclis={(data) => { setMeclisPrefill(data); handleTabChange('soru-meclisi'); }} />
             </motion.div>
           )}
 
@@ -278,6 +286,8 @@ export default function StudentDashboard() {
                 username={currentUsername}
                 usernameChangedAt={profile?.username_changed_at}
                 onUsernameChanged={(newName) => setCurrentUsername(newName)}
+                prefillData={meclisPrefill || undefined}
+                onPrefillConsumed={() => setMeclisPrefill(null)}
               />
             </motion.div>
           )}

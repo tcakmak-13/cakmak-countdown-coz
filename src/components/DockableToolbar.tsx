@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Pen, Eraser, Undo2, Trash2, GripVertical } from 'lucide-react';
 
@@ -42,7 +42,6 @@ interface DockableToolbarProps {
   onClear: () => void;
 }
 
-const DOCK_SNAP = 60; // px from edge to snap
 const EDGE_MARGIN = 8;
 
 export default function DockableToolbar({
@@ -57,7 +56,7 @@ export default function DockableToolbar({
 
   const isVertical = dockedEdge === 'left' || dockedEdge === 'right';
 
-  // Calculate docked position
+  // Calculate docked position - full edge coverage
   const getDockedStyle = useCallback((): React.CSSProperties => {
     const base: React.CSSProperties = { position: 'fixed', zIndex: 50, transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4,0,0.2,1)' };
     switch (dockedEdge) {
@@ -72,10 +71,16 @@ export default function DockableToolbar({
     }
   }, [dockedEdge, isDragging]);
 
+  const isButtonElement = (el: HTMLElement): boolean => {
+    if (el.tagName === 'BUTTON' || el.tagName === 'SVG' || el.tagName === 'path' || el.tagName === 'line' || el.tagName === 'polyline' || el.tagName === 'circle') return true;
+    if (el.closest('button')) return true;
+    return false;
+  };
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    // Only allow drag from the grip handle
     const target = e.target as HTMLElement;
-    if (!target.closest('[data-drag-handle]')) return;
+    // Allow drag from any non-button area (empty space or grip handle)
+    if (isButtonElement(target) && !target.closest('[data-drag-handle]')) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -101,7 +106,7 @@ export default function DockableToolbar({
     });
   }, [isDragging]);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+  const handlePointerUp = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
     dragStartRef.current = null;
@@ -124,10 +129,7 @@ export default function DockableToolbar({
     ];
     distances.sort((a, b) => a[1] - b[1]);
     
-    const closest = distances[0][0];
-    if (distances[0][1] < DOCK_SNAP * 3) {
-      setDockedEdge(closest);
-    }
+    setDockedEdge(distances[0][0]);
     setPos(null);
   }, [isDragging, pos]);
 
@@ -142,6 +144,8 @@ export default function DockableToolbar({
   const containerClass = isVertical && !pos
     ? 'flex flex-col items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-2xl px-2 py-3 shadow-2xl'
     : 'flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border rounded-2xl px-3 py-2 shadow-2xl max-w-[95vw] overflow-x-auto scrollbar-hide';
+
+  const dividerClass = isVertical && !pos ? 'w-6 h-px bg-border' : 'w-px h-6 bg-border mx-0.5';
 
   return (
     <motion.div
@@ -164,7 +168,7 @@ export default function DockableToolbar({
         <GripVertical className="h-4 w-4" />
       </div>
 
-      <div className={`w-px h-6 bg-border ${isVertical && !pos ? 'w-6 h-px' : ''} mx-0.5`} />
+      <div className={dividerClass} />
 
       {/* Pen */}
       <button
@@ -184,7 +188,7 @@ export default function DockableToolbar({
         <Eraser className="h-4 w-4" />
       </button>
 
-      <div className={`w-px h-6 bg-border ${isVertical && !pos ? 'w-6 h-px' : ''} mx-0.5`} />
+      <div className={dividerClass} />
 
       {/* Sizes */}
       {tool === 'pen' ? PEN_SIZES.map(ps => (
@@ -207,7 +211,7 @@ export default function DockableToolbar({
         </button>
       ))}
 
-      <div className={`w-px h-6 bg-border ${isVertical && !pos ? 'w-6 h-px' : ''} mx-0.5`} />
+      <div className={dividerClass} />
 
       {/* Colors */}
       {COLORS.map((c, i) => (
@@ -224,7 +228,7 @@ export default function DockableToolbar({
         </button>
       ))}
 
-      <div className={`w-px h-6 bg-border ${isVertical && !pos ? 'w-6 h-px' : ''} mx-0.5`} />
+      <div className={dividerClass} />
 
       {/* Undo */}
       <button onClick={onUndo} className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all" title="Geri Al">
