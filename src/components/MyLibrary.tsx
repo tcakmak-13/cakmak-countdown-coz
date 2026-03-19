@@ -107,8 +107,8 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
     setCustomBookName('');
   };
 
-  const handleUpdateProgress = async (book: StudentBook, newTest: number) => {
-    const clamped = Math.max(0, Math.min(newTest, book.total_tests));
+  const handleUpdateCurrentTest = async (book: StudentBook, newTest: number) => {
+    const clamped = Math.max(0, newTest);
     try {
       const { error } = await supabase
         .from('student_books')
@@ -120,26 +120,6 @@ export default function MyLibrary({ profileId }: MyLibraryProps) {
     } catch (err) {
       console.error('Error updating progress:', err);
       toast.error('İlerleme kaydedilemedi');
-    }
-  };
-
-  const handleUpdateTotalTests = async (book: StudentBook, newTotal: number) => {
-    const total = Math.max(1, newTotal);
-    try {
-      const { error } = await supabase
-        .from('student_books')
-        .update({
-          total_tests: total,
-          current_test: Math.min(book.current_test, total),
-          updated_at: new Date().toISOString(),
-        } as any)
-        .eq('id', book.id);
-
-      if (error) throw error;
-      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, total_tests: total, current_test: Math.min(b.current_test, total) } : b));
-    } catch (err) {
-      console.error('Error updating total:', err);
-      toast.error('Güncelleme başarısız');
     }
   };
 
