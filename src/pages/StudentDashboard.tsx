@@ -286,6 +286,8 @@ export default function StudentDashboard() {
                 username={currentUsername}
                 usernameChangedAt={profile?.username_changed_at}
                 onUsernameChanged={(newName) => setCurrentUsername(newName)}
+                prefillData={meclisPrefill || undefined}
+                onPrefillConsumed={() => setMeclisPrefill(null)}
               />
             </motion.div>
           )}

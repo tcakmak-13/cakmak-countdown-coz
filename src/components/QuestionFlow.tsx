@@ -74,7 +74,7 @@ interface QuestionFlowProps {
   onUsernameChanged?: (newUsername: string) => void;
 }
 
-export default function QuestionFlow({ currentProfileId, currentName, currentRole, username, usernameChangedAt, onUsernameChanged }: QuestionFlowProps) {
+export default function QuestionFlow({ currentProfileId, currentName, currentRole, username, usernameChangedAt, onUsernameChanged, prefillData, onPrefillConsumed }: QuestionFlowProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
 

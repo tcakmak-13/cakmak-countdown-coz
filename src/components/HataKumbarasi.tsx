@@ -764,6 +764,25 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
                       >
                         {q.status === 'learned' ? '✓ Öğrendim' : '✗ Hala Çözemedim'}
                       </button>
+
+                      {/* Soru Meclisine Sor button */}
+                      {onAskInMeclis && getImageUrl(q) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAskInMeclis({
+                              imageUrl: getImageUrl(q),
+                              examType: q.exam_type,
+                              subject: q.subject,
+                              note: q.note || undefined,
+                            });
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-lg bg-violet-500/15 text-violet-500 dark:text-violet-400 hover:bg-violet-500/25 transition-colors"
+                        >
+                          <MessageCircleQuestion className="h-3.5 w-3.5" />
+                          Meclise Sor
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
