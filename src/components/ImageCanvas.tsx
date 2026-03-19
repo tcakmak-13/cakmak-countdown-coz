@@ -431,7 +431,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
               )}
               <span>Çözümü Gönder</span>
             </button>
-          </motion.div>
+          </div>
         )}
       </motion.div>
     </AnimatePresence>
