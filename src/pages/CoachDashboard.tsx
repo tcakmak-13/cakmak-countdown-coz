@@ -35,6 +35,7 @@ interface StudentProfile {
   username: string | null;
   target_university: string | null;
   target_department: string | null;
+  avatar_url: string | null;
 }
 
 export default function CoachDashboard() {
