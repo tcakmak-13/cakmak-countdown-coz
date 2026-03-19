@@ -309,6 +309,9 @@ export default function WeeklyBoardPlanner({ studentId }: Props) {
                         {task.topic && (
                           <p className="text-[10px] text-primary/80 truncate mt-0.5">{task.topic}</p>
                         )}
+                        {task.book_name && (
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">📖 {task.book_name}</p>
+                        )}
                         <div className="flex items-center gap-1 mt-1">
                           <Clock className="h-3 w-3 text-muted-foreground" />
                           <span className="text-[10px] text-muted-foreground font-medium">{formatDuration(task.estimated_minutes)}</span>
