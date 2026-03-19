@@ -98,7 +98,7 @@ export default function CoachDashboard() {
     if (!profileId) return;
     supabase
       .from('profiles')
-      .select('id, full_name, area, grade, username, target_university, target_department')
+      .select('id, full_name, area, grade, username, target_university, target_department, avatar_url')
       .eq('coach_id', profileId)
       .then(({ data }) => {
         if (data) setStudents(data as StudentProfile[]);
