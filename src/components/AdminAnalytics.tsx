@@ -36,8 +36,8 @@ interface CriticalAlert {
 
 const HEATMAP_COLORS = {
   active: 'bg-green-500',
-  partial: 'bg-orange-500',
-  inactive: 'bg-red-500',
+  partial: 'bg-yellow-400',
+  inactive: 'bg-red-600',
   noData: 'bg-muted/30',
 };
 
