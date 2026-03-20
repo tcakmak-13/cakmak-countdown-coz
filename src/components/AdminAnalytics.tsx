@@ -306,10 +306,25 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
       {/* Net Comparison Chart */}
       {studentsWithNames.length > 0 && netChartData.length > 0 && (
         <div className="glass-card rounded-2xl p-5">
-          <h3 className="font-display font-bold text-base mb-4 flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-primary" />
-            Net Kıyaslama Grafiği
-          </h3>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 className="font-display font-bold text-base flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-primary" />
+              Net Kıyaslama Grafiği
+            </h3>
+            <ToggleGroup
+              type="single"
+              value={chartExamType}
+              onValueChange={(v) => { if (v) setChartExamType(v as 'TYT' | 'AYT'); }}
+              className="bg-muted rounded-lg p-0.5"
+            >
+              <ToggleGroupItem value="TYT" className="text-xs px-4 py-1.5 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                TYT
+              </ToggleGroupItem>
+              <ToggleGroupItem value="AYT" className="text-xs px-4 py-1.5 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                AYT
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={netChartData}>
