@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, TrendingDown, Clock, Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface StudentProfile {
   id: string;
@@ -60,6 +61,7 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
   const [allTasks, setAllTasks] = useState<StudyTask[]>([]);
   const [allResults, setAllResults] = useState<DenemeResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartExamType, setChartExamType] = useState<'TYT' | 'AYT'>('TYT');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -101,12 +103,12 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
 
   // --- Net comparison chart ---
   const netChartData = useMemo(() => {
+    const filtered = allResults.filter(r => r.exam_type === chartExamType);
     const studentResults: Record<string, DenemeResult[]> = {};
     students.forEach(s => {
-      studentResults[s.id] = allResults.filter(r => r.student_id === s.id);
+      studentResults[s.id] = filtered.filter(r => r.student_id === s.id);
     });
 
-    // Find max exam count
     const maxExams = Math.max(...Object.values(studentResults).map(r => r.length), 1);
     const chartData: any[] = [];
 
@@ -122,7 +124,7 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
     }
 
     return chartData;
-  }, [students, allResults]);
+  }, [students, allResults, chartExamType]);
 
   // --- Critical alerts ---
   const alerts = useMemo<CriticalAlert[]>(() => {
@@ -304,10 +306,25 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
       {/* Net Comparison Chart */}
       {studentsWithNames.length > 0 && netChartData.length > 0 && (
         <div className="glass-card rounded-2xl p-5">
-          <h3 className="font-display font-bold text-base mb-4 flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-primary" />
-            Net Kıyaslama Grafiği
-          </h3>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 className="font-display font-bold text-base flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-primary" />
+              Net Kıyaslama Grafiği
+            </h3>
+            <ToggleGroup
+              type="single"
+              value={chartExamType}
+              onValueChange={(v) => { if (v) setChartExamType(v as 'TYT' | 'AYT'); }}
+              className="bg-muted rounded-lg p-0.5"
+            >
+              <ToggleGroupItem value="TYT" className="text-xs px-4 py-1.5 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                TYT
+              </ToggleGroupItem>
+              <ToggleGroupItem value="AYT" className="text-xs px-4 py-1.5 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                AYT
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={netChartData}>
