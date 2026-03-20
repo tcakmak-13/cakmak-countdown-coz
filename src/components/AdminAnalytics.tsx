@@ -61,6 +61,7 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
   const [allTasks, setAllTasks] = useState<StudyTask[]>([]);
   const [allResults, setAllResults] = useState<DenemeResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartExamType, setChartExamType] = useState<'TYT' | 'AYT'>('TYT');
 
   useEffect(() => {
     const fetchData = async () => {
