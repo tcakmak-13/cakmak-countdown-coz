@@ -103,12 +103,12 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
 
   // --- Net comparison chart ---
   const netChartData = useMemo(() => {
+    const filtered = allResults.filter(r => r.exam_type === chartExamType);
     const studentResults: Record<string, DenemeResult[]> = {};
     students.forEach(s => {
-      studentResults[s.id] = allResults.filter(r => r.student_id === s.id);
+      studentResults[s.id] = filtered.filter(r => r.student_id === s.id);
     });
 
-    // Find max exam count
     const maxExams = Math.max(...Object.values(studentResults).map(r => r.length), 1);
     const chartData: any[] = [];
 
@@ -124,7 +124,7 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
     }
 
     return chartData;
-  }, [students, allResults]);
+  }, [students, allResults, chartExamType]);
 
   // --- Critical alerts ---
   const alerts = useMemo<CriticalAlert[]>(() => {
