@@ -356,7 +356,7 @@ export default function KonuTakip({ studentId, studentArea, readOnly = false }: 
                             <span className="text-xs text-muted-foreground/50 font-mono">
                               {ti + 1}/{subjectTopics.length}
                             </span>
-                          </motion.button>
+                          </motion.div>
                         );
                       })}
                     </div>
