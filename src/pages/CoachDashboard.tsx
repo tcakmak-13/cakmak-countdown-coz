@@ -146,7 +146,7 @@ export default function CoachDashboard() {
   };
 
   // Bottom nav active tab (map sub-tabs to main nav)
-  const activeNav = (tab === 'schedule' || tab === 'profile') ? 'list' : tab;
+  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'exam-analysis') ? 'list' : tab;
 
   return (
     <><div className="min-h-screen bg-background pb-20">
