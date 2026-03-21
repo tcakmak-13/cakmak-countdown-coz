@@ -262,6 +262,17 @@ export default function StudentDashboard() {
             </motion.div>
           )}
 
+          {tab === 'calisma-odasi' && profileId && (
+            <motion.div key="calisma-odasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="glass-card rounded-2xl p-6">
+                <h2 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Timer className="h-5 w-5 text-primary" /> Çalışma Odası
+                </h2>
+                <StudyRoom studentId={profileId} />
+              </div>
+            </motion.div>
+          )}
+
           {tab === 'randevular' && profileId && (
             <motion.div key="randevular" variants={tabVariants} initial="initial" animate="animate" exit="exit">
               <AppointmentBooking studentId={profileId} coachId={profile?.coach_id} />
