@@ -298,9 +298,9 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
 
             {/* Exam type filter */}
             <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl">
-              {(['all', 'TYT', 'AYT'] as ExamFilter[]).map(f => (
+              {(['TYT', 'AYT'] as ExamFilter[]).map(f => (
                 <ToggleBtn key={f} active={examFilter === f} onClick={() => setExamFilter(f)}>
-                  {f === 'all' ? 'Tümü' : f}
+                  {f}
                 </ToggleBtn>
               ))}
             </div>
