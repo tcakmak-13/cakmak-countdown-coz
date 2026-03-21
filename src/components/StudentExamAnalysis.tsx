@@ -181,17 +181,26 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
     };
   }, [filteredExams, viewMode, studentArea, relevantSubjects]);
 
-  /* ── Streak ── */
-  const streak = useMemo(() => {
-    if (allExams.length === 0) return 0;
-    const dates = [...new Set(allExams.map(e => new Date(e.created_at).toISOString().slice(0, 10)))].sort().reverse();
-    let count = 1;
-    for (let i = 1; i < dates.length; i++) {
-      const diff = (new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) / 86400000;
-      if (diff <= 1) count++; else break;
-    }
-    return count;
-  }, [allExams]);
+  /* ── Active usage days (excludes frozen period) ── */
+  const [activeDays, setActiveDays] = useState(0);
+
+  useEffect(() => {
+    const calcActiveDays = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('created_at, is_active, updated_at')
+        .eq('id', student.id)
+        .maybeSingle();
+      if (!profile) return;
+
+      const start = new Date(profile.created_at);
+      // If frozen, count up to updated_at (freeze timestamp); if active, count up to now
+      const end = profile.is_active ? new Date() : new Date(profile.updated_at);
+      const diffMs = Math.max(0, end.getTime() - start.getTime());
+      setActiveDays(Math.floor(diffMs / 86400000));
+    };
+    calcActiveDays();
+  }, [student.id]);
 
   /* ── Topic progress (filtered by area + exam filter) ── */
   const topicProgress = useMemo(() => {
