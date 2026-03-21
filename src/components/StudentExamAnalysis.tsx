@@ -123,7 +123,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
 
   /* ── Filter exams by TYT/AYT ── */
   const filteredExams = useMemo(() => {
-    if (examFilter === 'all') return allExams;
     return allExams.filter(e => e.exam_type === examFilter);
   }, [allExams, examFilter]);
 
