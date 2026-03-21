@@ -47,7 +47,7 @@ const barConfig = { net: { label: 'Net', color: COLOR_AMBER } };
 
 /* ── Types ── */
 type ViewMode = 'average' | 'latest';
-type ExamFilter = 'all' | 'TYT' | 'AYT';
+type ExamFilter = 'TYT' | 'AYT';
 
 interface StudentExamAnalysisProps {
   student: {
