@@ -25,6 +25,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import QuestionFlow from '@/components/QuestionFlow';
 import ResourceList from '@/components/ResourceList';
 import MyLibrary from '@/components/MyLibrary';
+import StudyRoom from '@/components/StudyRoom';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
