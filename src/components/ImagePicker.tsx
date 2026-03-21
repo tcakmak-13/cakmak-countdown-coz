@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ImagePlus, Upload, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { X, ImagePlus, Upload, ShieldCheck, AlertTriangle, Camera, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
