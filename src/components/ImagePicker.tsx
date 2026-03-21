@@ -126,37 +126,61 @@ const ImagePicker = forwardRef<HTMLDivElement, ImagePickerProps>(function ImageP
 
         <div className="px-5 space-y-4">
           {/* Source buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || selectedFiles.length >= maxFiles}
-              className="group relative overflow-hidden rounded-xl p-5 text-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-xl" />
-              <div className="relative z-10">
-                <ImagePlus className="h-8 w-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-semibold">Galeriden Seç</p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {multiple ? 'Çoklu seçim desteklenir' : 'Tek fotoğraf seçin'}
-                </p>
-              </div>
-            </button>
-
+          <div className="grid grid-cols-3 gap-2">
+            {/* Camera */}
             <button
               onClick={() => cameraInputRef.current?.click()}
               disabled={uploading || selectedFiles.length >= maxFiles}
-              className="group relative overflow-hidden rounded-xl p-5 text-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+              className="group relative overflow-hidden rounded-xl p-4 text-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 rounded-xl" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-xl" />
               <div className="relative z-10">
-                <Upload className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold">Kamera ile Çek</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Anında fotoğraf çek</p>
+                <Camera className="h-7 w-7 text-primary mx-auto mb-1.5" />
+                <p className="text-sm font-semibold">Kamera</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Fotoğraf çek</p>
+              </div>
+            </button>
+
+            {/* Files */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || selectedFiles.length >= maxFiles}
+              className="group relative overflow-hidden rounded-xl p-4 text-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/40 to-accent/10 border border-border rounded-xl" />
+              <div className="relative z-10">
+                <FolderOpen className="h-7 w-7 text-accent-foreground mx-auto mb-1.5" />
+                <p className="text-sm font-semibold">Dosyalar</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Dosya seç</p>
+              </div>
+            </button>
+
+            {/* Gallery */}
+            <button
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={uploading || selectedFiles.length >= maxFiles}
+              className="group relative overflow-hidden rounded-xl p-4 text-center transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/50 border border-border rounded-xl" />
+              <div className="relative z-10">
+                <ImagePlus className="h-7 w-7 text-secondary-foreground mx-auto mb-1.5" />
+                <p className="text-sm font-semibold">Galeri</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Galeriden seç</p>
               </div>
             </button>
           </div>
 
           {/* Hidden inputs */}
+          {/* Camera: capture triggers native camera */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFilesSelected}
+            className="hidden"
+          />
+          {/* Files: accepts all supported types via file manager */}
           <input
             ref={fileInputRef}
             type="file"
@@ -165,11 +189,12 @@ const ImagePicker = forwardRef<HTMLDivElement, ImagePickerProps>(function ImageP
             onChange={handleFilesSelected}
             className="hidden"
           />
+          {/* Gallery: accept="image/*" without capture opens native gallery on mobile */}
           <input
-            ref={cameraInputRef}
+            ref={galleryInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
+            multiple={multiple}
             onChange={handleFilesSelected}
             className="hidden"
           />
