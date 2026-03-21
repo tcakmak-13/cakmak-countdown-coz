@@ -309,17 +309,22 @@ export default function KonuTakip({ studentId, studentArea, readOnly = false }: 
                       {subjectTopics.map((topic, ti) => {
                         const isCompleted = progress.get(topic.id) || false;
                         return (
-                          <motion.button
+                          <motion.div
                             key={topic.id}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: ti * 0.025 }}
-                            onClick={() => toggleTopic(topic.id)}
+                            onClick={() => !readOnly && toggleTopic(topic.id)}
                             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-left group/topic ${
+                              readOnly ? 'cursor-default' : 'cursor-pointer'
+                            } ${
                               isCompleted
                                 ? 'bg-green-500/10 border border-green-500/20'
-                                : 'bg-muted/30 border border-transparent hover:border-primary/20 hover:bg-muted/50'
+                                : readOnly
+                                  ? 'bg-muted/30 border border-transparent'
+                                  : 'bg-muted/30 border border-transparent hover:border-primary/20 hover:bg-muted/50'
                             }`}
+                            style={readOnly ? { pointerEvents: 'auto' } : undefined}
                           >
                             {/* Checkbox */}
                             <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
