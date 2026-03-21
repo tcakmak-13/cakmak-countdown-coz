@@ -39,6 +39,7 @@ const ImagePicker = forwardRef<HTMLDivElement, ImagePickerProps>(function ImageP
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
