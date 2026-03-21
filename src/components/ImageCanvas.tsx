@@ -266,12 +266,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       const delta = (dist - lastTouchDist.current) * 0.008;
       lastTouchDist.current = dist;
       setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
-    } else if (e.touches.length === 1 && scale <= 1 && showTools) {
+    } else if (e.touches.length === 1 && showTools) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       draw(pos.x, pos.y);
     }
-  }, [scale, getCanvasPos, draw, showTools]);
+  }, [getCanvasPos, draw, showTools]);
 
   const handleTouchEnd = useCallback(() => {
     lastTouchDist.current = null;
