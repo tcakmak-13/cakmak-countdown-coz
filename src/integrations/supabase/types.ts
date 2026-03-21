@@ -258,6 +258,41 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_study_periods: {
+        Row: {
+          break_minutes: number
+          created_at: string
+          id: string
+          name: string
+          student_id: string
+          work_minutes: number
+        }
+        Insert: {
+          break_minutes?: number
+          created_at?: string
+          id?: string
+          name: string
+          student_id: string
+          work_minutes?: number
+        }
+        Update: {
+          break_minutes?: number
+          created_at?: string
+          id?: string
+          name?: string
+          student_id?: string
+          work_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_study_periods_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deneme_results: {
         Row: {
           ayt_biyoloji_dogru: number

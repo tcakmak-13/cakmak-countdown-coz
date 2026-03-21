@@ -2,9 +2,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Flag, Coffee, Zap, Timer, Plus, Trash2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const PERSIST_KEY = 'study-room-state';
-const CUSTOM_PERIODS_KEY = 'study-custom-periods';
 
 function formatTime(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -61,16 +61,11 @@ interface CustomPeriod {
   breakMin: number;
 }
 
-function loadCustomPeriods(): CustomPeriod[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_PERIODS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [];
+interface Props {
+  studentId?: string;
 }
-function saveCustomPeriods(p: CustomPeriod[]) { localStorage.setItem(CUSTOM_PERIODS_KEY, JSON.stringify(p)); }
 
-export default function StudyRoom() {
+export default function StudyRoom({ studentId }: Props) {
   const [mode, setMode] = useState<Mode>('stopwatch');
 
   // ═══ STOPWATCH ═══
@@ -195,7 +190,7 @@ export default function StudyRoom() {
     : ((POM_PRESETS[pomPreset].brk * 60 - pomRemaining) / (POM_PRESETS[pomPreset].brk * 60)) * 100;
 
   // ═══ CUSTOM PERIODS ═══
-  const [customPeriods, setCustomPeriods] = useState<CustomPeriod[]>(loadCustomPeriods);
+  const [customPeriods, setCustomPeriods] = useState<CustomPeriod[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [newWork, setNewWork] = useState(45);
@@ -208,24 +203,48 @@ export default function StudyRoom() {
   const cpInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const cpRemainingRef = useRef(0);
 
-  const addCustomPeriod = () => {
+  // Fetch custom periods from DB
+  const fetchPeriods = useCallback(async () => {
+    if (!studentId) return;
+    const { data } = await supabase
+      .from('custom_study_periods')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: true });
+    if (data) {
+      setCustomPeriods(data.map(d => ({
+        id: d.id,
+        name: d.name,
+        workMin: d.work_minutes,
+        breakMin: d.break_minutes,
+      })));
+    }
+  }, [studentId]);
+
+  useEffect(() => { fetchPeriods(); }, [fetchPeriods]);
+
+  const addCustomPeriod = async () => {
     if (!newName.trim()) { toast.error('Periyot adı girin.'); return; }
     if (newWork < 1) { toast.error('Çalışma süresi en az 1 dk.'); return; }
-    const period: CustomPeriod = { id: Date.now().toString(), name: newName.trim(), workMin: newWork, breakMin: newBreak };
-    const updated = [...customPeriods, period];
-    setCustomPeriods(updated);
-    saveCustomPeriods(updated);
+    if (!studentId) { toast.error('Oturum bulunamadı.'); return; }
+    const { error } = await supabase.from('custom_study_periods').insert({
+      student_id: studentId,
+      name: newName.trim(),
+      work_minutes: newWork,
+      break_minutes: newBreak,
+    });
+    if (error) { toast.error('Kayıt başarısız.'); return; }
     setNewName('');
     setNewWork(45);
     setNewBreak(10);
     setShowAddForm(false);
     toast.success('Periyot kaydedildi!');
+    fetchPeriods();
   };
 
-  const deleteCustomPeriod = (id: string) => {
-    const updated = customPeriods.filter(p => p.id !== id);
-    setCustomPeriods(updated);
-    saveCustomPeriods(updated);
+  const deleteCustomPeriod = async (id: string) => {
+    await supabase.from('custom_study_periods').delete().eq('id', id);
+    setCustomPeriods(prev => prev.filter(p => p.id !== id));
     if (activePeriod?.id === id) {
       cpStopTimer();
       setActivePeriod(null);
