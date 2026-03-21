@@ -228,16 +228,16 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   }, [isDrawing, saveHistory]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scale > 1 || !showTools) return;
+    if (!showTools) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     startDraw(pos.x, pos.y);
-  }, [scale, getCanvasPos, startDraw, showTools]);
+  }, [getCanvasPos, startDraw, showTools]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (scale > 1 || !showTools) return;
+    if (!showTools) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     draw(pos.x, pos.y);
-  }, [scale, getCanvasPos, draw, showTools]);
+  }, [getCanvasPos, draw, showTools]);
 
   const handleMouseUp = useCallback(() => endDraw(), [endDraw]);
 
@@ -250,12 +250,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         e.touches[0].clientY - e.touches[1].clientY
       );
       lastTouchDist.current = dist;
-    } else if (e.touches.length === 1 && scale <= 1 && showTools) {
+    } else if (e.touches.length === 1 && showTools) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       startDraw(pos.x, pos.y);
     }
-  }, [scale, getCanvasPos, startDraw, showTools]);
+  }, [getCanvasPos, startDraw, showTools]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastTouchDist.current !== null) {
@@ -266,12 +266,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       const delta = (dist - lastTouchDist.current) * 0.008;
       lastTouchDist.current = dist;
       setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
-    } else if (e.touches.length === 1 && scale <= 1 && showTools) {
+    } else if (e.touches.length === 1 && showTools) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       draw(pos.x, pos.y);
     }
-  }, [scale, getCanvasPos, draw, showTools]);
+  }, [getCanvasPos, draw, showTools]);
 
   const handleTouchEnd = useCallback(() => {
     lastTouchDist.current = null;
@@ -404,7 +404,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           className="relative z-10 flex items-center justify-center overflow-hidden w-full h-full"
           onWheel={handleWheel}
           style={{
-            cursor: showTools && scale <= 1 ? (tool === 'eraser' ? 'none' : 'crosshair') : scale > 1 ? 'grab' : 'default',
+            cursor: showTools ? (tool === 'eraser' ? 'none' : 'crosshair') : 'default',
             ...getContentPadding(),
             transition: 'padding 0.3s ease',
           }}
