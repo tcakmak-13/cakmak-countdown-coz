@@ -423,7 +423,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium">
                       Konu Takibi İlerleme
-                      {examFilter !== 'all' && <span className="text-xs text-muted-foreground ml-2">({examFilter})</span>}
+                      <span className="text-xs text-muted-foreground ml-2">({examFilter})</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
