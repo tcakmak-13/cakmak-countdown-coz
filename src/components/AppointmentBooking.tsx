@@ -498,10 +498,6 @@ export default function AppointmentBooking({ studentId, coachId }: { studentId: 
                 <Repeat className="h-4 w-4 text-amber-400 shrink-0" />
                 <p className="text-xs text-amber-300 font-medium">Her hafta tekrar eder</p>
               </div>
-              <div className="rounded-xl bg-muted/50 border border-border px-3 py-2 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p className="text-xs text-muted-foreground font-medium">{DURATION[selectedType]} dk · 20 dk'lık slotlar</p>
-              </div>
             </div>
 
             {/* Legend */}
