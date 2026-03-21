@@ -333,7 +333,7 @@ export default function CoachDashboard() {
               </div>
             ) : tab === 'konu-takip' ? (
               <div className="glass-card rounded-2xl p-6">
-                <KonuTakip studentId={selectedStudent.id} studentArea={selectedStudent.area} />
+                <KonuTakip studentId={selectedStudent.id} studentArea={selectedStudent.area} readOnly />
               </div>
             ) : (
               <div className="glass-card rounded-2xl p-6">
