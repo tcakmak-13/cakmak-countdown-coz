@@ -309,6 +309,14 @@ export default function CoachDashboard() {
               >
                 <UserIcon className="h-4 w-4" /> Profil
               </button>
+              <button
+                onClick={() => setTab('exam-analysis')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tab === 'exam-analysis' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" /> Deneme Analizleri
+              </button>
             </div>
             <div className="glass-card rounded-2xl p-6">
               <h2 className="font-display text-lg font-semibold mb-4">
