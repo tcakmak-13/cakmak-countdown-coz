@@ -47,7 +47,7 @@ const barConfig = { net: { label: 'Net', color: COLOR_AMBER } };
 
 /* ── Types ── */
 type ViewMode = 'average' | 'latest';
-type ExamFilter = 'all' | 'TYT' | 'AYT';
+type ExamFilter = 'TYT' | 'AYT';
 
 interface StudentExamAnalysisProps {
   student: {
@@ -78,7 +78,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
   const [allExams, setAllExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('average');
-  const [examFilter, setExamFilter] = useState<ExamFilter>('all');
+  const [examFilter, setExamFilter] = useState<ExamFilter>('TYT');
 
   // Topic progress state
   const [allSubjects, setAllSubjects] = useState<{ id: string; name: string; exam_type: string; allowed_areas: string[] | null }[]>([]);
@@ -123,7 +123,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
 
   /* ── Filter exams by TYT/AYT ── */
   const filteredExams = useMemo(() => {
-    if (examFilter === 'all') return allExams;
     return allExams.filter(e => e.exam_type === examFilter);
   }, [allExams, examFilter]);
 
@@ -299,9 +298,9 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
 
             {/* Exam type filter */}
             <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl">
-              {(['all', 'TYT', 'AYT'] as ExamFilter[]).map(f => (
+              {(['TYT', 'AYT'] as ExamFilter[]).map(f => (
                 <ToggleBtn key={f} active={examFilter === f} onClick={() => setExamFilter(f)}>
-                  {f === 'all' ? 'Tümü' : f}
+                  {f}
                 </ToggleBtn>
               ))}
             </div>
@@ -313,7 +312,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
               ? 'En son girilen sınavın verileri gösteriliyor.'
               : <>Toplam <span className="font-semibold text-foreground">{computed?.examCount ?? 0}</span> sınavın ortalaması gösteriliyor.</>
             }
-            {examFilter !== 'all' && <span className="ml-1 text-primary font-medium">({examFilter} filtrelenmiş)</span>}
+            <span className="ml-1 text-primary font-medium">({examFilter})</span>
           </p>
 
           {!computed ? (
@@ -424,7 +423,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium">
                       Konu Takibi İlerleme
-                      {examFilter !== 'all' && <span className="text-xs text-muted-foreground ml-2">({examFilter})</span>}
+                      <span className="text-xs text-muted-foreground ml-2">({examFilter})</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
