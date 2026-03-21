@@ -62,16 +62,11 @@ interface CustomPeriod {
   breakMin: number;
 }
 
-function loadCustomPeriods(): CustomPeriod[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_PERIODS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [];
+interface Props {
+  studentId?: string;
 }
-function saveCustomPeriods(p: CustomPeriod[]) { localStorage.setItem(CUSTOM_PERIODS_KEY, JSON.stringify(p)); }
 
-export default function StudyRoom() {
+export default function StudyRoom({ studentId }: Props) {
   const [mode, setMode] = useState<Mode>('stopwatch');
 
   // ═══ STOPWATCH ═══
