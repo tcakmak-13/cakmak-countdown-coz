@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen } from 'lucide-react';
+import { LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen, BookOpen } from 'lucide-react';
 import ImageLightbox from '@/components/ImageLightbox';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -19,6 +19,7 @@ import QuestionFlow from '@/components/QuestionFlow';
 import ResourceUpload from '@/components/ResourceUpload';
 import ResourceList from '@/components/ResourceList';
 import StudentExamAnalysis from '@/components/StudentExamAnalysis';
+import KonuTakip from '@/components/KonuTakip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +45,7 @@ export default function CoachDashboard() {
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'exam-analysis' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'exam-analysis' | 'konu-takip' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
   const [resourceRefresh, setResourceRefresh] = useState(0);
   const unreadCount = useUnreadMessages(profileId);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -146,7 +147,7 @@ export default function CoachDashboard() {
   };
 
   // Bottom nav active tab (map sub-tabs to main nav)
-  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'exam-analysis') ? 'list' : tab;
+  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'exam-analysis' || tab === 'konu-takip') ? 'list' : tab;
 
   return (
     <><div className="min-h-screen bg-background pb-20">
@@ -315,12 +316,24 @@ export default function CoachDashboard() {
                   tab === 'exam-analysis' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <BarChart3 className="h-4 w-4" /> Deneme Analizleri
+                <BarChart3 className="h-4 w-4" /> Deneme Takibi
+              </button>
+              <button
+                onClick={() => setTab('konu-takip')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tab === 'konu-takip' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BookOpen className="h-4 w-4" /> Konu Takip
               </button>
             </div>
             {tab === 'exam-analysis' ? (
               <div className="glass-card rounded-2xl p-6">
                 <StudentExamAnalysis student={selectedStudent} />
+              </div>
+            ) : tab === 'konu-takip' ? (
+              <div className="glass-card rounded-2xl p-6">
+                <KonuTakip studentId={selectedStudent.id} studentArea={selectedStudent.area} />
               </div>
             ) : (
               <div className="glass-card rounded-2xl p-6">

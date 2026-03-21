@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { CalendarDays, Target, CheckCircle2, XCircle, MinusCircle, TrendingUp, BarChart3 } from 'lucide-react';
@@ -80,10 +80,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
   const [viewMode, setViewMode] = useState<ViewMode>('average');
   const [examFilter, setExamFilter] = useState<ExamFilter>('TYT');
 
-  // Topic progress state
-  const [allSubjects, setAllSubjects] = useState<{ id: string; name: string; exam_type: string; allowed_areas: string[] | null }[]>([]);
-  const [allTopics, setAllTopics] = useState<{ id: string; subject_id: string }[]>([]);
-  const [completedTopicIds, setCompletedTopicIds] = useState<Set<string>>(new Set());
 
   const studentArea = student.area ?? 'SAY';
 
@@ -98,20 +94,9 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
     setLoading(false);
   };
 
-  const fetchTopicData = async () => {
-    const [subRes, topRes, progRes] = await Promise.all([
-      supabase.from('subjects').select('id, name, exam_type, allowed_areas').order('sort_order'),
-      supabase.from('topics').select('id, subject_id'),
-      supabase.from('user_topic_progress').select('topic_id, completed').eq('student_id', student.id),
-    ]);
-    if (subRes.data) setAllSubjects(subRes.data);
-    if (topRes.data) setAllTopics(topRes.data);
-    setCompletedTopicIds(new Set((progRes.data || []).filter(p => p.completed).map(p => p.topic_id)));
-  };
 
   useEffect(() => {
     fetchExams();
-    fetchTopicData();
 
     const channel = supabase
       .channel(`exam-analysis-${student.id}`)
@@ -202,55 +187,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
     calcActiveDays();
   }, [student.id]);
 
-  /* ── Topic progress (grouped by YKS categories) ── */
-  const TOPIC_GROUPS: Record<string, { label: string; members: string[] }> = {
-    'Matematik': { label: 'Matematik', members: ['Matematik', 'Geometri'] },
-    'Türkçe': { label: 'Türkçe', members: ['Türkçe'] },
-    'TYT Fen': { label: 'TYT Fen', members: ['Fizik', 'Kimya', 'Biyoloji'] },
-    'TYT Sosyal': { label: 'TYT Sosyal', members: ['Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'] },
-  };
-
-  const topicProgress = useMemo(() => {
-    const filteredSubs = allSubjects.filter(sub => {
-      if (examFilter === 'TYT' && sub.exam_type !== 'TYT') return false;
-      if (examFilter === 'AYT' && sub.exam_type !== 'AYT') return false;
-      if (sub.exam_type === 'AYT' && sub.allowed_areas && sub.allowed_areas.length > 0) {
-        if (!sub.allowed_areas.includes(studentArea)) return false;
-      }
-      return true;
-    });
-
-    // Calculate per-subject progress
-    const subProgressMap: Record<string, number> = {};
-    for (const sub of filteredSubs) {
-      const subTopics = allTopics.filter(t => t.subject_id === sub.id);
-      const total = subTopics.length;
-      const done = subTopics.filter(t => completedTopicIds.has(t.id)).length;
-      subProgressMap[sub.name] = total > 0 ? Math.round((done / total) * 100) : 0;
-    }
-
-    // Group and average
-    const grouped: { subject: string; progress: number }[] = [];
-    const usedSubjects = new Set<string>();
-
-    for (const group of Object.values(TOPIC_GROUPS)) {
-      const matchedMembers = group.members.filter(m => m in subProgressMap);
-      if (matchedMembers.length > 0) {
-        const avg = Math.round(matchedMembers.reduce((sum, m) => sum + subProgressMap[m], 0) / matchedMembers.length);
-        grouped.push({ subject: group.label, progress: avg });
-        matchedMembers.forEach(m => usedSubjects.add(m));
-      }
-    }
-
-    // Add remaining ungrouped subjects (AYT-specific ones)
-    for (const sub of filteredSubs) {
-      if (!usedSubjects.has(sub.name)) {
-        grouped.push({ subject: sub.name, progress: subProgressMap[sub.name] ?? 0 });
-      }
-    }
-
-    return grouped;
-  }, [allSubjects, allTopics, completedTopicIds, studentArea, examFilter]);
 
   /* ── Distribution data ── */
   const distribution = computed ? [
@@ -455,32 +391,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
                 </Card>
               </div>
 
-              {/* ── Topic Progress ── */}
-              {topicProgress.length > 0 && (
-                <Card className="border-border bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">
-                      Konu Takibi İlerleme
-                      <span className="text-xs text-muted-foreground ml-2">({examFilter})</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {topicProgress.map((t, i) => (
-                      <div key={i} className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{t.subject}</span>
-                          <span className="text-xs font-semibold" style={{
-                            color: t.progress >= 75 ? COLOR_GREEN : t.progress >= 40 ? COLOR_AMBER : COLOR_RED
-                          }}>
-                            %{t.progress}
-                          </span>
-                        </div>
-                        <Progress value={t.progress} className="h-2.5" />
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
             </>
           )}
         </>
