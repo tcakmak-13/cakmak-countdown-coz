@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft, FolderOpen } from 'lucide-react';
+import { LogOut, BarChart3, LayoutDashboard, User as UserIcon, MessageCircle, CalendarIcon, ScrollText, Plus, ArrowLeft, FolderOpen, Timer } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -25,6 +25,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import QuestionFlow from '@/components/QuestionFlow';
 import ResourceList from '@/components/ResourceList';
 import MyLibrary from '@/components/MyLibrary';
+import StudyRoom from '@/components/StudyRoom';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -35,7 +36,7 @@ interface MeclisPrefill {
   note?: string;
 }
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar' | 'calisma-odasi';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Analizlerim',
@@ -46,6 +47,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'profilim': 'Profilim',
   'soru-meclisi': 'Soru Meclisi',
   'kaynaklar': 'Kaynaklarım',
+  'calisma-odasi': 'Çalışma Odası',
 };
 
 const tabVariants = {
@@ -180,7 +182,7 @@ export default function StudentDashboard() {
     { key: 'denemelerim', label: 'Analizlerim', icon: BarChart3 },
     { key: 'hata-kumbarasi', label: 'Hatalarım', icon: ScrollText },
     { key: 'ana-menu', label: 'Ana Menü', icon: LayoutDashboard },
-    { key: 'kaynaklar', label: 'Kaynaklar', icon: FolderOpen },
+    { key: 'calisma-odasi', label: 'Kronometre', icon: Timer },
     { key: 'mesajlar', label: 'Mesajlar', icon: MessageCircle },
     { key: 'profilim', label: 'Profilim', icon: UserIcon },
   ];
@@ -255,7 +257,32 @@ export default function StudentDashboard() {
                     </div>
                   </button>
                 )}
+                {profileId && (
+                  <button
+                    onClick={() => handleTabChange('kaynaklar' as Tab)}
+                    className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors w-full"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                      <FolderOpen className="h-6 w-6 text-foreground" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-display font-semibold text-sm">Kaynaklarım</p>
+                      <p className="text-[11px] text-muted-foreground">Koç kaynakları ve kitaplığın</p>
+                    </div>
+                  </button>
+                )}
                 <MotivationQuote />
+              </div>
+            </motion.div>
+          )}
+
+          {tab === 'calisma-odasi' && profileId && (
+            <motion.div key="calisma-odasi" variants={tabVariants} initial="initial" animate="animate" exit="exit">
+              <div className="glass-card rounded-2xl p-6">
+                <h2 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Timer className="h-5 w-5 text-primary" /> Çalışma Odası
+                </h2>
+                <StudyRoom studentId={profileId} />
               </div>
             </motion.div>
           )}

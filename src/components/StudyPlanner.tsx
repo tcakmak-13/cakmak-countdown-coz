@@ -438,6 +438,7 @@ export default function StudyPlanner({ studentId, readOnly = false }: Props) {
               {/* Turquoise Digital Timer */}
               <div className="shrink-0 flex flex-col items-center">
                 <TaskTimer
+                  taskId={task.id}
                   initialElapsed={timerLogs[task.id] || 0}
                   onElapsedChange={(secs) => setTimerLogs(prev => ({ ...prev, [task.id]: secs }))}
                   onSave={(secs) => handleTimerSave(task.id, secs)}
