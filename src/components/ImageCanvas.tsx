@@ -34,7 +34,6 @@ function EraserCursor({ size, canvasRef, containerRef, show }: { size: number; c
 
   if (!show || !pos.visible) return null;
 
-  // Scale eraser size based on canvas display ratio
   const canvas = canvasRef.current;
   let displaySize = size;
   if (canvas) {
@@ -66,6 +65,7 @@ interface ImageCanvasProps {
 
 export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAnswer, showShareButton = false }: ImageCanvasProps) {
   const [scale, setScale] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [tool, setTool] = useState<Tool>('pen');
   const [penSize, setPenSize] = useState<PenSize>(8);
   const [eraserSize, setEraserSize] = useState<EraserSize>(32);
@@ -83,6 +83,15 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   const canvasSizeRef = useRef({ w: 0, h: 0 });
   const historyRef = useRef<ImageData[]>([]);
   const imageLoadedRef = useRef(false);
+
+  // Touch gesture tracking
+  const isPanningRef = useRef(false);
+  const wasPanningRef = useRef(false);
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const panOffsetStartRef = useRef({ x: 0, y: 0 });
+  const lastTouchDist = useRef<number | null>(null);
+  const touchStartTimeRef = useRef(0);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
 
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 5;
@@ -116,6 +125,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     if (!src) return;
     imageLoadedRef.current = false;
     setScale(1);
+    setPanOffset({ x: 0, y: 0 });
     setShowTools(false);
     setHasDrawn(false);
     setToolbarEdge('bottom');
@@ -177,6 +187,31 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     };
   }, []);
 
+  const drawDot = useCallback((x: number, y: number) => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.beginPath();
+    if (tool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.globalAlpha = 1;
+      ctx.arc(x, y, eraserSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      const color = COLORS[colorIndex];
+      ctx.fillStyle = color.value;
+      ctx.globalAlpha = color.alpha;
+      ctx.arc(x, y, penSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.closePath();
+  }, [tool, penSize, colorIndex, eraserSize]);
+
   const startDraw = useCallback((x: number, y: number) => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
@@ -184,6 +219,10 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     if (!ctx) return;
 
     setIsDrawing(true);
+
+    // Draw an immediate dot for tap responsiveness
+    drawDot(x, y);
+
     ctx.beginPath();
     ctx.moveTo(x, y);
 
@@ -201,7 +240,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     }
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-  }, [tool, penSize, colorIndex, eraserSize]);
+  }, [tool, penSize, colorIndex, eraserSize, drawDot]);
 
   const draw = useCallback((x: number, y: number) => {
     if (!isDrawing) return;
@@ -227,6 +266,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     saveHistory();
   }, [isDrawing, saveHistory]);
 
+  // --- Mouse handlers ---
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!showTools) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
@@ -241,41 +281,107 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
 
   const handleMouseUp = useCallback(() => endDraw(), [endDraw]);
 
-  const lastTouchDist = useRef<number | null>(null);
-
+  // --- Touch handlers (with pan/zoom separation) ---
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
+      // Two fingers: start pan + pinch zoom
+      isPanningRef.current = true;
+      wasPanningRef.current = true;
+
+      // Cancel any ongoing draw immediately
+      if (isDrawing) {
+        setIsDrawing(false);
+        const canvas = drawCanvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.closePath();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
+          }
+        }
+        // Restore to state before this stroke
+        if (historyRef.current.length > 0) {
+          const prev = historyRef.current[historyRef.current.length - 1];
+          const canvas = drawCanvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.putImageData(prev, 0, 0);
+          }
+        }
+      }
+
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
       lastTouchDist.current = dist;
+
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      panStartRef.current = { x: midX, y: midY };
+      panOffsetStartRef.current = { ...panOffset };
+
     } else if (e.touches.length === 1 && showTools) {
+      // Single finger: drawing — but only if we weren't just panning
+      if (wasPanningRef.current) return;
+
       e.preventDefault();
+      touchStartTimeRef.current = Date.now();
+      touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       startDraw(pos.x, pos.y);
     }
-  }, [getCanvasPos, startDraw, showTools]);
+  }, [getCanvasPos, startDraw, showTools, isDrawing, panOffset]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && lastTouchDist.current !== null) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const delta = (dist - lastTouchDist.current) * 0.008;
-      lastTouchDist.current = dist;
-      setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
-    } else if (e.touches.length === 1 && showTools) {
+    if (e.touches.length === 2) {
+      // Pinch zoom
+      if (lastTouchDist.current !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const delta = (dist - lastTouchDist.current) * 0.008;
+        lastTouchDist.current = dist;
+        setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev + delta)));
+      }
+
+      // Pan
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const dx = midX - panStartRef.current.x;
+      const dy = midY - panStartRef.current.y;
+      setPanOffset({
+        x: panOffsetStartRef.current.x + dx,
+        y: panOffsetStartRef.current.y + dy,
+      });
+
+    } else if (e.touches.length === 1 && showTools && !isPanningRef.current && !wasPanningRef.current) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       draw(pos.x, pos.y);
     }
   }, [getCanvasPos, draw, showTools]);
 
-  const handleTouchEnd = useCallback(() => {
-    lastTouchDist.current = null;
-    endDraw();
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      // All fingers lifted
+      if (isPanningRef.current || wasPanningRef.current) {
+        isPanningRef.current = false;
+        // Keep wasPanningRef true briefly to block the ghost single-touch
+        setTimeout(() => { wasPanningRef.current = false; }, 80);
+        lastTouchDist.current = null;
+        // Do NOT call endDraw — no drawing happened
+        setIsDrawing(false);
+        return;
+      }
+      lastTouchDist.current = null;
+      endDraw();
+    } else if (e.touches.length === 1 && isPanningRef.current) {
+      // Went from 2 fingers to 1 — still considered panning, don't draw
+      isPanningRef.current = true;
+    }
   }, [endDraw]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -295,7 +401,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   }, [src, onClose, undo]);
 
   const handleShare = useCallback(async () => {
-    if (sharingRef.current) return; // prevent double-tap
+    if (sharingRef.current) return;
     const drawCanvas = drawCanvasRef.current;
     const img = imageRef.current;
     if (!drawCanvas || !img || !onShareAsAnswer) return;
@@ -323,16 +429,17 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       sharingRef.current = false;
       setSharing(false);
     }
-    // Don't reset sharing — component will unmount on navigation
   }, [onShareAsAnswer]);
 
-  const resetView = useCallback(() => setScale(1), []);
+  const resetView = useCallback(() => {
+    setScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
 
   if (!src) return null;
 
   const { w, h } = canvasSizeRef.current;
 
-  // Calculate send button position based on toolbar edge
   const getSendButtonStyle = (): React.CSSProperties => {
     const gap = 10;
     if (!showTools) {
@@ -350,7 +457,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
     }
   };
 
-  // Calculate canvas area padding based on toolbar edge
   const getContentPadding = (): React.CSSProperties => {
     if (!showTools) return {};
     switch (toolbarEdge) {
@@ -370,7 +476,6 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         transition={{ duration: 0.2 }}
         className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
       >
-        {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/95" onClick={onClose} />
 
         {/* Top controls */}
@@ -398,7 +503,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           )}
         </div>
 
-        {/* Canvas area - with padding for toolbar */}
+        {/* Canvas area */}
         <div
           ref={containerRef}
           className="relative z-10 flex items-center justify-center overflow-hidden w-full h-full"
@@ -409,7 +514,11 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
             transition: 'padding 0.3s ease',
           }}
         >
-          <div style={{ transform: `scale(${scale})`, transition: 'transform 0.15s ease-out', position: 'relative' }}>
+          <div style={{
+            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${scale})`,
+            transition: isPanningRef.current ? 'none' : 'transform 0.15s ease-out',
+            position: 'relative',
+          }}>
             {imageRef.current && (
               <img
                 src={src}
@@ -434,7 +543,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           </div>
         </div>
 
-        {/* Floating pen button - bottom left */}
+        {/* Floating pen button */}
         {scale === 1 && !showTools && (
           <motion.button
             initial={{ opacity: 0, scale: 0.5 }}
@@ -448,7 +557,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           </motion.button>
         )}
 
-        {/* Dockable drawing toolbar - full edge */}
+        {/* Dockable drawing toolbar */}
         <AnimatePresence>
           {showTools && (
             <DockableToolbar
@@ -467,15 +576,15 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
           )}
         </AnimatePresence>
 
-        {/* Eraser cursor overlay */}
+        {/* Eraser cursor - visible at ALL zoom levels */}
         <EraserCursor
           size={eraserSize}
           canvasRef={drawCanvasRef}
           containerRef={containerRef}
-          show={showTools && tool === 'eraser' && scale <= 1}
+          show={showTools && tool === 'eraser'}
         />
 
-        {/* Send Solution button - adapts to toolbar edge */}
+        {/* Send Solution button */}
         {showShareButton && onShareAsAnswer && (
           <div style={getSendButtonStyle()}>
             <button
