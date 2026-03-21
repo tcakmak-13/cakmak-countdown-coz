@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Flame, Target, CheckCircle2, XCircle, MinusCircle, TrendingUp, BarChart3 } from 'lucide-react';
+import { CalendarDays, Target, CheckCircle2, XCircle, MinusCircle, TrendingUp, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 /* ── Colors ── */
