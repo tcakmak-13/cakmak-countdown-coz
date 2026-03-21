@@ -13,7 +13,7 @@ import WeeklyBoardPlanner from '@/components/WeeklyBoardPlanner';
 import StudentProfileForm from '@/components/StudentProfileForm';
 import ChatView from '@/components/ChatView';
 import AdminAnalytics from '@/components/AdminAnalytics';
-import CoachAppointments from '@/components/CoachAppointments';
+import CoachSchedule from '@/components/CoachSchedule';
 import CoachProfileEditor from '@/components/CoachProfileEditor';
 import QuestionFlow from '@/components/QuestionFlow';
 import ResourceUpload from '@/components/ResourceUpload';
