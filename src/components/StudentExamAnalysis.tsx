@@ -78,7 +78,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
   const [allExams, setAllExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('average');
-  const [examFilter, setExamFilter] = useState<ExamFilter>('all');
+  const [examFilter, setExamFilter] = useState<ExamFilter>('TYT');
 
   // Topic progress state
   const [allSubjects, setAllSubjects] = useState<{ id: string; name: string; exam_type: string; allowed_areas: string[] | null }[]>([]);
