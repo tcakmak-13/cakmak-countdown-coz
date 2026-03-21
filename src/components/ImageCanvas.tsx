@@ -234,10 +234,10 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
   }, [getCanvasPos, startDraw, showTools]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (scale > 1 || !showTools) return;
+    if (!showTools) return;
     const pos = getCanvasPos(e.clientX, e.clientY);
     draw(pos.x, pos.y);
-  }, [scale, getCanvasPos, draw, showTools]);
+  }, [getCanvasPos, draw, showTools]);
 
   const handleMouseUp = useCallback(() => endDraw(), [endDraw]);
 
