@@ -41,7 +41,7 @@ const iconMap: Record<string, typeof BookOpen> = {
   'pen-tool': PenTool,
 };
 
-export default function KonuTakip({ studentId, studentArea }: { studentId: string; studentArea?: string | null }) {
+export default function KonuTakip({ studentId, studentArea, readOnly = false }: { studentId: string; studentArea?: string | null; readOnly?: boolean }) {
   const navigate = useNavigate();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
