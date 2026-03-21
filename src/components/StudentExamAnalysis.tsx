@@ -312,7 +312,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
               ? 'En son girilen sınavın verileri gösteriliyor.'
               : <>Toplam <span className="font-semibold text-foreground">{computed?.examCount ?? 0}</span> sınavın ortalaması gösteriliyor.</>
             }
-            {examFilter !== 'all' && <span className="ml-1 text-primary font-medium">({examFilter} filtrelenmiş)</span>}
+            <span className="ml-1 text-primary font-medium">({examFilter})</span>
           </p>
 
           {!computed ? (
