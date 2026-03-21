@@ -94,16 +94,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
     setLoading(false);
   };
 
-  const fetchTopicData = async () => {
-    const [subRes, topRes, progRes] = await Promise.all([
-      supabase.from('subjects').select('id, name, exam_type, allowed_areas').order('sort_order'),
-      supabase.from('topics').select('id, subject_id'),
-      supabase.from('user_topic_progress').select('topic_id, completed').eq('student_id', student.id),
-    ]);
-    if (subRes.data) setAllSubjects(subRes.data);
-    if (topRes.data) setAllTopics(topRes.data);
-    setCompletedTopicIds(new Set((progRes.data || []).filter(p => p.completed).map(p => p.topic_id)));
-  };
 
   useEffect(() => {
     fetchExams();
