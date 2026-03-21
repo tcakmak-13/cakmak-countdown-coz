@@ -250,12 +250,12 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         e.touches[0].clientY - e.touches[1].clientY
       );
       lastTouchDist.current = dist;
-    } else if (e.touches.length === 1 && scale <= 1 && showTools) {
+    } else if (e.touches.length === 1 && showTools) {
       e.preventDefault();
       const pos = getCanvasPos(e.touches[0].clientX, e.touches[0].clientY);
       startDraw(pos.x, pos.y);
     }
-  }, [scale, getCanvasPos, startDraw, showTools]);
+  }, [getCanvasPos, startDraw, showTools]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2 && lastTouchDist.current !== null) {
