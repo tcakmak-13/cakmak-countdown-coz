@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const PERSIST_KEY = 'study-room-state';
-const CUSTOM_PERIODS_KEY = 'study-custom-periods';
+const PERSIST_KEY = 'study-room-state';
 
 function formatTime(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
