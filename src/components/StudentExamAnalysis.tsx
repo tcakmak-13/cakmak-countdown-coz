@@ -97,7 +97,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
 
   useEffect(() => {
     fetchExams();
-    fetchTopicData();
 
     const channel = supabase
       .channel(`exam-analysis-${student.id}`)
