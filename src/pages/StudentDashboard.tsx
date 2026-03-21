@@ -36,7 +36,7 @@ interface MeclisPrefill {
   note?: string;
 }
 
-type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar';
+type Tab = 'denemelerim' | 'hata-kumbarasi' | 'ana-menu' | 'randevular' | 'mesajlar' | 'profilim' | 'soru-meclisi' | 'kaynaklar' | 'calisma-odasi';
 
 const TAB_TITLES: Record<Tab, string> = {
   'denemelerim': 'Analizlerim',
@@ -47,6 +47,7 @@ const TAB_TITLES: Record<Tab, string> = {
   'profilim': 'Profilim',
   'soru-meclisi': 'Soru Meclisi',
   'kaynaklar': 'Kaynaklarım',
+  'calisma-odasi': 'Çalışma Odası',
 };
 
 const tabVariants = {
