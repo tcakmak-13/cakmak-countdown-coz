@@ -318,16 +318,22 @@ export default function CoachDashboard() {
                 <BarChart3 className="h-4 w-4" /> Deneme Analizleri
               </button>
             </div>
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="font-display text-lg font-semibold mb-4">
-                {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
-              </h2>
-              {tab === 'schedule' ? (
-                <WeeklyBoardPlanner studentId={selectedStudent.id} />
-              ) : (
-                <StudentProfileForm studentId={selectedStudent.id} readOnly />
-              )}
-            </div>
+            {tab === 'exam-analysis' ? (
+              <div className="glass-card rounded-2xl p-6">
+                <StudentExamAnalysis student={selectedStudent} />
+              </div>
+            ) : (
+              <div className="glass-card rounded-2xl p-6">
+                <h2 className="font-display text-lg font-semibold mb-4">
+                  {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
+                </h2>
+                {tab === 'schedule' ? (
+                  <WeeklyBoardPlanner studentId={selectedStudent.id} />
+                ) : (
+                  <StudentProfileForm studentId={selectedStudent.id} readOnly />
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="glass-card rounded-2xl p-10 text-center">
