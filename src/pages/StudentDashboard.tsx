@@ -257,6 +257,20 @@ export default function StudentDashboard() {
                     </div>
                   </button>
                 )}
+                {profileId && (
+                  <button
+                    onClick={() => handleTabChange('kaynaklar' as Tab)}
+                    className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:bg-secondary/50 transition-colors w-full"
+                  >
+                    <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                      <FolderOpen className="h-6 w-6 text-foreground" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-display font-semibold text-sm">Kaynaklarım</p>
+                      <p className="text-[11px] text-muted-foreground">Koç kaynakları ve kitaplığın</p>
+                    </div>
+                  </button>
+                )}
                 <MotivationQuote />
               </div>
             </motion.div>
