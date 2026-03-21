@@ -18,6 +18,7 @@ import CoachProfileEditor from '@/components/CoachProfileEditor';
 import QuestionFlow from '@/components/QuestionFlow';
 import ResourceUpload from '@/components/ResourceUpload';
 import ResourceList from '@/components/ResourceList';
+import StudentExamAnalysis from '@/components/StudentExamAnalysis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +44,7 @@ export default function CoachDashboard() {
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'list' | 'schedule' | 'profile' | 'exam-analysis' | 'messages' | 'coach-edit' | 'appointments' | 'soru-akisi' | 'resources'>('analytics');
   const [resourceRefresh, setResourceRefresh] = useState(0);
   const unreadCount = useUnreadMessages(profileId);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -145,7 +146,7 @@ export default function CoachDashboard() {
   };
 
   // Bottom nav active tab (map sub-tabs to main nav)
-  const activeNav = (tab === 'schedule' || tab === 'profile') ? 'list' : tab;
+  const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'exam-analysis') ? 'list' : tab;
 
   return (
     <><div className="min-h-screen bg-background pb-20">
@@ -308,17 +309,31 @@ export default function CoachDashboard() {
               >
                 <UserIcon className="h-4 w-4" /> Profil
               </button>
+              <button
+                onClick={() => setTab('exam-analysis')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tab === 'exam-analysis' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" /> Deneme Analizleri
+              </button>
             </div>
-            <div className="glass-card rounded-2xl p-6">
-              <h2 className="font-display text-lg font-semibold mb-4">
-                {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
-              </h2>
-              {tab === 'schedule' ? (
-                <WeeklyBoardPlanner studentId={selectedStudent.id} />
-              ) : (
-                <StudentProfileForm studentId={selectedStudent.id} readOnly />
-              )}
-            </div>
+            {tab === 'exam-analysis' ? (
+              <div className="glass-card rounded-2xl p-6">
+                <StudentExamAnalysis student={selectedStudent} />
+              </div>
+            ) : (
+              <div className="glass-card rounded-2xl p-6">
+                <h2 className="font-display text-lg font-semibold mb-4">
+                  {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
+                </h2>
+                {tab === 'schedule' ? (
+                  <WeeklyBoardPlanner studentId={selectedStudent.id} />
+                ) : (
+                  <StudentProfileForm studentId={selectedStudent.id} readOnly />
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="glass-card rounded-2xl p-10 text-center">
