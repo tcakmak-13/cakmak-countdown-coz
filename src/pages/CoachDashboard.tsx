@@ -214,7 +214,7 @@ export default function CoachDashboard() {
             </div>
           </div>
         ) : tab === 'appointments' && profileId ? (
-          <CoachAppointments coachProfileId={profileId} />
+          <CoachSchedule coachProfileId={profileId} />
         ) : tab === 'soru-akisi' && profileId ? (
           <QuestionFlow currentProfileId={profileId} currentName={profile.full_name} currentRole={role} />
         ) : tab === 'coach-edit' ? (
