@@ -278,9 +278,9 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
           </div>
         </div>
         <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2">
-          <Flame className="h-5 w-5 text-primary" />
-          <span className="font-display text-xl font-bold text-primary">{streak}</span>
-          <span className="text-xs text-muted-foreground">Seri</span>
+          <CalendarDays className="h-5 w-5 text-primary" />
+          <span className="font-display text-xl font-bold text-primary">{activeDays}</span>
+          <span className="text-xs text-muted-foreground">Toplam Kullanım</span>
         </div>
       </div>
 
