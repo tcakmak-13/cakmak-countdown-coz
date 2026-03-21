@@ -455,32 +455,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
                 </Card>
               </div>
 
-              {/* ── Topic Progress ── */}
-              {topicProgress.length > 0 && (
-                <Card className="border-border bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium">
-                      Konu Takibi İlerleme
-                      <span className="text-xs text-muted-foreground ml-2">({examFilter})</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {topicProgress.map((t, i) => (
-                      <div key={i} className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{t.subject}</span>
-                          <span className="text-xs font-semibold" style={{
-                            color: t.progress >= 75 ? COLOR_GREEN : t.progress >= 40 ? COLOR_AMBER : COLOR_RED
-                          }}>
-                            %{t.progress}
-                          </span>
-                        </div>
-                        <Progress value={t.progress} className="h-2.5" />
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
             </>
           )}
         </>

@@ -316,12 +316,24 @@ export default function CoachDashboard() {
                   tab === 'exam-analysis' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <BarChart3 className="h-4 w-4" /> Deneme Analizleri
+                <BarChart3 className="h-4 w-4" /> Deneme Takibi
+              </button>
+              <button
+                onClick={() => setTab('konu-takip')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tab === 'konu-takip' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <BookOpen className="h-4 w-4" /> Konu Takip
               </button>
             </div>
             {tab === 'exam-analysis' ? (
               <div className="glass-card rounded-2xl p-6">
                 <StudentExamAnalysis student={selectedStudent} />
+              </div>
+            ) : tab === 'konu-takip' ? (
+              <div className="glass-card rounded-2xl p-6">
+                <KonuTakip studentId={selectedStudent.id} studentArea={selectedStudent.area} />
               </div>
             ) : (
               <div className="glass-card rounded-2xl p-6">
