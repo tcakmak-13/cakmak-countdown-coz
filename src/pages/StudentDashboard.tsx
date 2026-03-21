@@ -282,7 +282,7 @@ export default function StudentDashboard() {
                 <h2 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
                   <Timer className="h-5 w-5 text-primary" /> Çalışma Odası
                 </h2>
-                <StudyRoom studentId={profileId} />
+                <StudyRoom />
               </div>
             </motion.div>
           )}
