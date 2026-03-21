@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Flag, Coffee, Zap, Timer, Plus, Trash2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const PERSIST_KEY = 'study-room-state';
 const CUSTOM_PERIODS_KEY = 'study-custom-periods';
