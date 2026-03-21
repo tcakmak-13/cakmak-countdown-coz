@@ -187,55 +187,6 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
     calcActiveDays();
   }, [student.id]);
 
-  /* ── Topic progress (grouped by YKS categories) ── */
-  const TOPIC_GROUPS: Record<string, { label: string; members: string[] }> = {
-    'Matematik': { label: 'Matematik', members: ['Matematik', 'Geometri'] },
-    'Türkçe': { label: 'Türkçe', members: ['Türkçe'] },
-    'TYT Fen': { label: 'TYT Fen', members: ['Fizik', 'Kimya', 'Biyoloji'] },
-    'TYT Sosyal': { label: 'TYT Sosyal', members: ['Tarih', 'Coğrafya', 'Felsefe', 'Din Kültürü'] },
-  };
-
-  const topicProgress = useMemo(() => {
-    const filteredSubs = allSubjects.filter(sub => {
-      if (examFilter === 'TYT' && sub.exam_type !== 'TYT') return false;
-      if (examFilter === 'AYT' && sub.exam_type !== 'AYT') return false;
-      if (sub.exam_type === 'AYT' && sub.allowed_areas && sub.allowed_areas.length > 0) {
-        if (!sub.allowed_areas.includes(studentArea)) return false;
-      }
-      return true;
-    });
-
-    // Calculate per-subject progress
-    const subProgressMap: Record<string, number> = {};
-    for (const sub of filteredSubs) {
-      const subTopics = allTopics.filter(t => t.subject_id === sub.id);
-      const total = subTopics.length;
-      const done = subTopics.filter(t => completedTopicIds.has(t.id)).length;
-      subProgressMap[sub.name] = total > 0 ? Math.round((done / total) * 100) : 0;
-    }
-
-    // Group and average
-    const grouped: { subject: string; progress: number }[] = [];
-    const usedSubjects = new Set<string>();
-
-    for (const group of Object.values(TOPIC_GROUPS)) {
-      const matchedMembers = group.members.filter(m => m in subProgressMap);
-      if (matchedMembers.length > 0) {
-        const avg = Math.round(matchedMembers.reduce((sum, m) => sum + subProgressMap[m], 0) / matchedMembers.length);
-        grouped.push({ subject: group.label, progress: avg });
-        matchedMembers.forEach(m => usedSubjects.add(m));
-      }
-    }
-
-    // Add remaining ungrouped subjects (AYT-specific ones)
-    for (const sub of filteredSubs) {
-      if (!usedSubjects.has(sub.name)) {
-        grouped.push({ subject: sub.name, progress: subProgressMap[sub.name] ?? 0 });
-      }
-    }
-
-    return grouped;
-  }, [allSubjects, allTopics, completedTopicIds, studentArea, examFilter]);
 
   /* ── Distribution data ── */
   const distribution = computed ? [
