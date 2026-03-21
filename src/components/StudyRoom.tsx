@@ -21,7 +21,14 @@ interface PersistedState {
 function load(): PersistedState {
   try {
     const raw = localStorage.getItem(PERSIST_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        elapsed: typeof parsed.elapsed === 'number' ? parsed.elapsed : 0,
+        startedAt: typeof parsed.startedAt === 'number' ? parsed.startedAt : null,
+        laps: Array.isArray(parsed.laps) ? parsed.laps : [],
+      };
+    }
   } catch {}
   return { elapsed: 0, startedAt: null, laps: [] };
 }
