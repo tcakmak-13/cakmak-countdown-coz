@@ -617,8 +617,10 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             <div className="flex-1">
               <p className="font-display font-bold text-base">{coachName}</p>
               <div className="flex items-center gap-1.5">
-                <Circle className="h-2 w-2 fill-current text-emerald-500" />
-                <span className="text-xs text-emerald-400">Çevrimiçi</span>
+                <Circle className={`h-2 w-2 fill-current ${coachProfileId && isOnline(coachProfileId) ? 'text-emerald-500' : 'text-muted-foreground/40'}`} />
+                <span className={`text-xs ${coachProfileId && isOnline(coachProfileId) ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                  {coachProfileId && isOnline(coachProfileId) ? 'Çevrimiçi' : 'Çevrimdışı'}
+                </span>
               </div>
             </div>
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Profili Gör</span>
@@ -833,7 +835,10 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
                     {s.full_name?.charAt(0) || '?'}
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium truncate">{s.full_name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate">{s.full_name}</p>
+                      <Circle className={`h-2 w-2 fill-current shrink-0 ${isOnline(s.id) ? 'text-emerald-500' : 'text-muted-foreground/30'}`} />
+                    </div>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMsg ? lastMsg.content : 'Henüz mesaj yok'}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
@@ -886,7 +891,12 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
             </div>
             <div>
               <p className="font-display font-semibold text-sm">{selectedStudentData?.full_name}</p>
-              <p className="text-xs text-muted-foreground">{selectedStudentData?.area ?? 'SAY'} — {selectedStudentData?.grade ?? '12. Sınıf'}</p>
+              <div className="flex items-center gap-1.5">
+                <Circle className={`h-2 w-2 fill-current ${selectedStudent && isOnline(selectedStudent) ? 'text-emerald-500' : 'text-muted-foreground/40'}`} />
+                <span className={`text-xs ${selectedStudent && isOnline(selectedStudent) ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                  {selectedStudent && isOnline(selectedStudent) ? 'Çevrimiçi' : 'Çevrimdışı'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
