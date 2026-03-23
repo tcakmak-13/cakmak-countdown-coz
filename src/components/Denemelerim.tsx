@@ -153,11 +153,19 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   const handleSave = async () => {
     if (!validate()) { toast.error('Lütfen hataları düzeltin.'); return; }
+    // Validate exam date if entered
+    const parsedDate = examDateRaw ? parseMaskedDate(examDateRaw) : null;
+    if (examDateRaw && !parsedDate) {
+      toast.error('Geçersiz tarih formatı. GG.AA.YYYY olmalı.');
+      return;
+    }
     setSaving(true);
     const row: Record<string, any> = {
       student_id: studentId,
       exam_type: examType,
       student_area: examType === 'AYT' ? studentArea : null,
+      exam_name: examName.trim() || null,
+      exam_date: parsedDate || null,
     };
     activeSubjects.forEach(s => {
       const d = scores[`${s.key}_dogru`] || 0;
@@ -181,6 +189,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     toast.success(editingId ? 'Deneme güncellendi!' : 'Deneme kaydedildi!');
     setOpen(false);
     setEditingId(null);
+    setExamName('');
+    setExamDateRaw('');
     setScores(emptyScores(activeSubjects));
     fetchResults();
   };
