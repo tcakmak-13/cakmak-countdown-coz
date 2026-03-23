@@ -13,7 +13,6 @@ export function usePushNotifications(userId?: string) {
     navigator.serviceWorker.register('/sw.js')
       .then(reg => {
         swReg.current = reg;
-        // If permission already granted and userId present, ensure push subscription exists
         if (Notification.permission === 'granted' && userId) {
           subscribeToPush(userId, reg).catch(() => {});
         }
@@ -32,6 +31,18 @@ export function usePushNotifications(userId?: string) {
     }
     return result;
   }, [userId]);
+
+  // Auto-request permission when userId becomes available and permission is 'default'
+  useEffect(() => {
+    if (!userId) return;
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'default') return;
+
+    const timer = setTimeout(() => {
+      requestPermission();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [userId, requestPermission]);
 
   // Show notification via service worker (works when tab is backgrounded)
   const showNotification = useCallback((data: {
@@ -67,7 +78,6 @@ async function subscribeToPush(userId: string, reg: ServiceWorkerRegistration) {
     const { data, error } = await supabase.functions.invoke('get-vapid-key');
     if (error || !data?.publicKey) return;
 
-    // Check if already subscribed with same endpoint
     const existing = await reg.pushManager.getSubscription();
     let subscription = existing;
     if (!subscription) {
