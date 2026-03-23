@@ -89,6 +89,7 @@ export default function StudentExamAnalysis({ student }: StudentExamAnalysisProp
       .from('deneme_results')
       .select('*')
       .eq('student_id', student.id)
+      .order('exam_date', { ascending: false, nullsFirst: true })
       .order('created_at', { ascending: false });
     if (data) setAllExams(data);
     setLoading(false);
