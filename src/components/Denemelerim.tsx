@@ -76,6 +76,27 @@ function scoresFromResult(result: any, subjects: SubjectConfig[]): ScoreMap {
   return m;
 }
 
+// ─── Masked Date Input Helper ────────────────────────────────
+function formatDateMask(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  let result = '';
+  for (let i = 0; i < digits.length; i++) {
+    if (i === 2 || i === 4) result += '.';
+    result += digits[i];
+  }
+  return result;
+}
+
+function parseMaskedDate(masked: string): string | null {
+  const digits = masked.replace(/\D/g, '');
+  if (digits.length !== 8) return null;
+  const day = parseInt(digits.slice(0, 2));
+  const month = parseInt(digits.slice(2, 4));
+  const year = parseInt(digits.slice(4, 8));
+  if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2000 || year > 2099) return null;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export default function Denemelerim({ studentId, studentArea }: { studentId: string; studentArea: string }) {
   const [mainTab, setMainTab] = useState<'net' | 'konu'>('net');
   const [results, setResults] = useState<any[]>([]);
@@ -87,6 +108,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   const [chartTab, setChartTab] = useState<'total' | 'subjects'>('total');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [examName, setExamName] = useState('');
+  const [examDateRaw, setExamDateRaw] = useState('');
 
   const activeSubjects = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[studentArea] || AYT_BY_AREA['SAY']);
 
