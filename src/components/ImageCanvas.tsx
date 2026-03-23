@@ -423,6 +423,8 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
       });
 
       await onShareAsAnswer(blob);
+      sharingRef.current = false;
+      setSharing(false);
     } catch (err: any) {
       console.error('Görsel oluşturma hatası:', err);
       toast.error('Görsel oluşturulamadı. Lütfen tekrar deneyin.');
