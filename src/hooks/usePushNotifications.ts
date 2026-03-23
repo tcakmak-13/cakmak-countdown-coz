@@ -78,8 +78,16 @@ async function subscribeToPush(userId: string, reg: ServiceWorkerRegistration) {
     const { data, error } = await supabase.functions.invoke('get-vapid-key');
     if (error || !data?.publicKey) return;
 
+    // Unsubscribe existing if VAPID key changed, then re-subscribe
     const existing = await reg.pushManager.getSubscription();
     let subscription = existing;
+    if (existing) {
+      // Always unsubscribe and re-subscribe to ensure correct VAPID key
+      try {
+        await existing.unsubscribe();
+      } catch (_) {}
+      subscription = null;
+    }
     if (!subscription) {
       subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
