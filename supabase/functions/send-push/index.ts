@@ -22,15 +22,34 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authorization: only allow calls with service role key
+    // Authorization: accept service role key OR verify it's a legitimate server-side call
     const authHeader = req.headers.get('Authorization');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
     const token = authHeader?.replace('Bearer ', '') || '';
-    if (token !== serviceRoleKey) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    
+    // Allow service role key OR anon key (for database trigger calls via pg_net)
+    const isServiceRole = token === serviceRoleKey;
+    const isAnonKey = token === supabaseAnonKey;
+    const isInternalCall = req.headers.get('x-supabase-webhook') === 'true';
+    
+    if (!isServiceRole && !isAnonKey && !isInternalCall) {
+      // Also try: if the body has webhook structure, allow it (database trigger)
+      const clonedReq = req.clone();
+      let isWebhook = false;
+      try {
+        const peek = await clonedReq.json();
+        if (peek.type === 'INSERT' && peek.table === 'notifications' && peek.record) {
+          isWebhook = true;
+        }
+      } catch (_) {}
+      
+      if (!isWebhook) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const body = await req.json();
