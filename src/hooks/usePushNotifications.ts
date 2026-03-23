@@ -21,6 +21,19 @@ export function usePushNotifications(userId?: string) {
       .catch(err => console.warn('SW registration failed:', err));
   }, [userId]);
 
+  // Auto-request permission when userId becomes available and permission is 'default'
+  useEffect(() => {
+    if (!userId) return;
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'default') return;
+
+    // Small delay to avoid blocking initial render
+    const timer = setTimeout(() => {
+      requestPermission();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [userId, requestPermission]);
+
   // Request permission + subscribe
   const requestPermission = useCallback(async () => {
     if (!('Notification' in window)) return 'denied' as NotificationPermission;
