@@ -407,20 +407,35 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       (m.sender_id === pair.studentId && m.receiver_id === pair.coachId)
     ).length;
 
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || !chatPartnerId) return;
+    if (!trimmed || !chatPartnerId || sendingMessage) return;
     if (trimmed.length > 2000) {
       toast.error('Mesaj çok uzun (maks 2000 karakter)');
       return;
     }
-    await supabase.from('chat_messages').insert({
-      sender_id: currentProfileId,
-      receiver_id: chatPartnerId,
-      content: trimmed,
-      type: 'text',
-    });
-    setInput('');
+    setSendingMessage(true);
+    try {
+      const { error } = await supabase.from('chat_messages').insert({
+        sender_id: currentProfileId,
+        receiver_id: chatPartnerId,
+        content: trimmed,
+        type: 'text',
+      });
+      if (error) {
+        console.error('Mesaj gönderme hatası:', error.code, error.message, error.details);
+        toast.error('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+        return;
+      }
+      setInput('');
+    } catch (err: any) {
+      console.error('Mesaj gönderme beklenmeyen hata:', err);
+      toast.error('Mesaj gönderilemedi.');
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -436,40 +451,63 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       return;
     }
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const filePath = `${currentUserId}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
-    if (uploadError) { setUploading(false); return; }
-    const fileType = isImage(file.name) ? 'image' : 'file';
-    await supabase.from('chat_messages').insert({
-      sender_id: currentProfileId,
-      receiver_id: chatPartnerId,
-      content: fileType === 'image' ? '📷 Fotoğraf' : `📄 ${file.name}`,
-      type: fileType,
-      file_name: filePath,
-    });
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${currentUserId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
+      if (uploadError) {
+        console.error('Dosya yükleme hatası:', uploadError);
+        toast.error('Dosya yüklenemedi. Lütfen tekrar deneyin.');
+        return;
+      }
+      const fileType = isImage(file.name) ? 'image' : 'file';
+      const { error: msgError } = await supabase.from('chat_messages').insert({
+        sender_id: currentProfileId,
+        receiver_id: chatPartnerId,
+        content: fileType === 'image' ? '📷 Fotoğraf' : `📄 ${file.name}`,
+        type: fileType,
+        file_name: filePath,
+      });
+      if (msgError) {
+        console.error('Mesaj kaydetme hatası:', msgError);
+        toast.error('Dosya gönderildi ama mesaj kaydedilemedi.');
+      }
+    } catch (err: any) {
+      console.error('Dosya gönderme beklenmeyen hata:', err);
+      toast.error('Dosya gönderilemedi.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleMultiImageUpload = useCallback(async (files: File[]) => {
     if (!chatPartnerId || !currentUserId) return;
     setUploading(true);
-    for (const file of files) {
-      const ext = file.name.split('.').pop();
-      const filePath = `${currentUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
-      if (uploadError) { toast.error(`Yükleme hatası: ${file.name}`); continue; }
-      await supabase.from('chat_messages').insert({
-        sender_id: currentProfileId,
-        receiver_id: chatPartnerId,
-        content: '📷 Fotoğraf',
-        type: 'image',
-        file_name: filePath,
-      });
+    let successCount = 0;
+    try {
+      for (const file of files) {
+        const ext = file.name.split('.').pop();
+        const filePath = `${currentUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, file);
+        if (uploadError) { console.error('Çoklu yükleme hatası:', uploadError); toast.error(`Yükleme hatası: ${file.name}`); continue; }
+        const { error: msgError } = await supabase.from('chat_messages').insert({
+          sender_id: currentProfileId,
+          receiver_id: chatPartnerId,
+          content: '📷 Fotoğraf',
+          type: 'image',
+          file_name: filePath,
+        });
+        if (msgError) { console.error('Mesaj kaydetme hatası:', msgError); continue; }
+        successCount++;
+      }
+      if (successCount > 0) toast.success(`${successCount} fotoğraf gönderildi!`);
+    } catch (err: any) {
+      console.error('Çoklu fotoğraf gönderme hatası:', err);
+      toast.error('Fotoğraflar gönderilemedi.');
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
-    toast.success(`${files.length} fotoğraf gönderildi!`);
   }, [chatPartnerId, currentUserId, currentProfileId]);
 
   const renderMessageContent = (msg: Message) => {

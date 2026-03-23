@@ -377,7 +377,7 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     toast.success('Soru silindi.');
   };
 
-  // AI Solution Handler - same as Soru Meclisi
+  // AI Solution Handler - with 30s timeout
   const handleAISolve = async (question: ErrorQuestion) => {
     if (loadingAI) return;
     
@@ -390,6 +390,9 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
     setLoadingAI(true);
     setCurrentAISolution(null);
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     try {
       const response = await supabase.functions.invoke('solve-question', {
         body: {
@@ -401,11 +404,15 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         },
       });
 
+      clearTimeout(timeoutId);
+
       if (response.error) {
+        console.error('AI çözüm hata kodu:', response.error.message, response.error);
         throw new Error(response.error.message || 'AI çözümü alınamadı');
       }
 
       if (!response.data?.success) {
+        console.error('AI yanıt başarısız:', response.data?.error);
         throw new Error(response.data?.error || 'AI yanıt veremedi');
       }
 
@@ -431,15 +438,13 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         .eq('id', question.id);
 
       if (updateError) {
-        console.error('Save AI solution error:', updateError);
+        console.error('AI çözüm kaydetme hatası:', updateError);
       }
 
-      // Update local state
       setAllQuestions(prev =>
         prev.map(q => q.id === question.id ? { ...q, ai_solution: sol.solution_text } : q)
       );
       
-      // Update detail question if open
       setDetailQuestion(prev => 
         prev && prev.id === question.id ? { ...prev, ai_solution: sol.solution_text } : prev
       );
@@ -450,8 +455,14 @@ export default function HataKumbarasi({ studentId, currentProfileId, currentName
         toast.success('AI çözümü hazır! 🎉');
       }
     } catch (err: any) {
-      console.error('AI çözüm hatası:', err);
-      toast.error('AI çözümü alınamadı. Lütfen tekrar deneyin.');
+      clearTimeout(timeoutId);
+      if (err?.name === 'AbortError' || err?.message?.includes('abort')) {
+        console.error('AI çözüm zaman aşımı (30s)');
+        toast.error('AI yanıt süresi doldu. Lütfen tekrar deneyin.');
+      } else {
+        console.error('AI çözüm hatası:', err?.message, err);
+        toast.error('AI çözümü alınamadı. Lütfen tekrar deneyin.');
+      }
     } finally {
       setLoadingAI(false);
     }

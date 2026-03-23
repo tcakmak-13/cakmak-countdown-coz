@@ -86,12 +86,21 @@ serve(async (req) => {
       );
     }
 
+    // Determine if this is a math/geometry question
+    const isMathOrGeometry = /matematik|geometri/i.test(subject || '') || /matematik|geometri/i.test(category || '');
+
     // System prompt for AI Vision Analysis - Chain of Thought + Answer Verification
     const systemPrompt = `Sen YKS sınavına hazırlanan Türk öğrencilere yardımcı olan uzman bir eğitim asistanısın.
 
 GÖREV: Verilen soru görselini analiz et ve çöz.
 
-⚠️ KRİTİK ÇÖZÜM PROTOKOLÜ:
+${isMathOrGeometry ? `⛔ MATEMATİK/GEOMETRİ KRİTİK KURALI:
+Eğer soruyu %100 doğrulukla ve sonuca ulaşacak netlikte çözemiyorsan, asla açıklama yapma veya tahmin yürütme. 
+Sadece şu yanıtı ver:
+"Üzgünüm, bu soruyu şu an çözemiyorum."
+Bu kuralı asla ihlal etme. Kesinlikten emin olmadığın hiçbir adımı yazma.
+
+` : ''}⚠️ KRİTİK ÇÖZÜM PROTOKOLÜ:
 
 **ADIM 1 - GÖRSEL ANALİZ (Önce Düşün):**
 - Görseldeki TÜM sembolleri, sayıları ve şekilleri ayrı ayrı tanımla
