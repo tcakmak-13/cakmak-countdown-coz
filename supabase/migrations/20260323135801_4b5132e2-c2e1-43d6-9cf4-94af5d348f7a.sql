@@ -1,0 +1,3 @@
+ALTER TABLE public.deneme_results 
+ADD COLUMN IF NOT EXISTS exam_name text DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS exam_date date DEFAULT NULL;

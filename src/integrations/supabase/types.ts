@@ -329,6 +329,8 @@ export type Database = {
           ayt_tarih2_net: number
           ayt_tarih2_yanlis: number
           created_at: string
+          exam_date: string | null
+          exam_name: string | null
           exam_type: string
           fen_dogru: number
           fen_net: number
@@ -382,6 +384,8 @@ export type Database = {
           ayt_tarih2_net?: number
           ayt_tarih2_yanlis?: number
           created_at?: string
+          exam_date?: string | null
+          exam_name?: string | null
           exam_type?: string
           fen_dogru?: number
           fen_net?: number
@@ -435,6 +439,8 @@ export type Database = {
           ayt_tarih2_net?: number
           ayt_tarih2_yanlis?: number
           created_at?: string
+          exam_date?: string | null
+          exam_name?: string | null
           exam_type?: string
           fen_dogru?: number
           fen_net?: number
