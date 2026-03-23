@@ -199,7 +199,7 @@ export default function CoachDashboard() {
       </header>
 
       {/* Main content - full width */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 mt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
         {tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
         ) : tab === 'resources' ? (
