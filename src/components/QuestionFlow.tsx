@@ -192,15 +192,22 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
   const loadQuestionsRef = useRef<(() => void) | null>(null);
   const loadAnswersRef = useRef<((id: string) => void) | null>(null);
 
+  const [sharingCanvas, setSharingCanvas] = useState(false);
+
   const handleCanvasShareAsAnswer = useCallback(async (blob: Blob) => {
     const targetQuestionId = lightboxQuestionId || selectedQuestion?.id;
     if (!targetQuestionId) { toast.error('Soru bulunamadı'); return; }
+    if (sharingCanvas) return;
 
+    setSharingCanvas(true);
     try {
       const filePath = `answers/${currentProfileId}/${Date.now()}_canvas.png`;
       const file = new File([blob], 'canvas_solution.png', { type: 'image/png' });
       const { error: upErr } = await supabase.storage.from('question-images').upload(filePath, file, { upsert: true });
-      if (upErr) throw upErr;
+      if (upErr) {
+        console.error('Çizim yükleme hatası:', upErr);
+        throw upErr;
+      }
       const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(filePath);
 
       const { error } = await supabase.from('question_answers').insert({
@@ -209,7 +216,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         content: '🎨 Çizimli çözüm',
         image_url: urlData.publicUrl,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Çizim yanıt kaydetme hatası:', error);
+        throw error;
+      }
 
       toast.success('Çizimli çözümün gönderildi! ✅');
       setLightboxSrc(null);
@@ -217,10 +227,12 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       if (selectedQuestion) loadAnswersRef.current?.(selectedQuestion.id);
       loadQuestionsRef.current?.();
     } catch (err: any) {
-      console.error('Gönderim hatası:', err);
-      toast.error('Gönderim başarısız. Lütfen tekrar deneyin.');
+      console.error('Çizim gönderim hatası:', err?.message, err);
+      toast.error('Yanıt gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setSharingCanvas(false);
     }
-  }, [lightboxQuestionId, selectedQuestion, currentProfileId]);
+  }, [lightboxQuestionId, selectedQuestion, currentProfileId, sharingCanvas]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
@@ -500,7 +512,7 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
     setSendingAnswer(false);
   };
 
-  // Ask AI to solve the question - result shown inline
+  // Ask AI to solve the question - result shown inline (with 30s timeout)
   const askAI = async () => {
     if (!selectedQuestion || !selectedQuestion.image_url) {
       toast.error('Bu soru görseli içermiyor');
@@ -509,6 +521,9 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
 
     setLoadingAI(true);
     setAiSolution(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await supabase.functions.invoke('solve-question', {
@@ -521,11 +536,15 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         },
       });
 
+      clearTimeout(timeoutId);
+
       if (response.error) {
+        console.error('AI çözüm hata kodu:', response.error.message, response.error);
         throw new Error(response.error.message || 'AI çözümü alınamadı');
       }
 
       if (!response.data?.success) {
+        console.error('AI yanıt başarısız:', response.data?.error);
         throw new Error(response.data?.error || 'AI yanıt veremedi');
       }
 
@@ -540,8 +559,14 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         toast.success('AI çözümü hazır! 🎉');
       }
     } catch (err: any) {
-      console.error('AI çözüm hatası:', err);
-      toast.error('AI çözümü alınamadı. Lütfen tekrar deneyin.');
+      clearTimeout(timeoutId);
+      if (err?.name === 'AbortError' || err?.message?.includes('abort')) {
+        console.error('AI çözüm zaman aşımı (30s)');
+        toast.error('AI yanıt süresi doldu. Lütfen tekrar deneyin.');
+      } else {
+        console.error('AI çözüm hatası:', err?.message, err);
+        toast.error('AI çözümü alınamadı. Lütfen tekrar deneyin.');
+      }
     } finally {
       setLoadingAI(false);
     }
