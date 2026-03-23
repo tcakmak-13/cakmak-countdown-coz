@@ -487,7 +487,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         const ext = answerImage.name.split('.').pop() || 'jpg';
         const filePath = `answers/${currentProfileId}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from('question-images').upload(filePath, answerImage, { upsert: true });
-        if (upErr) throw upErr;
+        if (upErr) {
+          console.error('Yanıt görsel yükleme hatası:', upErr);
+          throw upErr;
+        }
         const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(filePath);
         imageUrl = urlData.publicUrl;
       }
@@ -498,7 +501,10 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
         content: answerText.trim(),
         image_url: imageUrl,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Yanıt kaydetme hatası:', error);
+        throw error;
+      }
 
       setAnswerText('');
       if (answerImagePreview) URL.revokeObjectURL(answerImagePreview);
@@ -506,10 +512,11 @@ export default function QuestionFlow({ currentProfileId, currentName, currentRol
       setAnswerImagePreview(null);
       loadAnswers(selectedQuestion.id);
     } catch (err: any) {
-      console.error('Yanıt gönderme hatası:', err);
+      console.error('Yanıt gönderme hatası:', err?.message, err);
       toast.error('Yanıt gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setSendingAnswer(false);
     }
-    setSendingAnswer(false);
   };
 
   // Ask AI to solve the question - result shown inline (with 30s timeout)
