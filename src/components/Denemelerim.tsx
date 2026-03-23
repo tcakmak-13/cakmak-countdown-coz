@@ -201,6 +201,14 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     const subs = type === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[result.student_area || studentArea] || AYT_BY_AREA['SAY']);
     setScores(scoresFromResult(result, subs));
     setEditingId(result.id);
+    setExamName(result.exam_name || '');
+    // Convert exam_date (YYYY-MM-DD) back to DD.MM.YYYY for the mask
+    if (result.exam_date) {
+      const [y, m, d] = result.exam_date.split('-');
+      setExamDateRaw(`${d}.${m}.${y}`);
+    } else {
+      setExamDateRaw('');
+    }
     setErrors({});
     setOpen(true);
   };
@@ -215,7 +223,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   const handleModalClose = (val: boolean) => {
     setOpen(val);
-    if (!val) { setEditingId(null); setScores(emptyScores(activeSubjects)); setErrors({}); }
+    if (!val) { setEditingId(null); setExamName(''); setExamDateRaw(''); setScores(emptyScores(activeSubjects)); setErrors({}); }
   };
 
   // ─── Progress Circles Data (AVERAGE across ALL exams) ─────────────
