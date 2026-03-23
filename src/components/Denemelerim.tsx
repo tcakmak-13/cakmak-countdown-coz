@@ -125,6 +125,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       .from('deneme_results')
       .select('*')
       .eq('student_id', studentId)
+      .order('exam_date', { ascending: true, nullsFirst: true })
       .order('created_at', { ascending: true });
     if (data) setResults(data as any[]);
   }, [studentId]);
