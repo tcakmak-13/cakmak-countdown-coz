@@ -388,7 +388,12 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
             <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-4 flex items-center justify-between border border-border group relative">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{r.exam_type}</span>
-                <span className="text-xs text-muted-foreground ml-2">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {r.exam_date
+                    ? new Date(r.exam_date + 'T00:00:00').toLocaleDateString('tr-TR')
+                    : new Date(r.created_at).toLocaleDateString('tr-TR')}
+                </span>
+                {r.exam_name && <span className="text-xs text-muted-foreground ml-1.5">· {r.exam_name}</span>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="font-display text-base sm:text-lg font-bold text-primary">{Number(r.total_net).toFixed(2)} Net</span>
