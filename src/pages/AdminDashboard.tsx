@@ -247,7 +247,7 @@ export default function AdminDashboard() {
   return (
     <><div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md pt-safe">
+      <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => { setSelectedStudent(null); setTab('overview'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <AppLogo size="sm" />
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main content - full width */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 mt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
         {tab === 'overview' ? (
           <div className="space-y-6">
             <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>

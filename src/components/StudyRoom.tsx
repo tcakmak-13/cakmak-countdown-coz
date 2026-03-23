@@ -124,7 +124,7 @@ export default function StudyRoom({ studentId }: Props) {
 
   useEffect(() => { const s = loadSW(); saveSW({ ...s, laps }); }, [laps]);
 
-  // ═══ POMODORO ═══
+  // ═══ POMODORO (timestamp-based) ═══
   const [pomPreset, setPomPreset] = useState(0);
   const [pomPhase, setPomPhase] = useState<'work' | 'break'>('work');
   const [pomRemaining, setPomRemaining] = useState(POM_PRESETS[0].work * 60);
@@ -132,39 +132,54 @@ export default function StudyRoom({ studentId }: Props) {
   const [pomSessions, setPomSessions] = useState(0);
   const pomInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const pomRemainingRef = useRef(POM_PRESETS[0].work * 60);
+  const pomStartedAtRef = useRef<number | null>(null);
+  const pomBaseRemainingRef = useRef(POM_PRESETS[0].work * 60);
 
   const pomStart = useCallback(() => {
     if (pomInterval.current) return;
     setPomRunning(true);
+    const now = Date.now();
+    pomStartedAtRef.current = now;
+    pomBaseRemainingRef.current = pomRemainingRef.current;
     pomInterval.current = setInterval(() => {
-      const next = pomRemainingRef.current - 1;
+      const elapsed = Math.floor((Date.now() - pomStartedAtRef.current!) / 1000);
+      const next = Math.max(0, pomBaseRemainingRef.current - elapsed);
       pomRemainingRef.current = next;
       setPomRemaining(next);
       if (next <= 0) {
         if (pomInterval.current) { clearInterval(pomInterval.current); pomInterval.current = null; }
+        pomStartedAtRef.current = null;
         setPomRunning(false);
         setPomPhase(p => {
           if (p === 'work') {
             setPomSessions(s => s + 1);
             const brkSecs = POM_PRESETS[pomPreset].brk * 60;
             pomRemainingRef.current = brkSecs;
+            pomBaseRemainingRef.current = brkSecs;
             setPomRemaining(brkSecs);
             toast.success('Mola zamanı! ☕');
             return 'break';
           } else {
             const workSecs = POM_PRESETS[pomPreset].work * 60;
             pomRemainingRef.current = workSecs;
+            pomBaseRemainingRef.current = workSecs;
             setPomRemaining(workSecs);
             toast.success('Çalışma zamanı! 🔥');
             return 'work';
           }
         });
       }
-    }, 1000);
+    }, 250);
   }, [pomPreset]);
 
   const pomStop = useCallback(() => {
     if (pomInterval.current) { clearInterval(pomInterval.current); pomInterval.current = null; }
+    // Freeze remaining at current calculated value
+    if (pomStartedAtRef.current) {
+      const elapsed = Math.floor((Date.now() - pomStartedAtRef.current) / 1000);
+      pomRemainingRef.current = Math.max(0, pomBaseRemainingRef.current - elapsed);
+      pomStartedAtRef.current = null;
+    }
     setPomRunning(false);
   }, []);
 
@@ -261,38 +276,53 @@ export default function StudyRoom({ studentId }: Props) {
     setCpSessions(0);
   };
 
+  const cpStartedAtRef = useRef<number | null>(null);
+  const cpBaseRemainingRef = useRef(0);
+
   const cpStartTimer = useCallback(() => {
     if (cpInterval.current || !activePeriod) return;
     setCpRunning(true);
+    const now = Date.now();
+    cpStartedAtRef.current = now;
+    cpBaseRemainingRef.current = cpRemainingRef.current;
     cpInterval.current = setInterval(() => {
-      const next = cpRemainingRef.current - 1;
+      const elapsed = Math.floor((Date.now() - cpStartedAtRef.current!) / 1000);
+      const next = Math.max(0, cpBaseRemainingRef.current - elapsed);
       cpRemainingRef.current = next;
       setCpRemaining(next);
       if (next <= 0) {
         if (cpInterval.current) { clearInterval(cpInterval.current); cpInterval.current = null; }
+        cpStartedAtRef.current = null;
         setCpRunning(false);
         setCpPhase(p => {
           if (p === 'work') {
             setCpSessions(s => s + 1);
             const brkSecs = activePeriod.breakMin * 60;
             cpRemainingRef.current = brkSecs;
+            cpBaseRemainingRef.current = brkSecs;
             setCpRemaining(brkSecs);
             toast.success('Mola zamanı! ☕');
             return 'break';
           } else {
             const workSecs = activePeriod.workMin * 60;
             cpRemainingRef.current = workSecs;
+            cpBaseRemainingRef.current = workSecs;
             setCpRemaining(workSecs);
             toast.success('Çalışma zamanı! 🔥');
             return 'work';
           }
         });
       }
-    }, 1000);
+    }, 250);
   }, [activePeriod]);
 
   const cpStopTimer = useCallback(() => {
     if (cpInterval.current) { clearInterval(cpInterval.current); cpInterval.current = null; }
+    if (cpStartedAtRef.current) {
+      const elapsed = Math.floor((Date.now() - cpStartedAtRef.current) / 1000);
+      cpRemainingRef.current = Math.max(0, cpBaseRemainingRef.current - elapsed);
+      cpStartedAtRef.current = null;
+    }
     setCpRunning(false);
   }, []);
 
