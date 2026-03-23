@@ -479,7 +479,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         <div className="absolute inset-0 bg-black/95" onClick={onClose} />
 
         {/* Top controls */}
-        <div className="absolute top-3 right-3 z-[70] flex items-center gap-1.5">
+        <div className="absolute top-3 right-3 z-[70] flex items-center gap-1.5 pt-safe">
           <button onClick={() => setScale(s => Math.min(MAX_SCALE, s + 0.3))} className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors" title="Yakınlaştır">
             <ZoomIn className="h-4 w-4" />
           </button>
@@ -495,7 +495,7 @@ export default function ImageCanvas({ src, alt = 'Görsel', onClose, onShareAsAn
         </div>
 
         {/* Zoom indicator */}
-        <div className="absolute top-3 left-3 z-[70] flex items-center gap-2">
+        <div className="absolute top-3 left-3 z-[70] flex items-center gap-2 pt-safe">
           {scale !== 1 && (
             <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium">
               {Math.round(scale * 100)}%

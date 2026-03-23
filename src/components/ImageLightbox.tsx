@@ -129,7 +129,7 @@ export default function ImageLightbox({ src, alt = 'Görsel', onClose }: ImageLi
           <div className="absolute inset-0 bg-black/90" />
 
           {/* Controls */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2 pt-safe">
             <button
               onClick={() => handleZoom(0.5)}
               className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
@@ -158,7 +158,7 @@ export default function ImageLightbox({ src, alt = 'Görsel', onClose }: ImageLi
 
           {/* Zoom indicator */}
           {scale > 1 && (
-            <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium">
+            <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-medium pt-safe">
               {Math.round(scale * 100)}%
             </div>
           )}

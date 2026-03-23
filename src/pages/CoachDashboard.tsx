@@ -152,7 +152,7 @@ export default function CoachDashboard() {
   return (
     <><div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md pt-safe">
+      <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => { setSelectedStudent(null); setTab('analytics'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <AppLogo size="sm" />

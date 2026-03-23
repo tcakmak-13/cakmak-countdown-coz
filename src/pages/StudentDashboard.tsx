@@ -189,7 +189,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="border-b border-border bg-card/50 sticky top-0 z-40 backdrop-blur-md pt-safe">
+      <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={() => setTab('ana-menu')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -215,7 +215,7 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-4 py-6 mt-[calc(3.5rem+env(safe-area-inset-top,0px))]">
         <AnimatePresence mode="wait">
           {tab === 'denemelerim' && profileId && (
             <motion.div key="denemelerim" variants={tabVariants} initial="initial" animate="animate" exit="exit">
