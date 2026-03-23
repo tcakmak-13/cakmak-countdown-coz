@@ -454,6 +454,30 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
               Alan: <span className="text-primary font-semibold">{studentArea}</span>
             </p>
           )}
+          {/* Deneme Adı & Tarihi */}
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Deneme Adı / Kurum</Label>
+              <Input
+                placeholder="Örn: Özdebir, 3D"
+                value={examName}
+                onChange={e => setExamName(e.target.value)}
+                maxLength={60}
+                className="bg-secondary border-primary/20 focus:border-primary"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Deneme Tarihi</Label>
+              <Input
+                placeholder="GG.AA.YYYY"
+                value={examDateRaw}
+                onChange={e => setExamDateRaw(formatDateMask(e.target.value))}
+                maxLength={10}
+                inputMode="numeric"
+                className="bg-secondary border-primary/20 focus:border-primary font-mono tracking-wider"
+              />
+            </div>
+          </div>
 
           <div className="space-y-4">
             {activeSubjects.map(s => {
