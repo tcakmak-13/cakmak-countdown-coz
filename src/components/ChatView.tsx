@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ImagePicker from '@/components/ImagePicker';
+import { usePresence } from '@/hooks/usePresence';
 
 interface Props {
   currentProfileId: string;
@@ -163,6 +164,7 @@ function CoachDrawer({ open, onOpenChange, name, avatarUrl, coachProfileId }: { 
 }
 
 export default function ChatView({ currentProfileId, currentName, currentRole, currentUserId, coachId }: Props) {
+  const { isOnline } = usePresence(currentProfileId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [students, setStudents] = useState<StudentItem[]>([]);
