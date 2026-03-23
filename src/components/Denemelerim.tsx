@@ -244,8 +244,11 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   // ─── Chart Data ──────────────────────────────────────
   const filteredResults = results.filter(r => r.exam_type === examType);
   const chartData = filteredResults.slice(-10).map(r => {
+    const displayDate = r.exam_date
+      ? new Date(r.exam_date + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })
+      : new Date(r.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
     const point: Record<string, any> = {
-      date: new Date(r.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
+      date: displayDate,
       net: Number(r.total_net),
     };
     const subs = r.exam_type === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[r.student_area] || AYT_BY_AREA[studentArea] || []);
