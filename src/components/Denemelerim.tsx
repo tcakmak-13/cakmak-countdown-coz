@@ -76,6 +76,27 @@ function scoresFromResult(result: any, subjects: SubjectConfig[]): ScoreMap {
   return m;
 }
 
+// ─── Masked Date Input Helper ────────────────────────────────
+function formatDateMask(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  let result = '';
+  for (let i = 0; i < digits.length; i++) {
+    if (i === 2 || i === 4) result += '.';
+    result += digits[i];
+  }
+  return result;
+}
+
+function parseMaskedDate(masked: string): string | null {
+  const digits = masked.replace(/\D/g, '');
+  if (digits.length !== 8) return null;
+  const day = parseInt(digits.slice(0, 2));
+  const month = parseInt(digits.slice(2, 4));
+  const year = parseInt(digits.slice(4, 8));
+  if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2000 || year > 2099) return null;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export default function Denemelerim({ studentId, studentArea }: { studentId: string; studentArea: string }) {
   const [mainTab, setMainTab] = useState<'net' | 'konu'>('net');
   const [results, setResults] = useState<any[]>([]);
@@ -87,6 +108,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   const [chartTab, setChartTab] = useState<'total' | 'subjects'>('total');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [examName, setExamName] = useState('');
+  const [examDateRaw, setExamDateRaw] = useState('');
 
   const activeSubjects = examType === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[studentArea] || AYT_BY_AREA['SAY']);
 
@@ -102,6 +125,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
       .from('deneme_results')
       .select('*')
       .eq('student_id', studentId)
+      .order('exam_date', { ascending: true, nullsFirst: true })
       .order('created_at', { ascending: true });
     if (data) setResults(data as any[]);
   }, [studentId]);
@@ -129,11 +153,19 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   const handleSave = async () => {
     if (!validate()) { toast.error('Lütfen hataları düzeltin.'); return; }
+    // Validate exam date if entered
+    const parsedDate = examDateRaw ? parseMaskedDate(examDateRaw) : null;
+    if (examDateRaw && !parsedDate) {
+      toast.error('Geçersiz tarih formatı. GG.AA.YYYY olmalı.');
+      return;
+    }
     setSaving(true);
     const row: Record<string, any> = {
       student_id: studentId,
       exam_type: examType,
       student_area: examType === 'AYT' ? studentArea : null,
+      exam_name: examName.trim() || null,
+      exam_date: parsedDate || null,
     };
     activeSubjects.forEach(s => {
       const d = scores[`${s.key}_dogru`] || 0;
@@ -157,6 +189,8 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     toast.success(editingId ? 'Deneme güncellendi!' : 'Deneme kaydedildi!');
     setOpen(false);
     setEditingId(null);
+    setExamName('');
+    setExamDateRaw('');
     setScores(emptyScores(activeSubjects));
     fetchResults();
   };
@@ -167,6 +201,14 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
     const subs = type === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[result.student_area || studentArea] || AYT_BY_AREA['SAY']);
     setScores(scoresFromResult(result, subs));
     setEditingId(result.id);
+    setExamName(result.exam_name || '');
+    // Convert exam_date (YYYY-MM-DD) back to DD.MM.YYYY for the mask
+    if (result.exam_date) {
+      const [y, m, d] = result.exam_date.split('-');
+      setExamDateRaw(`${d}.${m}.${y}`);
+    } else {
+      setExamDateRaw('');
+    }
     setErrors({});
     setOpen(true);
   };
@@ -181,7 +223,7 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
 
   const handleModalClose = (val: boolean) => {
     setOpen(val);
-    if (!val) { setEditingId(null); setScores(emptyScores(activeSubjects)); setErrors({}); }
+    if (!val) { setEditingId(null); setExamName(''); setExamDateRaw(''); setScores(emptyScores(activeSubjects)); setErrors({}); }
   };
 
   // ─── Progress Circles Data (AVERAGE across ALL exams) ─────────────
@@ -202,8 +244,11 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
   // ─── Chart Data ──────────────────────────────────────
   const filteredResults = results.filter(r => r.exam_type === examType);
   const chartData = filteredResults.slice(-10).map(r => {
+    const displayDate = r.exam_date
+      ? new Date(r.exam_date + 'T00:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })
+      : new Date(r.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
     const point: Record<string, any> = {
-      date: new Date(r.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
+      date: displayDate,
       net: Number(r.total_net),
     };
     const subs = r.exam_type === 'TYT' ? TYT_SUBJECTS : (AYT_BY_AREA[r.student_area] || AYT_BY_AREA[studentArea] || []);
@@ -343,7 +388,12 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
             <motion.div key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-4 flex items-center justify-between border border-border group relative">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{r.exam_type}</span>
-                <span className="text-xs text-muted-foreground ml-2">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {r.exam_date
+                    ? new Date(r.exam_date + 'T00:00:00').toLocaleDateString('tr-TR')
+                    : new Date(r.created_at).toLocaleDateString('tr-TR')}
+                </span>
+                {r.exam_name && <span className="text-xs text-muted-foreground ml-1.5">· {r.exam_name}</span>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="font-display text-base sm:text-lg font-bold text-primary">{Number(r.total_net).toFixed(2)} Net</span>
@@ -404,6 +454,30 @@ export default function Denemelerim({ studentId, studentArea }: { studentId: str
               Alan: <span className="text-primary font-semibold">{studentArea}</span>
             </p>
           )}
+          {/* Deneme Adı & Tarihi */}
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Deneme Adı / Kurum</Label>
+              <Input
+                placeholder="Örn: Özdebir, 3D"
+                value={examName}
+                onChange={e => setExamName(e.target.value)}
+                maxLength={60}
+                className="bg-secondary border-primary/20 focus:border-primary"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Deneme Tarihi</Label>
+              <Input
+                placeholder="GG.AA.YYYY"
+                value={examDateRaw}
+                onChange={e => setExamDateRaw(formatDateMask(e.target.value))}
+                maxLength={10}
+                inputMode="numeric"
+                className="bg-secondary border-primary/20 focus:border-primary font-mono tracking-wider"
+              />
+            </div>
+          </div>
 
           <div className="space-y-4">
             {activeSubjects.map(s => {
