@@ -52,8 +52,13 @@ async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
   const { data: callerUser } = await callerClient.auth.getUser();
   if (!callerUser?.user) return null;
   const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
-  if (roleData?.role !== "admin") return null;
+  if (!roleData || (roleData.role !== "admin" && roleData.role !== "super_admin")) return null;
   return callerUser.user;
+}
+
+async function getAdminCompanyId(supabase: any, userId: string): Promise<string | null> {
+  const { data } = await supabase.from("profiles").select("company_id").eq("user_id", userId).single();
+  return data?.company_id || null;
 }
 
 Deno.serve(async (req) => {
