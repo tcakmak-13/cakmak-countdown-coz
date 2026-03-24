@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageLightbox from '@/components/ImageLightbox';
-import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle } from 'lucide-react';
+import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle, Building2, Pencil } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [coaches, setCoaches] = useState<CoachProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'appointments' | 'coach-detail'>('overview');
+  const [tab, setTab] = useState<'overview' | 'management' | 'schedule' | 'profile' | 'messages' | 'analytics' | 'appointments' | 'coach-detail' | 'company'>('overview');
   const [selectedCoach, setSelectedCoach] = useState<CoachProfile | null>(null);
 
   // Student creation
@@ -115,21 +115,65 @@ export default function AdminDashboard() {
     if (coachProfiles) setCoaches(coachProfiles as CoachProfile[]);
   };
 
+  // Company management
+  const [companyName, setCompanyName] = useState('');
+  const [companyLogo, setCompanyLogo] = useState('');
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [savingCompany, setSavingCompany] = useState(false);
+
+  const loadCompany = async () => {
+    if (!profile?.company_id) return;
+    const { data } = await supabase.from('companies').select('*').eq('id', profile.company_id).single();
+    if (data) {
+      setCompanyId(data.id);
+      setCompanyName(data.name);
+      setCompanyLogo(data.logo_url || '');
+    }
+  };
+
+  const handleSaveCompany = async () => {
+    if (!companyName.trim()) { toast.error('Firma adı zorunludur.'); return; }
+    setSavingCompany(true);
+    try {
+      if (companyId) {
+        const { error } = await supabase.from('companies').update({ name: companyName.trim(), logo_url: companyLogo.trim() || null }).eq('id', companyId);
+        if (error) throw error;
+        toast.success('Firma güncellendi.');
+      } else {
+        const { data, error } = await supabase.from('companies').insert({ name: companyName.trim(), logo_url: companyLogo.trim() || null }).select().single();
+        if (error) throw error;
+        // Link admin profile to this company
+        if (data && profileId) {
+          await supabase.from('profiles').update({ company_id: data.id }).eq('id', profileId);
+          setCompanyId(data.id);
+          await refreshProfile();
+        }
+        toast.success('Firma oluşturuldu ve hesabınıza bağlandı.');
+      }
+    } catch (err) {
+      console.error('Firma kayıt hatası:', err);
+      toast.error('Firma kaydedilemedi.');
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
   const loadAll = async () => {
     await loadCoaches();
+    await loadCompany();
   };
 
   useEffect(() => {
-    if (!loading && (!profile || role !== 'admin')) { navigate('/login'); return; }
-    if (role === 'admin') loadAll();
+    if (!loading && (!profile || (role !== 'admin' && role !== 'super_admin'))) { navigate('/login'); return; }
+    if (role === 'admin' || role === 'super_admin') loadAll();
   }, [loading, role, profile, navigate, profileId]);
 
   useEffect(() => {
-    if (role === 'admin') loadStudents();
+    if (role === 'admin' || role === 'super_admin') loadStudents();
   }, [coaches, profileId, role]);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
-  if (!profile || role !== 'admin') return null;
+  if (!profile || (role !== 'admin' && role !== 'super_admin')) return null;
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
 
@@ -328,6 +372,34 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        ) : tab === 'company' ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+              <Building2 className="h-6 w-6 text-primary" /> Firma Yönetimi
+            </h2>
+            <div className="glass-card rounded-2xl p-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Firma Adı *</Label>
+                <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Örn: Eğitim A.Ş." className="bg-secondary border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label>Logo URL</Label>
+                <Input value={companyLogo} onChange={e => setCompanyLogo(e.target.value)} placeholder="https://..." className="bg-secondary border-border" />
+              </div>
+              {companyLogo && (
+                <div className="flex justify-center">
+                  <img src={companyLogo} alt="Logo" className="h-16 w-16 rounded-lg object-contain border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
+                </div>
+              )}
+              <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2">
+                {companyId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {savingCompany ? 'Kaydediliyor...' : companyId ? 'Firmayı Güncelle' : 'Firma Oluştur'}
+              </Button>
+              {!companyId && (
+                <p className="text-xs text-muted-foreground text-center">Henüz bir firma oluşturmadınız. Oluşturduğunuz firma hesabınıza bağlanacak ve eklediğiniz tüm kullanıcılar bu firmaya ait olacaktır.</p>
+              )}
+            </div>
+          </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
         ) : tab === 'appointments' ? (
@@ -521,6 +593,7 @@ export default function AdminDashboard() {
             { key: 'management', icon: Users, label: 'Yönetim' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+            { key: 'company', icon: Building2, label: 'Firma' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (

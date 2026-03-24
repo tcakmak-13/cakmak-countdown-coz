@@ -1367,6 +1367,7 @@ export type Database = {
           yks_ranking: string
         }[]
       }
+      get_my_company_id: { Args: never; Returns: string }
       get_my_profile_id: { Args: never; Returns: string }
       get_my_student_ids: { Args: never; Returns: string[] }
       has_coach_info: { Args: { _profile_id: string }; Returns: boolean }
@@ -1378,6 +1379,7 @@ export type Database = {
         Returns: boolean
       }
       is_coach_profile: { Args: { _profile_id: string }; Returns: boolean }
+      is_same_company: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "student" | "koc" | "super_admin"

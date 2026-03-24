@@ -52,8 +52,13 @@ async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
   const { data: callerUser } = await callerClient.auth.getUser();
   if (!callerUser?.user) return null;
   const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
-  if (roleData?.role !== "admin") return null;
+  if (!roleData || (roleData.role !== "admin" && roleData.role !== "super_admin")) return null;
   return callerUser.user;
+}
+
+async function getAdminCompanyId(supabase: any, userId: string): Promise<string | null> {
+  const { data } = await supabase.from("profiles").select("company_id").eq("user_id", userId).single();
+  return data?.company_id || null;
 }
 
 Deno.serve(async (req) => {
@@ -180,6 +185,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Set company_id to match admin's company
+      if (newUser?.user && admin) {
+        const companyId = await getAdminCompanyId(supabase, admin.id);
+        if (companyId) {
+          await supabase.from("profiles").update({ company_id: companyId }).eq("user_id", newUser.user.id);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
         headers: { ...cors, "Content-Type": "application/json" },
       });
@@ -230,10 +243,15 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update role to 'koc' and mark profile as completed
+      // Update role to 'koc' and mark profile as completed, set company_id
       if (newUser?.user) {
         await supabase.from("user_roles").update({ role: "koc" }).eq("user_id", newUser.user.id);
-        await supabase.from("profiles").update({ profile_completed: true, full_name: fullName || username }).eq("user_id", newUser.user.id);
+        const updateData: any = { profile_completed: true, full_name: fullName || username };
+        if (admin) {
+          const companyId = await getAdminCompanyId(supabase, admin.id);
+          if (companyId) updateData.company_id = companyId;
+        }
+        await supabase.from("profiles").update(updateData).eq("user_id", newUser.user.id);
       }
 
       return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
