@@ -372,6 +372,34 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        ) : tab === 'company' ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+              <Building2 className="h-6 w-6 text-primary" /> Firma Yönetimi
+            </h2>
+            <div className="glass-card rounded-2xl p-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Firma Adı *</Label>
+                <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Örn: Eğitim A.Ş." className="bg-secondary border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label>Logo URL</Label>
+                <Input value={companyLogo} onChange={e => setCompanyLogo(e.target.value)} placeholder="https://..." className="bg-secondary border-border" />
+              </div>
+              {companyLogo && (
+                <div className="flex justify-center">
+                  <img src={companyLogo} alt="Logo" className="h-16 w-16 rounded-lg object-contain border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
+                </div>
+              )}
+              <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2">
+                {companyId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {savingCompany ? 'Kaydediliyor...' : companyId ? 'Firmayı Güncelle' : 'Firma Oluştur'}
+              </Button>
+              {!companyId && (
+                <p className="text-xs text-muted-foreground text-center">Henüz bir firma oluşturmadınız. Oluşturduğunuz firma hesabınıza bağlanacak ve eklediğiniz tüm kullanıcılar bu firmaya ait olacaktır.</p>
+              )}
+            </div>
+          </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
         ) : tab === 'appointments' ? (
