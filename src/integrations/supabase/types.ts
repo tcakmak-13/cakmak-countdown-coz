@@ -258,6 +258,27 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       custom_study_periods: {
         Row: {
           break_minutes: number
@@ -556,6 +577,7 @@ export type Database = {
           birthday: string | null
           coach_id: string | null
           coach_selected: boolean
+          company_id: string | null
           created_at: string
           email: string | null
           expectations: string | null
@@ -582,6 +604,7 @@ export type Database = {
           birthday?: string | null
           coach_id?: string | null
           coach_selected?: boolean
+          company_id?: string | null
           created_at?: string
           email?: string | null
           expectations?: string | null
@@ -608,6 +631,7 @@ export type Database = {
           birthday?: string | null
           coach_id?: string | null
           coach_selected?: boolean
+          company_id?: string | null
           created_at?: string
           email?: string | null
           expectations?: string | null
@@ -634,6 +658,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1349,7 +1380,7 @@ export type Database = {
       is_coach_profile: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "student" | "koc"
+      app_role: "admin" | "student" | "koc" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1477,7 +1508,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "student", "koc"],
+      app_role: ["admin", "student", "koc", "super_admin"],
     },
   },
 } as const
