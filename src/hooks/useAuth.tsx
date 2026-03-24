@@ -15,6 +15,7 @@ interface Profile {
   obp: string | null;
   coach_id: string | null;
   coach_selected: boolean;
+  company_id: string | null;
 }
 
 export type AppRole = 'super_admin' | 'admin' | 'koc' | 'student' | null;
