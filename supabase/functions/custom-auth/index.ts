@@ -185,6 +185,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Set company_id to match admin's company
+      if (newUser?.user && admin) {
+        const companyId = await getAdminCompanyId(supabase, admin.id);
+        if (companyId) {
+          await supabase.from("profiles").update({ company_id: companyId }).eq("user_id", newUser.user.id);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
         headers: { ...cors, "Content-Type": "application/json" },
       });
