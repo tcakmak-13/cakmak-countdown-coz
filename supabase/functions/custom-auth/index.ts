@@ -243,10 +243,15 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update role to 'koc' and mark profile as completed
+      // Update role to 'koc' and mark profile as completed, set company_id
       if (newUser?.user) {
         await supabase.from("user_roles").update({ role: "koc" }).eq("user_id", newUser.user.id);
-        await supabase.from("profiles").update({ profile_completed: true, full_name: fullName || username }).eq("user_id", newUser.user.id);
+        const updateData: any = { profile_completed: true, full_name: fullName || username };
+        if (admin) {
+          const companyId = await getAdminCompanyId(supabase, admin.id);
+          if (companyId) updateData.company_id = companyId;
+        }
+        await supabase.from("profiles").update(updateData).eq("user_id", newUser.user.id);
       }
 
       return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
