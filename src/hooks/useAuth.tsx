@@ -17,7 +17,7 @@ interface Profile {
   coach_selected: boolean;
 }
 
-export type AppRole = 'admin' | 'koc' | 'student' | null;
+export type AppRole = 'super_admin' | 'admin' | 'koc' | 'student' | null;
 
 interface AuthContextType {
   user: User | null;

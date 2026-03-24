@@ -15,6 +15,7 @@ import CoachOnboarding from "./pages/CoachOnboarding";
 import StudentDashboard from "./pages/StudentDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 import Showcase from "./pages/Showcase";
 

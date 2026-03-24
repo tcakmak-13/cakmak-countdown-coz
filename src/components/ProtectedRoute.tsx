@@ -20,7 +20,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (requiredRole && role !== requiredRole) return <Navigate to="/login" replace />;
+  if (requiredRole && role !== requiredRole) {
+    // super_admin can access admin routes too
+    if (!(requiredRole === 'admin' && role === 'super_admin')) {
+      return <Navigate to="/login" replace />;
+    }
+  }
 
   // Student-specific redirects
   if (role === 'student' && profile) {
