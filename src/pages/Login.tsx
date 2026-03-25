@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 function getRedirectPath(role: string | null, profile: any) {
   if (role === 'super_admin') return '/super-admin';
   if (role === 'admin') return '/admin';
+  if (role === 'firm_admin') return '/firm';
   if (role === 'koc') return '/coach';
   if (role === 'student') {
     if (!profile?.profile_completed) return '/onboarding';

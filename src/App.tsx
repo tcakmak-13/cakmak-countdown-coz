@@ -16,6 +16,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import FirmDashboard from "./pages/FirmDashboard";
 import NotFound from "./pages/NotFound";
 import Showcase from "./pages/Showcase";
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/coach" element={<ProtectedRoute requiredRole="koc"><CoachDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="super_admin"><SuperAdminDashboard /></ProtectedRoute>} />
+            <Route path="/firm" element={<ProtectedRoute requiredRole="firm_admin"><FirmDashboard /></ProtectedRoute>} />
             <Route path="/showcase" element={<Showcase />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

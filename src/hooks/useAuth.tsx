@@ -18,7 +18,7 @@ interface Profile {
   company_id: string | null;
 }
 
-export type AppRole = 'super_admin' | 'admin' | 'koc' | 'student' | null;
+export type AppRole = 'super_admin' | 'admin' | 'firm_admin' | 'koc' | 'student' | null;
 
 interface AuthContextType {
   user: User | null;

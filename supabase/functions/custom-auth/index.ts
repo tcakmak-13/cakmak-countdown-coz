@@ -42,7 +42,7 @@ function isUsernameValid(username: string): boolean {
   return /^[a-zA-Z0-9._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
 }
 
-async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
+async function verifySuperAdminOrAdmin(req: Request, supabase: any, supabaseUrl: string) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return null;
   const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -53,7 +53,12 @@ async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
   if (!callerUser?.user) return null;
   const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
   if (!roleData || (roleData.role !== "admin" && roleData.role !== "super_admin")) return null;
-  return callerUser.user;
+  return { user: callerUser.user, role: roleData.role as string };
+}
+
+async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
+  const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
+  return result?.user ?? null;
 }
 
 async function getAdminCompanyId(supabase: any, userId: string): Promise<string | null> {
@@ -73,7 +78,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
-    const { action, username, password, fullName, profileId, role: targetRole } = await req.json();
+    const { action, username, password, fullName, profileId, role: targetRole, companyId } = await req.json();
 
     if (action === "login") {
       if (!username || !password) {
@@ -375,6 +380,65 @@ Deno.serve(async (req) => {
         });
       }
       return new Response(JSON.stringify({ success: true, is_active: newStatus }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Create firm admin (super_admin only)
+    if (action === "create-firm-admin") {
+      const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
+      if (!result || result.role !== "super_admin") {
+        return new Response(JSON.stringify({ error: "Sadece super admin firma yöneticisi oluşturabilir." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!username || !password || !companyId) {
+        return new Response(JSON.stringify({ error: "Kullanıcı adı, şifre ve firma ID gerekli." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      if (!isUsernameValid(username)) {
+        return new Response(JSON.stringify({ error: "Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir (en az 2 karakter)." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      if (!isPasswordStrong(password)) {
+        return new Response(JSON.stringify({ error: "Şifre en az 8 karakter olmalıdır." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const email = `${username}@${EMAIL_DOMAIN}`;
+      const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName || username, username },
+      });
+
+      if (createErr) {
+        console.error('Firm admin creation error:', createErr);
+        if (createErr.message.includes("already been registered")) {
+          return new Response(JSON.stringify({ error: "Bu kullanıcı adı zaten mevcut." }), {
+            status: 409, headers: { ...cors, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ error: "Yönetici oluşturulamadı." }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      if (newUser?.user) {
+        await supabase.from("user_roles").update({ role: "firm_admin" }).eq("user_id", newUser.user.id);
+        await supabase.from("profiles").update({
+          profile_completed: true,
+          full_name: fullName || username,
+          company_id: companyId,
+        }).eq("user_id", newUser.user.id);
+      }
+
+      return new Response(JSON.stringify({ success: true, userId: newUser?.user?.id }), {
         headers: { ...cors, "Content-Type": "application/json" },
       });
     }
