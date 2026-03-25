@@ -10,7 +10,7 @@ import { usePresence } from '@/hooks/usePresence';
 interface Props {
   currentProfileId: string;
   currentName: string;
-  currentRole: 'super_admin' | 'admin' | 'koc' | 'student' | null;
+  currentRole: 'super_admin' | 'admin' | 'firm_admin' | 'koc' | 'student' | null;
   currentUserId?: string;
   coachId?: string | null;
 }
