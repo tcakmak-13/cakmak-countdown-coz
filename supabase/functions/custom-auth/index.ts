@@ -42,7 +42,7 @@ function isUsernameValid(username: string): boolean {
   return /^[a-zA-Z0-9._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
 }
 
-async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
+async function verifySuperAdminOrAdmin(req: Request, supabase: any, supabaseUrl: string) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return null;
   const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -53,7 +53,12 @@ async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
   if (!callerUser?.user) return null;
   const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
   if (!roleData || (roleData.role !== "admin" && roleData.role !== "super_admin")) return null;
-  return callerUser.user;
+  return { user: callerUser.user, role: roleData.role as string };
+}
+
+async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
+  const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
+  return result?.user ?? null;
 }
 
 async function getAdminCompanyId(supabase: any, userId: string): Promise<string | null> {
