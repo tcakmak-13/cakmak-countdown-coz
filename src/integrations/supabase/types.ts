@@ -587,6 +587,7 @@ export type Database = {
           high_school: string | null
           id: string
           is_active: boolean
+          is_approved: boolean
           obp: string | null
           parent_phone: string | null
           phone: string | null
@@ -614,6 +615,7 @@ export type Database = {
           high_school?: string | null
           id?: string
           is_active?: boolean
+          is_approved?: boolean
           obp?: string | null
           parent_phone?: string | null
           phone?: string | null
@@ -641,6 +643,7 @@ export type Database = {
           high_school?: string | null
           id?: string
           is_active?: boolean
+          is_approved?: boolean
           obp?: string | null
           parent_phone?: string | null
           phone?: string | null

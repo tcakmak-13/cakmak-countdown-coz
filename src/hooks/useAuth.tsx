@@ -16,6 +16,7 @@ interface Profile {
   coach_id: string | null;
   coach_selected: boolean;
   company_id: string | null;
+  is_approved: boolean;
 }
 
 export type AppRole = 'super_admin' | 'admin' | 'firm_admin' | 'koc' | 'student' | null;
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfileAndRole = async (userId: string) => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from('profiles').select('id, user_id, full_name, email, avatar_url, username, username_changed_at, profile_completed, area, obp, coach_id, coach_selected, company_id').eq('user_id', userId).single(),
+      supabase.from('profiles').select('id, user_id, full_name, email, avatar_url, username, username_changed_at, profile_completed, area, obp, coach_id, coach_selected, company_id, is_approved').eq('user_id', userId).single(),
       supabase.from('user_roles').select('role').eq('user_id', userId).single(),
     ]);
     if (profileRes.data) setProfile(profileRes.data as Profile);
