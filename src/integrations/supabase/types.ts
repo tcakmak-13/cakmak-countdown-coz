@@ -1382,7 +1382,7 @@ export type Database = {
       is_same_company: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "student" | "koc" | "super_admin"
+      app_role: "admin" | "student" | "koc" | "super_admin" | "firm_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1510,7 +1510,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "student", "koc", "super_admin"],
+      app_role: ["admin", "student", "koc", "super_admin", "firm_admin"],
     },
   },
 } as const
