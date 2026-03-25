@@ -112,7 +112,7 @@ export default function FirmDashboard() {
             <span className="font-semibold text-lg">{company?.name || 'Firma Paneli'}</span>
           </div>
           <div className="flex items-center gap-2">
-            {user && <NotificationBell userId={user.id} />}
+            <NotificationBell />
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" /> Çıkış
