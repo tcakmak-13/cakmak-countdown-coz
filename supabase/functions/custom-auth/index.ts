@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
-    const { action, username, password, fullName, profileId, role: targetRole } = await req.json();
+    const { action, username, password, fullName, profileId, role: targetRole, companyId } = await req.json();
 
     if (action === "login") {
       if (!username || !password) {
