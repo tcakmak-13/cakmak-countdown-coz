@@ -16,6 +16,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import FirmDashboard from "./pages/FirmDashboard";
 import NotFound from "./pages/NotFound";
 import Showcase from "./pages/Showcase";
 

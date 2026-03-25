@@ -27,6 +27,13 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     }
   }
 
+  // Firm admin redirect
+  if (role === 'firm_admin' && !requiredRole) {
+    if (location.pathname !== '/firm') {
+      return <Navigate to="/firm" replace />;
+    }
+  }
+
   // Student-specific redirects
   if (role === 'student' && profile) {
     if (!profile.profile_completed && location.pathname !== '/onboarding') {
