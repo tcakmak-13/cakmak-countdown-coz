@@ -48,6 +48,7 @@ export default function SuperAdminDashboard() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyStatsMap, setCompanyStatsMap] = useState<Map<string, CompanyStats>>(new Map());
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [name, setName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
