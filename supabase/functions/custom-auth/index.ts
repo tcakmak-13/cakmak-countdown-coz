@@ -515,6 +515,46 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Change password (firm_admin only)
+    if (action === "change-password") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
+      const callerClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: callerUser } = await callerClient.auth.getUser();
+      if (!callerUser?.user) {
+        return new Response(JSON.stringify({ error: "Oturum bulunamadı." }), {
+          status: 401, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
+      if (!roleData || roleData.role !== "firm_admin") {
+        return new Response(JSON.stringify({ error: "Sadece firma yöneticileri şifre değiştirebilir." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      if (!password || !isPasswordStrong(password)) {
+        return new Response(JSON.stringify({ error: "Yeni şifre en az 8 karakter olmalıdır." }), {
+          status: 400, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const { error: updateErr } = await supabase.auth.admin.updateUserById(callerUser.user.id, { password });
+      if (updateErr) {
+        return new Response(JSON.stringify({ error: "Şifre değiştirilemedi." }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Geçersiz işlem." }), {
       status: 400, headers: { ...cors, "Content-Type": "application/json" },
     });

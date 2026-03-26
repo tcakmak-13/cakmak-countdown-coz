@@ -131,10 +131,18 @@ export default function SuperAdminDashboard() {
     fetchPendingUsers();
   }, []);
 
+  // Firm admin fields for create flow
+  const [firmAdminName, setFirmAdminName] = useState('');
+  const [firmAdminUsername, setFirmAdminUsername] = useState('');
+  const [firmAdminPassword, setFirmAdminPassword] = useState('');
+
   const openCreate = () => {
     setEditingCompany(null);
     setName('');
     setLogoUrl('');
+    setFirmAdminName('');
+    setFirmAdminUsername('');
+    setFirmAdminPassword('');
     setDialogOpen(true);
   };
 
@@ -147,6 +155,19 @@ export default function SuperAdminDashboard() {
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Firma adı zorunludur.'); return; }
+
+    // For new firms, require admin account info
+    if (!editingCompany) {
+      if (!firmAdminUsername.trim() || !firmAdminPassword.trim()) {
+        toast.error('Firma yöneticisi kullanıcı adı ve şifre zorunludur.');
+        return;
+      }
+      if (firmAdminPassword.length < 8) {
+        toast.error('Şifre en az 8 karakter olmalıdır.');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       if (editingCompany) {
@@ -157,16 +178,44 @@ export default function SuperAdminDashboard() {
         if (error) throw error;
         toast.success('Firma güncellendi.');
       } else {
-        const { error } = await supabase
+        // 1. Create the company
+        const { data: newCompany, error: companyErr } = await supabase
           .from('companies')
-          .insert({ name: name.trim(), logo_url: logoUrl.trim() || null });
-        if (error) {
-          console.error('Firma ekleme hatası:', error);
-          toast.error(`Firma eklenemedi: ${error.message}`);
+          .insert({ name: name.trim(), logo_url: logoUrl.trim() || null })
+          .select('id')
+          .single();
+        if (companyErr) {
+          console.error('Firma ekleme hatası:', companyErr);
+          toast.error(`Firma eklenemedi: ${companyErr.message}`);
           setSaving(false);
           return;
         }
-        toast.success('Firma oluşturuldu.');
+
+        // 2. Create the firm admin account
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            },
+            body: JSON.stringify({
+              action: 'create-firm-admin',
+              username: firmAdminUsername.trim(),
+              password: firmAdminPassword,
+              fullName: firmAdminName.trim() || firmAdminUsername.trim(),
+              companyId: newCompany.id,
+            }),
+          }
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || 'Firma oluşturuldu ancak yönetici hesabı oluşturulamadı.');
+        } else {
+          toast.success('Firma ve yönetici hesabı başarıyla oluşturuldu.');
+        }
       }
       setDialogOpen(false);
       fetchCompanies();
@@ -558,8 +607,28 @@ export default function SuperAdminDashboard() {
                         <img src={logoUrl} alt="Logo önizleme" className="h-16 w-16 rounded-lg object-contain border" onError={e => (e.currentTarget.style.display = 'none')} />
                       </div>
                     )}
+                    {/* Firm admin fields - only for new firms */}
+                    {!editingCompany && (
+                      <>
+                        <div className="border-t pt-4">
+                          <p className="text-sm font-medium mb-3">Firma Yöneticisi Hesabı</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ad Soyad</Label>
+                          <Input value={firmAdminName} onChange={e => setFirmAdminName(e.target.value)} placeholder="Örn: Ahmet Yılmaz" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Kullanıcı Adı *</Label>
+                          <Input value={firmAdminUsername} onChange={e => setFirmAdminUsername(e.target.value)} placeholder="Giriş için kullanılacak" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Şifre * (en az 8 karakter)</Label>
+                          <Input type="password" value={firmAdminPassword} onChange={e => setFirmAdminPassword(e.target.value)} placeholder="••••••••" />
+                        </div>
+                      </>
+                    )}
                     <Button onClick={handleSave} disabled={saving} className="w-full">
-                      {saving ? 'Kaydediliyor...' : editingCompany ? 'Güncelle' : 'Ekle'}
+                      {saving ? 'Kaydediliyor...' : editingCompany ? 'Güncelle' : 'Firma ve Yönetici Oluştur'}
                     </Button>
                   </div>
                 </DialogContent>

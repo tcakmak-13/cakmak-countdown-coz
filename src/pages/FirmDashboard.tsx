@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Building2, Users, GraduationCap, LogOut, UserCheck, CalendarDays, UserPlus, Clock } from 'lucide-react';
+import { Building2, Users, GraduationCap, LogOut, UserCheck, CalendarDays, UserPlus, Clock, KeyRound } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import NotificationBell from '@/components/NotificationBell';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -52,6 +52,45 @@ export default function FirmDashboard() {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Password change
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPasswordValue, setNewPasswordValue] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!newPasswordValue || newPasswordValue.length < 8) {
+      toast.error('Yeni şifre en az 8 karakter olmalıdır.');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({ action: 'change-password', password: newPasswordValue }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Şifre değiştirilemedi.');
+        return;
+      }
+      toast.success('Şifreniz başarıyla değiştirildi.');
+      setPasswordDialogOpen(false);
+      setNewPasswordValue('');
+    } catch {
+      toast.error('Bağlantı hatası.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   useEffect(() => {
     if (!profile?.company_id) return;
@@ -177,6 +216,27 @@ export default function FirmDashboard() {
           <div className="flex items-center gap-2">
             <NotificationBell />
             <ThemeToggle />
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={() => setNewPasswordValue('')}>
+                  <KeyRound className="h-4 w-4 mr-2" /> Şifre Değiştir
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Şifre Değiştir</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>Yeni Şifre * (en az 8 karakter)</Label>
+                    <Input type="password" value={newPasswordValue} onChange={e => setNewPasswordValue(e.target.value)} placeholder="••••••••" />
+                  </div>
+                  <Button onClick={handleChangePassword} disabled={changingPassword} className="w-full">
+                    {changingPassword ? 'Değiştiriliyor...' : 'Şifreyi Güncelle'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" /> Çıkış
             </Button>
