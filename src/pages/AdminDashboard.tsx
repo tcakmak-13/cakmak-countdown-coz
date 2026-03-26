@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageLightbox from '@/components/ImageLightbox';
-import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle, Building2, Pencil } from 'lucide-react';
+import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle, Building2, Pencil, Eye, GraduationCap, UserCheck } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -115,66 +118,127 @@ export default function AdminDashboard() {
     if (coachProfiles) setCoaches(coachProfiles as CoachProfile[]);
   };
 
-  // Company management
+  // Company management - table view
+  interface CompanyRow { id: string; name: string; logo_url: string | null; created_at: string; }
+  interface CompanyStats { adminCount: number; coachCount: number; studentCount: number; }
+  const [companiesList, setCompaniesList] = useState<CompanyRow[]>([]);
+  const [companyStatsMap, setCompanyStatsMap] = useState<Map<string, CompanyStats>>(new Map());
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<CompanyRow | null>(null);
   const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState('');
-  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [firmAdminName, setFirmAdminName] = useState('');
+  const [firmAdminUsername, setFirmAdminUsername] = useState('');
+  const [firmAdminPassword, setFirmAdminPassword] = useState('');
   const [savingCompany, setSavingCompany] = useState(false);
 
-  const loadCompany = async () => {
-    if (!profile?.company_id) return;
-    const { data } = await supabase.from('companies').select('*').eq('id', profile.company_id).single();
-    if (data) {
-      setCompanyId(data.id);
-      setCompanyName(data.name);
-      setCompanyLogo(data.logo_url || '');
+  const loadCompanies = async () => {
+    setCompaniesLoading(true);
+    try {
+      const { data, error } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      setCompaniesList(data || []);
+
+      if (data && data.length > 0) {
+        const companyIds = data.map(c => c.id);
+        const { data: profiles } = await supabase.from('profiles').select('company_id, user_id, is_approved').in('company_id', companyIds);
+        if (profiles && profiles.length > 0) {
+          const userIds = profiles.map(p => p.user_id);
+          const { data: roles } = await supabase.from('user_roles').select('user_id, role').in('user_id', userIds);
+          const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+          const statsMap = new Map<string, CompanyStats>();
+          for (const cId of companyIds) statsMap.set(cId, { adminCount: 0, coachCount: 0, studentCount: 0 });
+          for (const p of profiles) {
+            if (!p.company_id) continue;
+            const stats = statsMap.get(p.company_id);
+            if (!stats) continue;
+            const r = roleMap.get(p.user_id);
+            if (r === 'firm_admin') stats.adminCount++;
+            else if (r === 'koc' && p.is_approved) stats.coachCount++;
+            else if (r === 'student' && p.is_approved) stats.studentCount++;
+          }
+          setCompanyStatsMap(statsMap);
+        }
+      }
+    } catch (err) {
+      console.error('Firma listesi alınamadı:', err);
+    } finally {
+      setCompaniesLoading(false);
     }
+  };
+
+  const openCreateCompany = () => {
+    setEditingCompany(null);
+    setCompanyName('');
+    setCompanyLogo('');
+    setFirmAdminName('');
+    setFirmAdminUsername('');
+    setFirmAdminPassword('');
+    setCompanyDialogOpen(true);
+  };
+
+  const openEditCompany = (c: CompanyRow) => {
+    setEditingCompany(c);
+    setCompanyName(c.name);
+    setCompanyLogo(c.logo_url || '');
+    setCompanyDialogOpen(true);
   };
 
   const handleSaveCompany = async () => {
     if (!companyName.trim()) { toast.error('Firma adı zorunludur.'); return; }
+    if (!editingCompany && (!firmAdminUsername.trim() || !firmAdminPassword.trim())) {
+      toast.error('Firma yöneticisi kullanıcı adı ve şifre zorunludur.'); return;
+    }
+    if (!editingCompany && firmAdminPassword.length < 8) {
+      toast.error('Şifre en az 8 karakter olmalıdır.'); return;
+    }
     setSavingCompany(true);
     try {
-      if (companyId) {
-        const { error } = await supabase
-          .from('companies')
-          .update({ name: companyName.trim(), logo_url: companyLogo.trim() || null })
-          .eq('id', companyId);
+      if (editingCompany) {
+        const { error } = await supabase.from('companies').update({ name: companyName.trim(), logo_url: companyLogo.trim() || null }).eq('id', editingCompany.id);
         if (error) throw error;
         toast.success('Firma güncellendi.');
       } else {
         const newCompanyId = crypto.randomUUID();
-        const { error: insertError } = await supabase
-          .from('companies')
-          .insert({ id: newCompanyId, name: companyName.trim(), logo_url: companyLogo.trim() || null });
+        const { error: insertError } = await supabase.from('companies').insert({ id: newCompanyId, name: companyName.trim(), logo_url: companyLogo.trim() || null });
         if (insertError) throw insertError;
 
-        if (!profileId) throw new Error('Profil bulunamadı. Lütfen tekrar giriş yapın.');
-
-        const { error: profileUpdateError } = await supabase
-          .from('profiles')
-          .update({ company_id: newCompanyId })
-          .eq('id', profileId);
-        if (profileUpdateError) throw profileUpdateError;
-
-        setCompanyId(newCompanyId);
-        await refreshProfile();
-        toast.success('Firma oluşturuldu ve hesabınıza bağlandı.');
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+          body: JSON.stringify({ action: 'create-firm-admin', username: firmAdminUsername.trim(), password: firmAdminPassword, fullName: firmAdminName.trim() || firmAdminUsername.trim(), companyId: newCompanyId }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || 'Firma oluşturuldu ancak yönetici hesabı oluşturulamadı.');
+        } else {
+          toast.success('Firma ve yönetici hesabı başarıyla oluşturuldu.');
+        }
       }
-    } catch (err) {
-      console.error('Firma kayıt hatası:', err);
-      const message = typeof err === 'object' && err !== null && 'message' in err
-        ? String((err as { message?: string }).message)
-        : 'Bilinmeyen hata';
-      toast.error(`Firma kaydedilemedi: ${message}`);
+      setCompanyDialogOpen(false);
+      loadCompanies();
+    } catch (err: any) {
+      console.error('Firma kaydedilemedi:', err);
+      toast.error(`Bir hata oluştu: ${err?.message || 'Bilinmeyen hata'}`);
     } finally {
       setSavingCompany(false);
     }
   };
 
+  const handleDeleteCompany = async (id: string) => {
+    if (!confirm('Bu firmayı silmek istediğinize emin misiniz?')) return;
+    try {
+      const { error } = await supabase.from('companies').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Firma silindi.');
+      loadCompanies();
+    } catch { toast.error('Firma silinemedi.'); }
+  };
+
   const loadAll = async () => {
     await loadCoaches();
-    await loadCompany();
+    await loadCompanies();
   };
 
   useEffect(() => {
@@ -388,31 +452,136 @@ export default function AdminDashboard() {
           </div>
         ) : tab === 'company' ? (
           <div className="space-y-6">
-            <h2 className="font-display text-2xl font-bold flex items-center gap-2">
-              <Building2 className="h-6 w-6 text-primary" /> Firma Yönetimi
-            </h2>
-            <div className="glass-card rounded-2xl p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Firma Adı *</Label>
-                <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Örn: Eğitim A.Ş." className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-2">
-                <Label>Logo URL</Label>
-                <Input value={companyLogo} onChange={e => setCompanyLogo(e.target.value)} placeholder="https://..." className="bg-secondary border-border" />
-              </div>
-              {companyLogo && (
-                <div className="flex justify-center">
-                  <img src={companyLogo} alt="Logo" className="h-16 w-16 rounded-lg object-contain border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
-                </div>
-              )}
-              <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2">
-                {companyId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                {savingCompany ? 'Kaydediliyor...' : companyId ? 'Firmayı Güncelle' : 'Firma Oluştur'}
-              </Button>
-              {!companyId && (
-                <p className="text-xs text-muted-foreground text-center">Henüz bir firma oluşturmadınız. Oluşturduğunuz firma hesabınıza bağlanacak ve eklediğiniz tüm kullanıcılar bu firmaya ait olacaktır.</p>
-              )}
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+                <Building2 className="h-6 w-6 text-primary" /> Firma Yönetimi
+              </h2>
+              <Dialog open={companyDialogOpen} onOpenChange={setCompanyDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openCreateCompany} className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
+                    <Plus className="h-4 w-4 mr-2" /> Yeni Firma Ekle
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingCompany ? 'Firmayı Düzenle' : 'Yeni Firma ve Yönetici Ekle'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label>Firma Adı *</Label>
+                      <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Örn: Eğitim A.Ş." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Logo URL</Label>
+                      <Input value={companyLogo} onChange={e => setCompanyLogo(e.target.value)} placeholder="https://..." />
+                    </div>
+                    {companyLogo && (
+                      <div className="flex justify-center">
+                        <img src={companyLogo} alt="Logo önizleme" className="h-16 w-16 rounded-lg object-contain border" onError={e => (e.currentTarget.style.display = 'none')} />
+                      </div>
+                    )}
+                    {!editingCompany && (
+                      <>
+                        <div className="border-t pt-4">
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" /> Firma Yöneticisi Hesabı
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ad Soyad</Label>
+                          <Input value={firmAdminName} onChange={e => setFirmAdminName(e.target.value)} placeholder="Örn: Ahmet Yılmaz" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Kullanıcı Adı *</Label>
+                          <Input value={firmAdminUsername} onChange={e => setFirmAdminUsername(e.target.value)} placeholder="Giriş için kullanılacak" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Şifre * (en az 8 karakter)</Label>
+                          <Input type="password" value={firmAdminPassword} onChange={e => setFirmAdminPassword(e.target.value)} placeholder="••••••••" />
+                        </div>
+                      </>
+                    )}
+                    <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full">
+                      {savingCompany ? 'Kaydediliyor...' : editingCompany ? 'Güncelle' : 'Firma ve Yönetici Oluştur'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            <Card>
+              <CardContent className="p-0">
+                {companiesLoading ? (
+                  <p className="text-muted-foreground text-center py-8">Yükleniyor...</p>
+                ) : companiesList.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">Henüz firma eklenmemiş.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Sağ üstteki butona tıklayarak yeni firma ekleyin.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[60px]">Logo</TableHead>
+                        <TableHead>Firma Adı</TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><Users className="h-3.5 w-3.5" /> Admin</span>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><UserCheck className="h-3.5 w-3.5" /> Koç</span>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><GraduationCap className="h-3.5 w-3.5" /> Öğrenci</span>
+                        </TableHead>
+                        <TableHead className="text-right">İşlemler</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {companiesList.map(c => {
+                        const stats = companyStatsMap.get(c.id) || { adminCount: 0, coachCount: 0, studentCount: 0 };
+                        return (
+                          <TableRow key={c.id}>
+                            <TableCell>
+                              {c.logo_url ? (
+                                <img src={c.logo_url} alt={c.name} className="h-9 w-9 rounded-lg object-contain border" />
+                              ) : (
+                                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Building2 className="h-5 w-5 text-primary" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{c.name}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString('tr-TR')}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.adminCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.coachCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.studentCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-1" onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" onClick={() => openEditCompany(c)} title="Düzenle">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteCompany(c.id)} title="Sil">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
