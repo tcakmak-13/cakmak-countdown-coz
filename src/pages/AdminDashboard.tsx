@@ -136,23 +136,37 @@ export default function AdminDashboard() {
     setSavingCompany(true);
     try {
       if (companyId) {
-        const { error } = await supabase.from('companies').update({ name: companyName.trim(), logo_url: companyLogo.trim() || null }).eq('id', companyId);
+        const { error } = await supabase
+          .from('companies')
+          .update({ name: companyName.trim(), logo_url: companyLogo.trim() || null })
+          .eq('id', companyId);
         if (error) throw error;
         toast.success('Firma güncellendi.');
       } else {
-        const { data, error } = await supabase.from('companies').insert({ name: companyName.trim(), logo_url: companyLogo.trim() || null }).select().single();
-        if (error) throw error;
-        // Link admin profile to this company
-        if (data && profileId) {
-          await supabase.from('profiles').update({ company_id: data.id }).eq('id', profileId);
-          setCompanyId(data.id);
-          await refreshProfile();
-        }
+        const newCompanyId = crypto.randomUUID();
+        const { error: insertError } = await supabase
+          .from('companies')
+          .insert({ id: newCompanyId, name: companyName.trim(), logo_url: companyLogo.trim() || null });
+        if (insertError) throw insertError;
+
+        if (!profileId) throw new Error('Profil bulunamadı. Lütfen tekrar giriş yapın.');
+
+        const { error: profileUpdateError } = await supabase
+          .from('profiles')
+          .update({ company_id: newCompanyId })
+          .eq('id', profileId);
+        if (profileUpdateError) throw profileUpdateError;
+
+        setCompanyId(newCompanyId);
+        await refreshProfile();
         toast.success('Firma oluşturuldu ve hesabınıza bağlandı.');
       }
     } catch (err) {
       console.error('Firma kayıt hatası:', err);
-      toast.error('Firma kaydedilemedi.');
+      const message = typeof err === 'object' && err !== null && 'message' in err
+        ? String((err as { message?: string }).message)
+        : 'Bilinmeyen hata';
+      toast.error(`Firma kaydedilemedi: ${message}`);
     } finally {
       setSavingCompany(false);
     }
