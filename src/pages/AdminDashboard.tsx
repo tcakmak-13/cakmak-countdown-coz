@@ -238,7 +238,7 @@ export default function AdminDashboard() {
 
   const loadAll = async () => {
     await loadCoaches();
-    await loadCompany();
+    await loadCompanies();
   };
 
   useEffect(() => {
@@ -452,31 +452,136 @@ export default function AdminDashboard() {
           </div>
         ) : tab === 'company' ? (
           <div className="space-y-6">
-            <h2 className="font-display text-2xl font-bold flex items-center gap-2">
-              <Building2 className="h-6 w-6 text-primary" /> Firma Yönetimi
-            </h2>
-            <div className="glass-card rounded-2xl p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Firma Adı *</Label>
-                <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Örn: Eğitim A.Ş." className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-2">
-                <Label>Logo URL</Label>
-                <Input value={companyLogo} onChange={e => setCompanyLogo(e.target.value)} placeholder="https://..." className="bg-secondary border-border" />
-              </div>
-              {companyLogo && (
-                <div className="flex justify-center">
-                  <img src={companyLogo} alt="Logo" className="h-16 w-16 rounded-lg object-contain border border-border" onError={e => (e.currentTarget.style.display = 'none')} />
-                </div>
-              )}
-              <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2">
-                {companyId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                {savingCompany ? 'Kaydediliyor...' : companyId ? 'Firmayı Güncelle' : 'Firma Oluştur'}
-              </Button>
-              {!companyId && (
-                <p className="text-xs text-muted-foreground text-center">Henüz bir firma oluşturmadınız. Oluşturduğunuz firma hesabınıza bağlanacak ve eklediğiniz tüm kullanıcılar bu firmaya ait olacaktır.</p>
-              )}
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+                <Building2 className="h-6 w-6 text-primary" /> Firma Yönetimi
+              </h2>
+              <Dialog open={companyDialogOpen} onOpenChange={setCompanyDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openCreateCompany} className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90">
+                    <Plus className="h-4 w-4 mr-2" /> Yeni Firma Ekle
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingCompany ? 'Firmayı Düzenle' : 'Yeni Firma ve Yönetici Ekle'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label>Firma Adı *</Label>
+                      <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Örn: Eğitim A.Ş." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Logo URL</Label>
+                      <Input value={companyLogo} onChange={e => setCompanyLogo(e.target.value)} placeholder="https://..." />
+                    </div>
+                    {companyLogo && (
+                      <div className="flex justify-center">
+                        <img src={companyLogo} alt="Logo önizleme" className="h-16 w-16 rounded-lg object-contain border" onError={e => (e.currentTarget.style.display = 'none')} />
+                      </div>
+                    )}
+                    {!editingCompany && (
+                      <>
+                        <div className="border-t pt-4">
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" /> Firma Yöneticisi Hesabı
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Ad Soyad</Label>
+                          <Input value={firmAdminName} onChange={e => setFirmAdminName(e.target.value)} placeholder="Örn: Ahmet Yılmaz" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Kullanıcı Adı *</Label>
+                          <Input value={firmAdminUsername} onChange={e => setFirmAdminUsername(e.target.value)} placeholder="Giriş için kullanılacak" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Şifre * (en az 8 karakter)</Label>
+                          <Input type="password" value={firmAdminPassword} onChange={e => setFirmAdminPassword(e.target.value)} placeholder="••••••••" />
+                        </div>
+                      </>
+                    )}
+                    <Button onClick={handleSaveCompany} disabled={savingCompany} className="w-full">
+                      {savingCompany ? 'Kaydediliyor...' : editingCompany ? 'Güncelle' : 'Firma ve Yönetici Oluştur'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            <Card>
+              <CardContent className="p-0">
+                {companiesLoading ? (
+                  <p className="text-muted-foreground text-center py-8">Yükleniyor...</p>
+                ) : companiesList.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">Henüz firma eklenmemiş.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Sağ üstteki butona tıklayarak yeni firma ekleyin.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[60px]">Logo</TableHead>
+                        <TableHead>Firma Adı</TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><Users className="h-3.5 w-3.5" /> Admin</span>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><UserCheck className="h-3.5 w-3.5" /> Koç</span>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><GraduationCap className="h-3.5 w-3.5" /> Öğrenci</span>
+                        </TableHead>
+                        <TableHead className="text-right">İşlemler</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {companiesList.map(c => {
+                        const stats = companyStatsMap.get(c.id) || { adminCount: 0, coachCount: 0, studentCount: 0 };
+                        return (
+                          <TableRow key={c.id}>
+                            <TableCell>
+                              {c.logo_url ? (
+                                <img src={c.logo_url} alt={c.name} className="h-9 w-9 rounded-lg object-contain border" />
+                              ) : (
+                                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Building2 className="h-5 w-5 text-primary" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{c.name}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString('tr-TR')}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.adminCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.coachCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.studentCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-1" onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" onClick={() => openEditCompany(c)} title="Düzenle">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteCompany(c.id)} title="Sil">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
