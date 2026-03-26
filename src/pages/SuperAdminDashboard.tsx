@@ -20,6 +20,12 @@ interface Company {
   created_at: string;
 }
 
+interface CompanyStats {
+  adminCount: number;
+  coachCount: number;
+  studentCount: number;
+}
+
 interface FirmDetail {
   company: Company;
   coachCount: number;
@@ -41,6 +47,7 @@ export default function SuperAdminDashboard() {
   const { signOut } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [companyStatsMap, setCompanyStatsMap] = useState<Map<string, CompanyStats>>(new Map());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [name, setName] = useState('');
@@ -71,6 +78,36 @@ export default function SuperAdminDashboard() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setCompanies(data || []);
+
+      // Fetch stats for all companies
+      if (data && data.length > 0) {
+        const companyIds = data.map(c => c.id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('company_id, user_id, is_approved')
+          .in('company_id', companyIds);
+        
+        if (profiles && profiles.length > 0) {
+          const userIds = profiles.map(p => p.user_id);
+          const { data: roles } = await supabase.from('user_roles').select('user_id, role').in('user_id', userIds);
+          const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+
+          const statsMap = new Map<string, CompanyStats>();
+          for (const cId of companyIds) {
+            statsMap.set(cId, { adminCount: 0, coachCount: 0, studentCount: 0 });
+          }
+          for (const p of profiles) {
+            if (!p.company_id) continue;
+            const stats = statsMap.get(p.company_id);
+            if (!stats) continue;
+            const role = roleMap.get(p.user_id);
+            if (role === 'firm_admin') stats.adminCount++;
+            else if (role === 'koc' && p.is_approved) stats.coachCount++;
+            else if (role === 'student' && p.is_approved) stats.studentCount++;
+          }
+          setCompanyStatsMap(statsMap);
+        }
+      }
     } catch (err) {
       console.error('Firma listesi alınamadı:', err);
       toast.error('Firma listesi yüklenemedi.');
@@ -586,12 +623,12 @@ export default function SuperAdminDashboard() {
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={openCreate}>
-                    <Plus className="h-4 w-4 mr-2" /> Yeni Firma
+                    <Plus className="h-4 w-4 mr-2" /> Yeni Firma Ekle
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>{editingCompany ? 'Firmayı Düzenle' : 'Yeni Firma Ekle'}</DialogTitle>
+                    <DialogTitle>{editingCompany ? 'Firmayı Düzenle' : 'Yeni Firma ve Yönetici Ekle'}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 pt-2">
                     <div className="space-y-2">
@@ -607,11 +644,12 @@ export default function SuperAdminDashboard() {
                         <img src={logoUrl} alt="Logo önizleme" className="h-16 w-16 rounded-lg object-contain border" onError={e => (e.currentTarget.style.display = 'none')} />
                       </div>
                     )}
-                    {/* Firm admin fields - only for new firms */}
                     {!editingCompany && (
                       <>
                         <div className="border-t pt-4">
-                          <p className="text-sm font-medium mb-3">Firma Yöneticisi Hesabı</p>
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-primary" /> Firma Yöneticisi Hesabı
+                          </p>
                         </div>
                         <div className="space-y-2">
                           <Label>Ad Soyad</Label>
@@ -636,51 +674,76 @@ export default function SuperAdminDashboard() {
             </div>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Kayıtlı Firmalar ({companies.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {loading ? (
                   <p className="text-muted-foreground text-center py-8">Yükleniyor...</p>
                 ) : companies.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Henüz firma eklenmemiş.</p>
+                  <div className="text-center py-12">
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">Henüz firma eklenmemiş.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Sağ üstteki butona tıklayarak yeni firma ekleyin.</p>
+                  </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Logo</TableHead>
+                        <TableHead className="w-[60px]">Logo</TableHead>
                         <TableHead>Firma Adı</TableHead>
-                        <TableHead>Kayıt Tarihi</TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><Users className="h-3.5 w-3.5" /> Admin</span>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><UserCheck className="h-3.5 w-3.5" /> Koç</span>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <span className="flex items-center justify-center gap-1"><GraduationCap className="h-3.5 w-3.5" /> Öğrenci</span>
+                        </TableHead>
                         <TableHead className="text-right">İşlemler</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {companies.map(c => (
-                        <TableRow key={c.id} className="cursor-pointer" onClick={() => openFirmDetail(c)}>
-                          <TableCell>
-                            {c.logo_url ? (
-                              <img src={c.logo_url} alt={c.name} className="h-8 w-8 rounded object-contain" />
-                            ) : (
-                              <Building2 className="h-8 w-8 text-muted-foreground" />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">{c.name}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {new Date(c.created_at).toLocaleDateString('tr-TR')}
-                          </TableCell>
-                          <TableCell className="text-right space-x-2" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" onClick={() => openFirmDetail(c)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(c.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {companies.map(c => {
+                        const stats = companyStatsMap.get(c.id) || { adminCount: 0, coachCount: 0, studentCount: 0 };
+                        return (
+                          <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openFirmDetail(c)}>
+                            <TableCell>
+                              {c.logo_url ? (
+                                <img src={c.logo_url} alt={c.name} className="h-9 w-9 rounded-lg object-contain border" />
+                              ) : (
+                                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Building2 className="h-5 w-5 text-primary" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{c.name}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleDateString('tr-TR')}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.adminCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.coachCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-semibold">{stats.studentCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-1" onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" onClick={() => openFirmDetail(c)} title="Detay">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(c)} title="Düzenle">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(c.id)} title="Sil">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
