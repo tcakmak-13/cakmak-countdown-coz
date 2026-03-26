@@ -78,6 +78,36 @@ export default function SuperAdminDashboard() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setCompanies(data || []);
+
+      // Fetch stats for all companies
+      if (data && data.length > 0) {
+        const companyIds = data.map(c => c.id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('company_id, user_id, is_approved')
+          .in('company_id', companyIds);
+        
+        if (profiles && profiles.length > 0) {
+          const userIds = profiles.map(p => p.user_id);
+          const { data: roles } = await supabase.from('user_roles').select('user_id, role').in('user_id', userIds);
+          const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+
+          const statsMap = new Map<string, CompanyStats>();
+          for (const cId of companyIds) {
+            statsMap.set(cId, { adminCount: 0, coachCount: 0, studentCount: 0 });
+          }
+          for (const p of profiles) {
+            if (!p.company_id) continue;
+            const stats = statsMap.get(p.company_id);
+            if (!stats) continue;
+            const role = roleMap.get(p.user_id);
+            if (role === 'firm_admin') stats.adminCount++;
+            else if (role === 'koc' && p.is_approved) stats.coachCount++;
+            else if (role === 'student' && p.is_approved) stats.studentCount++;
+          }
+          setCompanyStatsMap(statsMap);
+        }
+      }
     } catch (err) {
       console.error('Firma listesi alınamadı:', err);
       toast.error('Firma listesi yüklenemedi.');
