@@ -20,6 +20,12 @@ interface Company {
   created_at: string;
 }
 
+interface CompanyStats {
+  adminCount: number;
+  coachCount: number;
+  studentCount: number;
+}
+
 interface FirmDetail {
   company: Company;
   coachCount: number;
