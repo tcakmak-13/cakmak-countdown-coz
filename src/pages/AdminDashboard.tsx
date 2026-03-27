@@ -619,6 +619,35 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Add Admin to Existing Company Dialog */}
+            <Dialog open={addAdminDialogOpen} onOpenChange={setAddAdminDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Yönetici Ekle — {addAdminCompany?.name}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-primary" /> Bu firmaya yeni bir yönetici hesabı oluşturun.
+                  </p>
+                  <div className="space-y-2">
+                    <Label>Ad Soyad</Label>
+                    <Input value={addAdminName} onChange={e => setAddAdminName(e.target.value)} placeholder="Örn: Mehmet Kaya" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Kullanıcı Adı *</Label>
+                    <Input value={addAdminUsername} onChange={e => setAddAdminUsername(e.target.value)} placeholder="Giriş için kullanılacak" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Şifre * (en az 8 karakter)</Label>
+                    <Input type="password" value={addAdminPassword} onChange={e => setAddAdminPassword(e.target.value)} placeholder="••••••••" />
+                  </div>
+                  <Button onClick={handleAddAdmin} disabled={addingAdmin} className="w-full">
+                    {addingAdmin ? 'Oluşturuluyor...' : 'Yönetici Hesabı Oluştur'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
