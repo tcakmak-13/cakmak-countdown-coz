@@ -7,6 +7,19 @@ interface Props {
   requiredRole?: AppRole;
 }
 
+function getRoleHome(role: string | null, profile: any): string {
+  if (role === 'super_admin') return '/super-admin';
+  if (role === 'admin') return '/admin';
+  if (role === 'firm_admin') return '/firm';
+  if (role === 'koc') return '/coach';
+  if (role === 'student') {
+    if (!profile?.profile_completed) return '/onboarding';
+    if (!profile?.coach_selected) return '/select-coach';
+    return '/student';
+  }
+  return '/login';
+}
+
 export default function ProtectedRoute({ children, requiredRole }: Props) {
   const { user, role, profile, loading } = useAuth();
   const location = useLocation();
@@ -20,10 +33,16 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (requiredRole && role !== requiredRole) {
+
+  // Super admin route protection: only tcakmak1355 can access
+  if (requiredRole === 'super_admin') {
+    if (role !== 'super_admin' || profile?.username !== 'tcakmak1355') {
+      return <Navigate to={getRoleHome(role, profile)} replace />;
+    }
+  } else if (requiredRole && role !== requiredRole) {
     // super_admin can access admin routes too
     if (!(requiredRole === 'admin' && role === 'super_admin')) {
-      return <Navigate to="/login" replace />;
+      return <Navigate to={getRoleHome(role, profile)} replace />;
     }
   }
 
