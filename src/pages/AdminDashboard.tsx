@@ -601,6 +601,9 @@ export default function AdminDashboard() {
                               <Badge variant="outline" className="font-semibold">{stats.studentCount}</Badge>
                             </TableCell>
                             <TableCell className="text-right space-x-1" onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" onClick={() => openAddAdmin(c)} title="Yönetici Ekle">
+                                <UserPlus className="h-4 w-4 text-primary" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => openEditCompany(c)} title="Düzenle">
                                 <Pencil className="h-4 w-4" />
                               </Button>
