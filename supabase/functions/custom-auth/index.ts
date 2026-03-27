@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ADMIN_USERNAME = Deno.env.get("ADMIN_USERNAME")!;
-const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD")!;
+const SUPER_ADMIN_USERNAME = Deno.env.get("ADMIN_USERNAME")!;
+const SUPER_ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD")!;
 const EMAIL_DOMAIN = "cakmak.internal";
 
 const failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
@@ -42,7 +42,7 @@ function isUsernameValid(username: string): boolean {
   return /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
 }
 
-async function verifySuperAdminOrAdmin(req: Request, supabase: any, supabaseUrl: string) {
+async function verifyCaller(req: Request, supabase: any, supabaseUrl: string) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return null;
   const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -52,18 +52,11 @@ async function verifySuperAdminOrAdmin(req: Request, supabase: any, supabaseUrl:
   const { data: callerUser } = await callerClient.auth.getUser();
   if (!callerUser?.user) return null;
   const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", callerUser.user.id).single();
-  if (!roleData || !["admin", "super_admin", "firm_admin"].includes(roleData.role)) return null;
+  if (!roleData || !["super_admin", "firm_admin"].includes(roleData.role)) return null;
   return { user: callerUser.user, role: roleData.role as string };
 }
 
-async function verifyAdmin(req: Request, supabase: any, supabaseUrl: string) {
-  const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
-  if (!result) return null;
-  // admin, super_admin, and firm_admin can all call admin-level actions
-  return result;
-}
-
-async function getAdminCompanyId(supabase: any, userId: string): Promise<string | null> {
+async function getCallerCompanyId(supabase: any, userId: string): Promise<string | null> {
   const { data } = await supabase.from("profiles").select("company_id").eq("user_id", userId).single();
   return data?.company_id || null;
 }
@@ -82,6 +75,7 @@ Deno.serve(async (req) => {
   try {
     const { action, username, password, fullName, profileId, role: targetRole, companyId } = await req.json();
 
+    // ─── LOGIN ───
     if (action === "login") {
       if (!username || !password) {
         return new Response(JSON.stringify({ error: "Kullanıcı adı ve şifre gerekli." }), {
@@ -97,26 +91,36 @@ Deno.serve(async (req) => {
 
       const email = `${username}@${EMAIL_DOMAIN}`;
 
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      // Auto-create super_admin account for tcakmak1355
+      if (username === SUPER_ADMIN_USERNAME && password === SUPER_ADMIN_PASSWORD) {
         const { data: existing } = await supabase.auth.admin.listUsers();
-        const adminExists = existing?.users?.some((u) => u.email === email);
+        const adminExists = existing?.users?.some((u: any) => u.email === email);
 
         if (!adminExists) {
           const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
             email,
-            password: ADMIN_PASSWORD,
+            password: SUPER_ADMIN_PASSWORD,
             email_confirm: true,
-            user_metadata: { full_name: "Admin", username: ADMIN_USERNAME },
+            user_metadata: { full_name: "Süper Admin", username: SUPER_ADMIN_USERNAME },
           });
           if (createErr) {
-            console.error('Admin creation error:', createErr);
-            return new Response(JSON.stringify({ error: "Admin hesabı oluşturulamadı." }), {
+            console.error('Super admin creation error:', createErr);
+            return new Response(JSON.stringify({ error: "Süper Admin hesabı oluşturulamadı." }), {
               status: 500, headers: { ...cors, "Content-Type": "application/json" },
             });
           }
           if (newUser?.user) {
-            await supabase.from("user_roles").update({ role: "admin" }).eq("user_id", newUser.user.id);
-            await supabase.from("profiles").update({ profile_completed: true, full_name: "Admin", is_approved: true }).eq("user_id", newUser.user.id);
+            await supabase.from("user_roles").update({ role: "super_admin" }).eq("user_id", newUser.user.id);
+            await supabase.from("profiles").update({ profile_completed: true, full_name: "Süper Admin", is_approved: true }).eq("user_id", newUser.user.id);
+          }
+        } else {
+          // Ensure existing account has super_admin role
+          const existingUser = existing?.users?.find((u: any) => u.email === email);
+          if (existingUser) {
+            const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", existingUser.id).single();
+            if (roleData && roleData.role !== "super_admin") {
+              await supabase.from("user_roles").update({ role: "super_admin" }).eq("user_id", existingUser.id);
+            }
           }
         }
       }
@@ -136,7 +140,7 @@ Deno.serve(async (req) => {
       const { data: profileData } = await supabase.from("profiles").select("is_active, is_approved").eq("user_id", data.user.id).single();
       if (profileData && profileData.is_active === false) {
         await anonClient.auth.signOut();
-        return new Response(JSON.stringify({ error: "Hesabınız admin tarafından dondurulmuştur." }), {
+        return new Response(JSON.stringify({ error: "Hesabınız yönetici tarafından dondurulmuştur." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -155,9 +159,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create student (admin or firm_admin)
+    // ─── CREATE STUDENT (firm_admin or super_admin) ───
     if (action === "create-student") {
-      const caller = await verifyAdmin(req, supabase, supabaseUrl);
+      const caller = await verifyCaller(req, supabase, supabaseUrl);
       if (!caller) {
         return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
@@ -200,9 +204,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Set company_id and approval status based on caller role
       if (newUser?.user) {
-        const callerCompanyId = await getAdminCompanyId(supabase, caller.user.id);
+        const callerCompanyId = await getCallerCompanyId(supabase, caller.user.id);
         const isFirmAdmin = caller.role === "firm_admin";
         const updateData: any = { full_name: fullName || username };
         if (callerCompanyId) updateData.company_id = callerCompanyId;
@@ -218,9 +221,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create coach (admin or firm_admin)
+    // ─── CREATE COACH (firm_admin or super_admin) ───
     if (action === "create-coach") {
-      const caller = await verifyAdmin(req, supabase, supabaseUrl);
+      const caller = await verifyCaller(req, supabase, supabaseUrl);
       if (!caller) {
         return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
@@ -263,10 +266,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Update role to 'koc' and set company_id, approval status
       if (newUser?.user) {
         await supabase.from("user_roles").update({ role: "koc" }).eq("user_id", newUser.user.id);
-        const callerCompanyId = await getAdminCompanyId(supabase, caller.user.id);
+        const callerCompanyId = await getCallerCompanyId(supabase, caller.user.id);
         const isFirmAdmin = caller.role === "firm_admin";
         const updateData: any = { profile_completed: true, full_name: fullName || username };
         if (callerCompanyId) updateData.company_id = callerCompanyId;
@@ -281,11 +283,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Delete user (admin only)
+    // ─── DELETE USER ───
     if (action === "delete-student" || action === "delete-user") {
-      const caller = await verifyAdmin(req, supabase, supabaseUrl);
+      const caller = await verifyCaller(req, supabase, supabaseUrl);
       if (!caller) {
-        return new Response(JSON.stringify({ error: "Sadece adminler kullanıcı silebilir." }), {
+        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -304,8 +306,8 @@ Deno.serve(async (req) => {
       }
 
       const { data: targetRoleData } = await supabase.from("user_roles").select("role").eq("user_id", profileData.user_id).single();
-      if (targetRoleData?.role === "admin" || targetRoleData?.role === "super_admin") {
-        return new Response(JSON.stringify({ error: "Admin/Super Admin hesabı silinemez." }), {
+      if (targetRoleData?.role === "super_admin" || targetRoleData?.role === "firm_admin") {
+        return new Response(JSON.stringify({ error: "Yönetici hesabı silinemez." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -328,9 +330,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Assign student to coach
+    // ─── ASSIGN COACH ───
     if (action === "assign-coach") {
-      const caller = await verifyAdmin(req, supabase, supabaseUrl);
+      const caller = await verifyCaller(req, supabase, supabaseUrl);
       if (!caller) {
         return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
@@ -364,9 +366,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Toggle active status
+    // ─── TOGGLE ACTIVE ───
     if (action === "toggle-active") {
-      const caller = await verifyAdmin(req, supabase, supabaseUrl);
+      const caller = await verifyCaller(req, supabase, supabaseUrl);
       if (!caller) {
         return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
@@ -384,8 +386,8 @@ Deno.serve(async (req) => {
         });
       }
       const { data: targetRoleData } = await supabase.from("user_roles").select("role").eq("user_id", targetProfile.user_id).single();
-      if (targetRoleData?.role === "admin") {
-        return new Response(JSON.stringify({ error: "Admin hesabı dondurulamaz." }), {
+      if (targetRoleData?.role === "super_admin" || targetRoleData?.role === "firm_admin") {
+        return new Response(JSON.stringify({ error: "Yönetici hesabı dondurulamaz." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -401,11 +403,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Approve user (super_admin only)
+    // ─── APPROVE USER (super_admin only) ───
     if (action === "approve-user") {
-      const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
+      const result = await verifyCaller(req, supabase, supabaseUrl);
       if (!result || result.role !== "super_admin") {
-        return new Response(JSON.stringify({ error: "Sadece super admin kullanıcıları onaylayabilir." }), {
+        return new Response(JSON.stringify({ error: "Sadece Süper Admin kullanıcıları onaylayabilir." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -425,11 +427,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Reject/delete pending user (super_admin only)
+    // ─── REJECT USER (super_admin only) ───
     if (action === "reject-user") {
-      const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
+      const result = await verifyCaller(req, supabase, supabaseUrl);
       if (!result || result.role !== "super_admin") {
-        return new Response(JSON.stringify({ error: "Sadece super admin kullanıcıları reddedebilir." }), {
+        return new Response(JSON.stringify({ error: "Sadece Süper Admin kullanıcıları reddedebilir." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -455,11 +457,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create firm admin (super_admin or admin)
+    // ─── CREATE FIRM ADMIN (super_admin only) ───
     if (action === "create-firm-admin") {
-      const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
-      if (!result || !["super_admin", "admin"].includes(result.role)) {
-        return new Response(JSON.stringify({ error: "Sadece admin veya super admin firma yöneticisi oluşturabilir." }), {
+      const result = await verifyCaller(req, supabase, supabaseUrl);
+      if (!result || result.role !== "super_admin") {
+        return new Response(JSON.stringify({ error: "Sadece Süper Admin firma yöneticisi oluşturabilir." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
@@ -515,7 +517,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Change password (firm_admin only)
+    // ─── CHANGE PASSWORD (firm_admin only) ───
     if (action === "change-password") {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
