@@ -455,11 +455,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create firm admin (super_admin only)
+    // Create firm admin (super_admin or admin)
     if (action === "create-firm-admin") {
       const result = await verifySuperAdminOrAdmin(req, supabase, supabaseUrl);
-      if (!result || result.role !== "super_admin") {
-        return new Response(JSON.stringify({ error: "Sadece super admin firma yöneticisi oluşturabilir." }), {
+      if (!result || !["super_admin", "admin"].includes(result.role)) {
+        return new Response(JSON.stringify({ error: "Sadece admin veya super admin firma yöneticisi oluşturabilir." }), {
           status: 403, headers: { ...cors, "Content-Type": "application/json" },
         });
       }
