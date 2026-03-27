@@ -133,6 +133,40 @@ export default function AdminDashboard() {
   const [firmAdminPassword, setFirmAdminPassword] = useState('');
   const [savingCompany, setSavingCompany] = useState(false);
 
+  // Add admin to existing company
+  const [addAdminDialogOpen, setAddAdminDialogOpen] = useState(false);
+  const [addAdminCompany, setAddAdminCompany] = useState<CompanyRow | null>(null);
+  const [addAdminName, setAddAdminName] = useState('');
+  const [addAdminUsername, setAddAdminUsername] = useState('');
+  const [addAdminPassword, setAddAdminPassword] = useState('');
+  const [addingAdmin, setAddingAdmin] = useState(false);
+
+  const openAddAdmin = (c: CompanyRow) => {
+    setAddAdminCompany(c);
+    setAddAdminName('');
+    setAddAdminUsername('');
+    setAddAdminPassword('');
+    setAddAdminDialogOpen(true);
+  };
+
+  const handleAddAdmin = async () => {
+    if (!addAdminCompany) return;
+    if (!addAdminUsername.trim() || !addAdminPassword.trim()) { toast.error('Kullanıcı adı ve şifre zorunludur.'); return; }
+    if (addAdminPassword.length < 8) { toast.error('Şifre en az 8 karakter olmalıdır.'); return; }
+    setAddingAdmin(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+        body: JSON.stringify({ action: 'create-firm-admin', username: addAdminUsername.trim(), password: addAdminPassword, fullName: addAdminName.trim() || addAdminUsername.trim(), companyId: addAdminCompany.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Yönetici hesabı oluşturulamadı.'); }
+      else { toast.success(`"${addAdminName.trim() || addAdminUsername.trim()}" yönetici hesabı oluşturuldu!`); setAddAdminDialogOpen(false); loadCompanies(); }
+    } catch { toast.error('Bağlantı hatası.'); }
+    setAddingAdmin(false);
+  };
+
   const loadCompanies = async () => {
     setCompaniesLoading(true);
     try {
@@ -567,6 +601,9 @@ export default function AdminDashboard() {
                               <Badge variant="outline" className="font-semibold">{stats.studentCount}</Badge>
                             </TableCell>
                             <TableCell className="text-right space-x-1" onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" onClick={() => openAddAdmin(c)} title="Yönetici Ekle">
+                                <UserPlus className="h-4 w-4 text-primary" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => openEditCompany(c)} title="Düzenle">
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -582,6 +619,35 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Add Admin to Existing Company Dialog */}
+            <Dialog open={addAdminDialogOpen} onOpenChange={setAddAdminDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Yönetici Ekle — {addAdminCompany?.name}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-primary" /> Bu firmaya yeni bir yönetici hesabı oluşturun.
+                  </p>
+                  <div className="space-y-2">
+                    <Label>Ad Soyad</Label>
+                    <Input value={addAdminName} onChange={e => setAddAdminName(e.target.value)} placeholder="Örn: Mehmet Kaya" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Kullanıcı Adı *</Label>
+                    <Input value={addAdminUsername} onChange={e => setAddAdminUsername(e.target.value)} placeholder="Giriş için kullanılacak" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Şifre * (en az 8 karakter)</Label>
+                    <Input type="password" value={addAdminPassword} onChange={e => setAddAdminPassword(e.target.value)} placeholder="••••••••" />
+                  </div>
+                  <Button onClick={handleAddAdmin} disabled={addingAdmin} className="w-full">
+                    {addingAdmin ? 'Oluşturuluyor...' : 'Yönetici Hesabı Oluştur'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         ) : tab === 'analytics' ? (
           <AdminAnalytics students={students} adminProfileId={profileId} />
