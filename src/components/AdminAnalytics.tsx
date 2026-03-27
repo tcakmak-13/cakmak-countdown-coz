@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, TrendingDown, Clock, Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -267,8 +267,8 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
 
             {/* Student rows */}
             {heatmapData.map(({ student, days }) => (
-              <>
-                <span key={`name-${student.id}`} className="text-[11px] sm:text-xs font-medium text-foreground truncate text-right pr-1">
+              <React.Fragment key={student.id}>
+                <span className="text-[11px] sm:text-xs font-medium text-foreground truncate text-right pr-1">
                   {student.full_name || student.username || '?'}
                 </span>
                 {days.map((status, i) => (
@@ -282,7 +282,7 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
                     }`}
                   />
                 ))}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>
