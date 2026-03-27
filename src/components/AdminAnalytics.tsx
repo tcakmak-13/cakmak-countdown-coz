@@ -193,10 +193,12 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      days.push(d.toLocaleDateString('tr-TR', { weekday: 'short' }));
+      const dayName = d.toLocaleDateString('tr-TR', { weekday: 'short' });
+      const dayNum = d.getDate();
+      days.push(`${dayName} ${dayNum}`);
     }
     return days;
-  }, []);
+  }, [allTasks]);
 
   const studentsWithNames = students.filter(s => s.full_name || s.username);
 
@@ -254,35 +256,33 @@ export default function AdminAnalytics({ students, adminProfileId }: Props) {
         </h3>
 
         <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-          {/* Day labels */}
-          <div className="flex items-center gap-2 mb-3 pl-[80px] sm:pl-[140px]">
+          <div className="grid grid-cols-[minmax(80px,140px)_repeat(7,minmax(32px,1fr))] gap-1.5 items-center">
+            {/* Header row: empty cell + day labels */}
+            <div />
             {dayLabels.map((d, i) => (
-              <span key={i} className="w-7 text-center text-[10px] font-medium text-muted-foreground uppercase">
+              <span key={i} className="text-center text-[10px] font-medium text-muted-foreground uppercase leading-tight py-1">
                 {d}
               </span>
             ))}
-          </div>
 
-          <div className="space-y-1.5">
+            {/* Student rows */}
             {heatmapData.map(({ student, days }) => (
-              <div key={student.id} className="flex items-center gap-2">
-                <span className="w-[72px] sm:w-[132px] text-[11px] sm:text-xs font-medium text-foreground truncate text-right shrink-0">
+              <>
+                <span key={`name-${student.id}`} className="text-[11px] sm:text-xs font-medium text-foreground truncate text-right pr-1">
                   {student.full_name || student.username || '?'}
                 </span>
-                <div className="flex gap-1">
-                  {days.map((status, i) => (
-                    <div
-                      key={i}
-                      className={`w-7 h-7 rounded-md ${HEATMAP_COLORS[status]} transition-colors`}
-                      title={`${dayLabels[i]}: ${
-                        status === 'active' ? 'Tamamlandı' :
-                        status === 'partial' ? 'Kısmen' :
-                        status === 'inactive' ? 'Boş' : 'Veri yok'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
+                {days.map((status, i) => (
+                  <div
+                    key={`${student.id}-${i}`}
+                    className={`w-7 h-7 rounded-md ${HEATMAP_COLORS[status]} transition-colors mx-auto`}
+                    title={`${dayLabels[i]}: ${
+                      status === 'active' ? 'Tamamlandı' :
+                      status === 'partial' ? 'Kısmen' :
+                      status === 'inactive' ? 'Boş' : 'Veri yok'
+                    }`}
+                  />
+                ))}
+              </>
             ))}
           </div>
         </div>
