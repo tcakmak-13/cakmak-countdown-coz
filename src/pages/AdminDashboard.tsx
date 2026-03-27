@@ -133,6 +133,40 @@ export default function AdminDashboard() {
   const [firmAdminPassword, setFirmAdminPassword] = useState('');
   const [savingCompany, setSavingCompany] = useState(false);
 
+  // Add admin to existing company
+  const [addAdminDialogOpen, setAddAdminDialogOpen] = useState(false);
+  const [addAdminCompany, setAddAdminCompany] = useState<CompanyRow | null>(null);
+  const [addAdminName, setAddAdminName] = useState('');
+  const [addAdminUsername, setAddAdminUsername] = useState('');
+  const [addAdminPassword, setAddAdminPassword] = useState('');
+  const [addingAdmin, setAddingAdmin] = useState(false);
+
+  const openAddAdmin = (c: CompanyRow) => {
+    setAddAdminCompany(c);
+    setAddAdminName('');
+    setAddAdminUsername('');
+    setAddAdminPassword('');
+    setAddAdminDialogOpen(true);
+  };
+
+  const handleAddAdmin = async () => {
+    if (!addAdminCompany) return;
+    if (!addAdminUsername.trim() || !addAdminPassword.trim()) { toast.error('Kullanıcı adı ve şifre zorunludur.'); return; }
+    if (addAdminPassword.length < 8) { toast.error('Şifre en az 8 karakter olmalıdır.'); return; }
+    setAddingAdmin(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+        body: JSON.stringify({ action: 'create-firm-admin', username: addAdminUsername.trim(), password: addAdminPassword, fullName: addAdminName.trim() || addAdminUsername.trim(), companyId: addAdminCompany.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Yönetici hesabı oluşturulamadı.'); }
+      else { toast.success(`"${addAdminName.trim() || addAdminUsername.trim()}" yönetici hesabı oluşturuldu!`); setAddAdminDialogOpen(false); loadCompanies(); }
+    } catch { toast.error('Bağlantı hatası.'); }
+    setAddingAdmin(false);
+  };
+
   const loadCompanies = async () => {
     setCompaniesLoading(true);
     try {
