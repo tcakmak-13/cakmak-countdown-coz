@@ -39,7 +39,7 @@ function isPasswordStrong(password: string): boolean {
 }
 
 function isUsernameValid(username: string): boolean {
-  return /^[a-zA-Z0-9._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
+  return /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ._-]+$/.test(username) && username.length >= 2 && username.length <= 50;
 }
 
 async function verifySuperAdminOrAdmin(req: Request, supabase: any, supabaseUrl: string) {
