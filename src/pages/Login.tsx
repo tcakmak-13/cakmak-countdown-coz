@@ -35,9 +35,11 @@ export default function Login() {
   useEffect(() => {
     if (authLoading) return;
     if (user && role) {
-      navigate(getRedirectPath(role, profile), { replace: true });
+      const target = getRedirectPath(role, profile);
+      navigate(target, { replace: true });
     }
-  }, [user, role, profile, authLoading, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, role, authLoading, profile?.profile_completed, profile?.coach_selected]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
