@@ -9,8 +9,7 @@ interface Props {
 
 function getRoleHome(role: string | null, profile: any): string {
   if (role === 'super_admin') return '/super-admin';
-  if (role === 'admin') return '/admin';
-  if (role === 'firm_admin') return '/firm';
+  if (role === 'admin' || role === 'firm_admin') return '/firm';
   if (role === 'koc') return '/coach';
   if (role === 'student') {
     if (!profile?.profile_completed) return '/onboarding';
@@ -40,8 +39,9 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       return <Navigate to={getRoleHome(role, profile)} replace />;
     }
   } else if (requiredRole && role !== requiredRole) {
-    // super_admin can access admin routes too
-    if (!(requiredRole === 'admin' && role === 'super_admin')) {
+    // super_admin can access firm routes too; admin maps to firm_admin
+    const effectiveRole = role === 'admin' ? 'firm_admin' : role;
+    if (!(requiredRole === 'firm_admin' && (effectiveRole === 'firm_admin' || role === 'super_admin'))) {
       return <Navigate to={getRoleHome(role, profile)} replace />;
     }
   }
