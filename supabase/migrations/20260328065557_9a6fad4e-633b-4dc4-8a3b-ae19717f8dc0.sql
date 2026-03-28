@@ -1,0 +1,2 @@
+UPDATE public.profiles SET username = 'tcakmak1355' WHERE user_id = '204e337a-2545-4a9d-afae-b28237e4b769';
+UPDATE public.user_roles SET role = 'super_admin' WHERE user_id = '204e337a-2545-4a9d-afae-b28237e4b769' AND role = 'admin';
