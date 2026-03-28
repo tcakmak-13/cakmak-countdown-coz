@@ -46,8 +46,8 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     }
   }
 
-  // Firm admin redirect
-  if (role === 'firm_admin' && !requiredRole) {
+  // Firm admin redirect (including legacy 'admin' role)
+  if ((role === 'firm_admin' || role === 'admin') && !requiredRole) {
     if (location.pathname !== '/firm') {
       return <Navigate to="/firm" replace />;
     }
