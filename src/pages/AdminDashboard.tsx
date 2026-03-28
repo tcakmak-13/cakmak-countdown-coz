@@ -38,6 +38,7 @@ interface StudentProfile {
   target_department: string | null;
   coach_id: string | null;
   is_active: boolean;
+  is_approved: boolean;
   avatar_url: string | null;
 }
 
@@ -47,11 +48,29 @@ interface CoachProfile {
   username: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  is_approved: boolean;
 }
 
-export default function AdminDashboard() {
+interface CompanyScopedUser {
+  id: string;
+  full_name: string;
+  username: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  is_approved: boolean;
+  area: string | null;
+  grade: string | null;
+  target_university: string | null;
+  target_department: string | null;
+  coach_id: string | null;
+  role: string | null;
+}
+
+export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'admin' | 'firm' }) {
   const navigate = useNavigate();
   const { profile, role, loading, signOut, profileId, session, refreshProfile } = useAuth();
+  const isFirmPanel = panelType === 'firm';
+  const hasPanelAccess = isFirmPanel ? role === 'firm_admin' : (role === 'admin' || role === 'super_admin');
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [coaches, setCoaches] = useState<CoachProfile[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
@@ -102,8 +121,61 @@ export default function AdminDashboard() {
     setSendingAnnouncement(false);
   };
 
+  const loadCompanyUsersFromBackend = async () => {
+    const token = session?.access_token;
+    if (!token) return;
+
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action: 'get-company-users' }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error(data.error || 'Firma kullanıcıları yüklenemedi.');
+      return;
+    }
+
+    const users = (data.users || []) as CompanyScopedUser[];
+
+    const coachList: CoachProfile[] = users
+      .filter(u => u.role === 'koc')
+      .map(u => ({
+        id: u.id,
+        full_name: u.full_name,
+        username: u.username,
+        avatar_url: u.avatar_url,
+        is_active: u.is_active,
+        is_approved: u.is_approved,
+      }));
+
+    const studentList: StudentProfile[] = users
+      .filter(u => u.role === 'student')
+      .map(u => ({
+        id: u.id,
+        full_name: u.full_name,
+        area: u.area,
+        grade: u.grade,
+        username: u.username,
+        target_university: u.target_university,
+        target_department: u.target_department,
+        coach_id: u.coach_id,
+        is_active: u.is_active,
+        is_approved: u.is_approved,
+        avatar_url: u.avatar_url,
+      }));
+
+    setCoaches(coachList);
+    setStudents(studentList);
+  };
+
   const loadStudents = async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active, avatar_url');
+    const { data } = await supabase.from('profiles').select('id, full_name, area, grade, username, target_university, target_department, coach_id, is_active, is_approved, avatar_url');
     if (data) {
       const coachIds = new Set(coaches.map(c => c.id));
       setStudents(data.filter((s: any) => s.id !== profileId && !coachIds.has(s.id)) as StudentProfile[]);
@@ -114,7 +186,7 @@ export default function AdminDashboard() {
     const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
     if (!coachRoles || coachRoles.length === 0) { setCoaches([]); return; }
     const coachUserIds = coachRoles.map(r => r.user_id);
-    const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, username, avatar_url, is_active').in('user_id', coachUserIds);
+    const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, username, avatar_url, is_active, is_approved').in('user_id', coachUserIds);
     if (coachProfiles) setCoaches(coachProfiles as CoachProfile[]);
   };
 
@@ -271,21 +343,25 @@ export default function AdminDashboard() {
   };
 
   const loadAll = async () => {
+    if (isFirmPanel) {
+      await loadCompanyUsersFromBackend();
+      return;
+    }
     await loadCoaches();
     await loadCompanies();
   };
 
   useEffect(() => {
-    if (!loading && (!profile || (role !== 'admin' && role !== 'super_admin'))) { navigate('/login'); return; }
-    if (role === 'admin' || role === 'super_admin') loadAll();
-  }, [loading, role, profile, navigate, profileId]);
+    if (!loading && (!profile || !hasPanelAccess)) { navigate('/login'); return; }
+    if (hasPanelAccess) loadAll();
+  }, [loading, role, profile, navigate, profileId, session?.access_token, isFirmPanel]);
 
   useEffect(() => {
-    if (role === 'admin' || role === 'super_admin') loadStudents();
-  }, [coaches, profileId, role]);
+    if (!isFirmPanel && (role === 'admin' || role === 'super_admin')) loadStudents();
+  }, [coaches, profileId, role, isFirmPanel]);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Yükleniyor...</p></div>;
-  if (!profile || (role !== 'admin' && role !== 'super_admin')) return null;
+  if (!profile || !hasPanelAccess) return null;
 
   const handleLogout = async () => { await signOut(); navigate('/'); };
 
@@ -365,12 +441,25 @@ export default function AdminDashboard() {
   const handleAssignCoach = async () => {
     if (!assignDialogStudent) return;
     const coachId = assignCoachId === 'none' ? null : assignCoachId;
-    const { error } = await supabase.from('profiles').update({ coach_id: coachId, coach_selected: coachId ? true : false }).eq('id', assignDialogStudent.id);
-    if (error) { console.error('Koç ataması hatası:', error); toast.error('Koç ataması başarısız. Lütfen tekrar deneyin.'); return; }
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ action: 'assign-coach', profileId: assignDialogStudent.id, role: coachId ?? 'none' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Koç ataması başarısız.');
+        return;
+      }
+    } catch {
+      toast.error('Bağlantı hatası.');
+      return;
+    }
     toast.success('Koç ataması güncellendi!');
     setAssignDialogStudent(null);
     setAssignCoachId('');
-    loadStudents();
+    loadAll();
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -398,6 +487,9 @@ export default function AdminDashboard() {
     return students.filter(s => s.coach_id === coachId).length;
   };
 
+  const approvedCoachCount = coaches.filter(c => c.is_approved).length;
+  const approvedStudentCount = students.filter(s => s.is_approved).length;
+
   const activeNav = (tab === 'schedule' || tab === 'profile' || tab === 'management' || tab === 'coach-detail') ? 'management' : tab;
 
   return (
@@ -410,14 +502,14 @@ export default function AdminDashboard() {
             <span className="font-display text-lg font-bold hidden sm:inline">
               Çakmak<span className="text-primary">Koçluk</span>
             </span>
-            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">Admin</span>
+            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">{isFirmPanel ? 'Firma' : 'Admin'}</span>
           </button>
           <div className="flex items-center gap-2">
             <YKSCountdown compact />
             <ThemeToggle />
             <NotificationBell />
             {/* Announcement */}
-            <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
+            {!isFirmPanel && <Dialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
               <DialogTrigger asChild>
                 <button className="p-2 rounded-lg hover:bg-secondary text-amber-400 hover:text-amber-300 transition-colors" title="Duyuru Gönder">
                   <Megaphone className="h-5 w-5" />
@@ -431,7 +523,7 @@ export default function AdminDashboard() {
                   <Button onClick={handleSendAnnouncement} disabled={sendingAnnouncement} className="w-full bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-2"><Megaphone className="h-4 w-4" />{sendingAnnouncement ? 'Gönderiliyor...' : `Tüm Öğrencilere Gönder (${students.length})`}</Button>
                 </div>
               </DialogContent>
-            </Dialog>
+            </Dialog>}
             <AvatarUpload size="sm" disableUpload />
           </div>
         </div>
@@ -444,11 +536,11 @@ export default function AdminDashboard() {
             <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{coaches.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{approvedCoachCount}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Koç</p>
               </div>
               <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{students.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{approvedStudentCount}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
               </div>
               <div className="glass-card rounded-2xl p-4 sm:p-6 text-center col-span-2 sm:col-span-1">
@@ -484,7 +576,7 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-        ) : tab === 'company' ? (
+        ) : !isFirmPanel && tab === 'company' ? (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-2xl font-bold flex items-center gap-2">
@@ -656,7 +748,7 @@ export default function AdminDashboard() {
         ) : tab === 'coach-detail' && selectedCoach ? (
           <CoachDetailView coachId={selectedCoach.id} coachName={selectedCoach.full_name || selectedCoach.username || 'Koç'} coachAvatar={selectedCoach.avatar_url} onBack={() => { setSelectedCoach(null); setTab('management'); }} />
         ) : tab === 'messages' && profileId ? (
-          <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
+          <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={isFirmPanel ? 'admin' : role} currentUserId={session?.user?.id} />
         ) : tab === 'management' && !selectedStudent ? (
           /* Management: Students + Coaches as full-width content */
           <div className="space-y-6">
@@ -705,6 +797,7 @@ export default function AdminDashboard() {
                           {s.full_name || s.username || 'İsimsiz'}
                           {!s.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
                         </p>
+                        {!s.is_approved && <p className="text-[11px] text-amber-500">Süper Admin Onayı Bekliyor</p>}
                         <p className="text-xs text-muted-foreground">
                           {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
                         </p>
@@ -778,6 +871,7 @@ export default function AdminDashboard() {
                           {c.full_name || c.username}
                           {!c.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
                         </p>
+                        {!c.is_approved && <p className="text-[11px] text-amber-500">Süper Admin Onayı Bekliyor</p>}
                         <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
                       </div>
                     </button>
@@ -821,7 +915,7 @@ export default function AdminDashboard() {
               <h2 className="font-display text-lg font-semibold mb-4">
                 {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
               </h2>
-              {tab === 'schedule' ? <StudyPlanner studentId={selectedStudent.id} /> : <StudentProfileForm studentId={selectedStudent.id} readOnly />}
+              {tab === 'schedule' ? <StudyPlanner studentId={selectedStudent.id} readOnly={isFirmPanel} /> : <StudentProfileForm studentId={selectedStudent.id} readOnly={isFirmPanel} />}
             </div>
           </>
         ) : (
@@ -836,14 +930,20 @@ export default function AdminDashboard() {
       {/* Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
         <div className="max-w-7xl mx-auto flex items-center overflow-x-auto scrollbar-hide h-14 sm:h-16">
-          {[
+          {(isFirmPanel ? [
+            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
+            { key: 'overview', icon: Shield, label: 'Bakış' },
+            { key: 'management', icon: Users, label: 'Yönetim' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+          ] : [
             { key: 'analytics', icon: BarChart3, label: 'Analiz' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
             { key: 'company', icon: Building2, label: 'Firma' },
-          ].map(item => {
+          ]).map(item => {
             const isActive = activeNav === item.key;
             return (
               <button
