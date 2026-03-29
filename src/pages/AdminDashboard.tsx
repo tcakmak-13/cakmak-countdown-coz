@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import AppLogo from '@/components/AppLogo';
+import BrandHeader from '@/components/BrandHeader';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -498,10 +499,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
       <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => { setSelectedStudent(null); setTab('overview'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <AppLogo size="sm" />
-            <span className="font-display text-lg font-bold hidden sm:inline">
-              Çakmak<span className="text-primary">Koçluk</span>
-            </span>
+            <BrandHeader fallbackLabel={isFirmPanel ? 'Firma Paneli' : 'Admin Paneli'} />
             <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">{isFirmPanel ? 'Firma' : 'Admin'}</span>
           </button>
           <div className="flex items-center gap-2">
@@ -797,7 +795,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                           {s.full_name || s.username || 'İsimsiz'}
                           {!s.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
                         </p>
-                        {!s.is_approved && <p className="text-[11px] text-amber-500">Süper Admin Onayı Bekliyor</p>}
+                        {!s.is_approved && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400/50 bg-amber-400/10 text-amber-500 gap-1"><Shield className="h-2.5 w-2.5" />Onay Bekliyor</Badge>}
                         <p className="text-xs text-muted-foreground">
                           {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
                         </p>
@@ -871,7 +869,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                           {c.full_name || c.username}
                           {!c.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
                         </p>
-                        {!c.is_approved && <p className="text-[11px] text-amber-500">Süper Admin Onayı Bekliyor</p>}
+                        {!c.is_approved && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400/50 bg-amber-400/10 text-amber-500 gap-1"><Shield className="h-2.5 w-2.5" />Onay Bekliyor</Badge>}
                         <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
                       </div>
                     </button>
