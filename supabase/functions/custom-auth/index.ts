@@ -209,10 +209,8 @@ Deno.serve(async (req) => {
         const isFirmAdmin = caller.role === "firm_admin";
         const updateData: any = { full_name: fullName || username };
         if (callerCompanyId) updateData.company_id = callerCompanyId;
-        // firm_admin created users need super_admin approval
-        if (isFirmAdmin) {
-          updateData.is_approved = false;
-        }
+        // super_admin users are auto-approved; firm_admin users need approval
+        updateData.is_approved = isFirmAdmin ? false : true;
         await supabase.from("profiles").update(updateData).eq("user_id", newUser.user.id);
       }
 
@@ -272,9 +270,7 @@ Deno.serve(async (req) => {
         const isFirmAdmin = caller.role === "firm_admin";
         const updateData: any = { profile_completed: true, full_name: fullName || username };
         if (callerCompanyId) updateData.company_id = callerCompanyId;
-        if (isFirmAdmin) {
-          updateData.is_approved = false;
-        }
+        updateData.is_approved = isFirmAdmin ? false : true;
         await supabase.from("profiles").update(updateData).eq("user_id", newUser.user.id);
       }
 
