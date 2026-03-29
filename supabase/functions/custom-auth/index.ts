@@ -557,6 +557,63 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── GET COMPANY USERS (firm_admin or super_admin) ───
+    if (action === "get-company-users") {
+      const caller = await verifyCaller(req, supabase, supabaseUrl);
+      if (!caller) {
+        return new Response(JSON.stringify({ error: "Yetkilendirme gerekli." }), {
+          status: 403, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const callerCompanyId = await getCallerCompanyId(supabase, caller.user.id);
+      if (!callerCompanyId) {
+        return new Response(JSON.stringify({ error: "Firma bulunamadı." }), {
+          status: 404, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: companyProfiles, error: profilesErr } = await supabase
+        .from("profiles")
+        .select("id, full_name, username, avatar_url, is_active, is_approved, area, grade, target_university, target_department, coach_id, user_id")
+        .eq("company_id", callerCompanyId);
+
+      if (profilesErr) {
+        console.error("Get company users error:", profilesErr);
+        return new Response(JSON.stringify({ error: "Kullanıcılar yüklenemedi." }), {
+          status: 500, headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get roles for all company users
+      const userIds = (companyProfiles || []).map((p: any) => p.user_id);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      const roleMap = new Map((roles || []).map((r: any) => [r.user_id, r.role]));
+
+      const users = (companyProfiles || []).map((p: any) => ({
+        id: p.id,
+        full_name: p.full_name,
+        username: p.username,
+        avatar_url: p.avatar_url,
+        is_active: p.is_active,
+        is_approved: p.is_approved,
+        area: p.area,
+        grade: p.grade,
+        target_university: p.target_university,
+        target_department: p.target_department,
+        coach_id: p.coach_id,
+        role: roleMap.get(p.user_id) || null,
+      }));
+
+      return new Response(JSON.stringify({ users }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Geçersiz işlem." }), {
       status: 400, headers: { ...cors, "Content-Type": "application/json" },
     });
