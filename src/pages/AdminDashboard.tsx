@@ -795,7 +795,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                           {s.full_name || s.username || 'İsimsiz'}
                           {!s.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
                         </p>
-                        {!s.is_approved && <p className="text-[11px] text-amber-500">Süper Admin Onayı Bekliyor</p>}
+                        {!s.is_approved && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400/50 bg-amber-400/10 text-amber-500 gap-1"><Shield className="h-2.5 w-2.5" />Onay Bekliyor</Badge>}
                         <p className="text-xs text-muted-foreground">
                           {s.area ?? 'SAY'} — <span className={s.coach_id ? 'text-primary' : 'text-amber-400'}>{getCoachName(s.coach_id)}</span>
                         </p>
@@ -869,7 +869,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                           {c.full_name || c.username}
                           {!c.is_active && <Ban className="h-3 w-3 text-destructive inline" />}
                         </p>
-                        {!c.is_approved && <p className="text-[11px] text-amber-500">Süper Admin Onayı Bekliyor</p>}
+                        {!c.is_approved && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400/50 bg-amber-400/10 text-amber-500 gap-1"><Shield className="h-2.5 w-2.5" />Onay Bekliyor</Badge>}
                         <p className="text-xs text-muted-foreground">{getCoachStudentCount(c.id)} öğrenci</p>
                       </div>
                     </button>
