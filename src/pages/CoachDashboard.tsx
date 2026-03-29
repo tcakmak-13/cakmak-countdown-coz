@@ -158,7 +158,6 @@ export default function CoachDashboard() {
           <button onClick={() => { setSelectedStudent(null); setTab('analytics'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <BrandHeader />
           </button>
-          </button>
           <div className="flex items-center gap-2">
             <YKSCountdown compact />
             <ThemeToggle />
