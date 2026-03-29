@@ -196,7 +196,6 @@ export default function StudentDashboard() {
             <button onClick={() => setTab('ana-menu')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <BrandHeader />
             </button>
-            </button>
             {TAB_TITLES[tab] && (
               <span className="text-muted-foreground font-display text-sm hidden sm:inline ml-1">/ {TAB_TITLES[tab]}</span>
             )}
