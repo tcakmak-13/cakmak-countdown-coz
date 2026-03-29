@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import AppLogo from '@/components/AppLogo';
+import BrandHeader from '@/components/BrandHeader';
 import ThemeToggle from '@/components/ThemeToggle';
 import AvatarUpload from '@/components/AvatarUpload';
 import NotificationBell from '@/components/NotificationBell';
@@ -498,10 +499,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
       <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => { setSelectedStudent(null); setTab('overview'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <AppLogo size="sm" />
-            <span className="font-display text-lg font-bold hidden sm:inline">
-              Çakmak<span className="text-primary">Koçluk</span>
-            </span>
+            <BrandHeader fallbackLabel={isFirmPanel ? 'Firma Paneli' : 'Admin Paneli'} />
             <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium hidden sm:inline">{isFirmPanel ? 'Firma' : 'Admin'}</span>
           </button>
           <div className="flex items-center gap-2">
