@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock, ImagePlus, Eye, Shield } from 'lucide-react';
+import { Send, Paperclip, ArrowLeft, FileText, Download, Circle, Trophy, Award, GraduationCap, Star, Instagram, MessageCircle as WhatsAppIcon, Clock, ImagePlus, Eye, Shield, Building2, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -44,7 +44,7 @@ interface ConversationPair {
 interface ChatContact {
   id: string;
   name: string;
-  type: 'student' | 'coach' | 'admin';
+  type: 'student' | 'coach' | 'admin' | 'firm_admin';
   avatar_url?: string | null;
   subtitle?: string;
 }
@@ -181,14 +181,21 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [conversationPairs, setConversationPairs] = useState<ConversationPair[]>([]);
   const [selectedPair, setSelectedPair] = useState<ConversationPair | null>(null);
 
-  // Admin direct messaging with coaches
+  // Admin/firm_admin direct messaging with coaches
   const [adminCoachContacts, setAdminCoachContacts] = useState<ChatContact[]>([]);
-  const [adminChatMode, setAdminChatMode] = useState<'spectator' | 'direct'>('spectator');
+  const [adminChatMode, setAdminChatMode] = useState<'spectator' | 'direct'>('direct');
   const [adminDirectContact, setAdminDirectContact] = useState<ChatContact | null>(null);
 
   // Coach: admin contact for direct messaging
   const [adminContact, setAdminContact] = useState<ChatContact | null>(null);
   const [coachChatMode, setCoachChatMode] = useState<'students' | 'admin'>('students');
+
+  // Super Admin specific contacts
+  const [saFirmAdminContacts, setSaFirmAdminContacts] = useState<ChatContact[]>([]);
+  const [saCoachContacts, setSaCoachContacts] = useState<ChatContact[]>([]);
+  const [saStudentContacts, setSaStudentContacts] = useState<ChatContact[]>([]);
+  const [saChatMode, setSaChatMode] = useState<'direct' | 'spectator'>('direct');
+  const [saDirectContact, setSaDirectContact] = useState<ChatContact | null>(null);
 
   const getSignedUrl = async (fileName: string) => {
     if (signedUrls[fileName]) return signedUrls[fileName];
@@ -200,6 +207,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     return '';
   };
 
+  // ─── LOAD CONTACTS ───
   useEffect(() => {
     if (currentRole === 'student' && coachId) {
       setCoachProfileId(coachId);
@@ -213,7 +221,86 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   }, [currentRole, coachId]);
 
   useEffect(() => {
-    if (currentRole === 'admin') {
+    if (currentRole === 'super_admin') {
+      const loadSuperAdminContacts = async () => {
+        // Get own company_id
+        const { data: myProfile } = await supabase.from('profiles').select('company_id').eq('id', currentProfileId).single();
+        const myCompanyId = myProfile?.company_id;
+
+        // 1) All firm_admins (from all companies)
+        const { data: firmAdminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'firm_admin');
+        if (firmAdminRoles && firmAdminRoles.length > 0) {
+          const { data: firmAdminProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, company_id').in('user_id', firmAdminRoles.map(r => r.user_id));
+          if (firmAdminProfiles) {
+            // get company names
+            const companyIds = [...new Set(firmAdminProfiles.map(p => p.company_id).filter(Boolean))];
+            let companyMap: Record<string, string> = {};
+            if (companyIds.length > 0) {
+              const { data: companies } = await supabase.from('companies').select('id, name').in('id', companyIds as string[]);
+              if (companies) companyMap = Object.fromEntries(companies.map(c => [c.id, c.name]));
+            }
+            setSaFirmAdminContacts(firmAdminProfiles.map(p => ({
+              id: p.id,
+              name: p.full_name || 'Firma Yöneticisi',
+              type: 'firm_admin' as const,
+              avatar_url: p.avatar_url,
+              subtitle: p.company_id ? (companyMap[p.company_id] || 'Firma') : 'Firma Yöneticisi',
+            })));
+          }
+        }
+
+        // 2) Own company coaches
+        if (myCompanyId) {
+          const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
+          if (coachRoles && coachRoles.length > 0) {
+            const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, company_id, user_id').in('user_id', coachRoles.map(r => r.user_id)).eq('company_id', myCompanyId);
+            if (coachProfiles) {
+              setSaCoachContacts(coachProfiles.map(c => ({
+                id: c.id,
+                name: c.full_name || 'Koç',
+                type: 'coach' as const,
+                avatar_url: c.avatar_url,
+                subtitle: 'Koç',
+              })));
+
+              // 3) Own company students
+              const { data: studentRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'student');
+              if (studentRoles && studentRoles.length > 0) {
+                const { data: studentProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, company_id, coach_id').in('user_id', studentRoles.map(r => r.user_id)).eq('company_id', myCompanyId);
+                if (studentProfiles) {
+                  setSaStudentContacts(studentProfiles.map(s => ({
+                    id: s.id,
+                    name: s.full_name || 'Öğrenci',
+                    type: 'student' as const,
+                    avatar_url: s.avatar_url,
+                    subtitle: 'Öğrenci',
+                  })));
+
+                  // 4) Conversation pairs for spectator (own company only)
+                  const pairs: ConversationPair[] = [];
+                  for (const student of studentProfiles) {
+                    if (student.coach_id) {
+                      const coach = coachProfiles.find(c => c.id === student.coach_id);
+                      if (coach) {
+                        pairs.push({
+                          coachId: coach.id,
+                          coachName: coach.full_name || 'Koç',
+                          studentId: student.id,
+                          studentName: student.full_name || 'Öğrenci',
+                          key: `${coach.id}-${student.id}`,
+                        });
+                      }
+                    }
+                  }
+                  setConversationPairs(pairs);
+                }
+              }
+            }
+          }
+        }
+      };
+      loadSuperAdminContacts();
+    } else if (currentRole === 'admin' || currentRole === 'firm_admin') {
       const loadPairs = async () => {
         const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
         if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); setAdminCoachContacts([]); return; }
@@ -221,7 +308,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, user_id, avatar_url').in('user_id', coachUserIds);
         if (!coachProfiles) { setConversationPairs([]); setAdminCoachContacts([]); return; }
 
-        // Coach contacts for direct messaging
         setAdminCoachContacts(coachProfiles.map(c => ({
           id: c.id,
           name: c.full_name || 'Koç',
@@ -249,13 +335,11 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       };
       loadPairs();
     } else if (currentRole === 'koc') {
-      // Load students
       supabase.from('profiles').select('id, full_name, area, grade')
         .eq('coach_id', currentProfileId)
         .then(({ data }) => {
           if (data) setStudents(data);
         });
-      // Load admin contact
       supabase.rpc('get_admin_profile_info').then(({ data }) => {
         if (data && data.length > 0) {
           const admin = data[0];
@@ -271,11 +355,11 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     }
   }, [currentRole, currentProfileId]);
 
+  // ─── FETCH MESSAGES ───
   useEffect(() => {
     const fetchMessages = async () => {
       let query = supabase.from('chat_messages').select('*');
-      // Admin needs all messages for spectator mode
-      if (currentRole !== 'admin') {
+      if (currentRole !== 'admin' && currentRole !== 'super_admin') {
         query = query.or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`);
       }
       const { data } = await query.order('created_at').limit(1000);
@@ -310,9 +394,18 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // ─── MARK AS READ ───
   useEffect(() => {
-    if (currentRole === 'admin') {
-      // Admin marks direct messages as read
+    if (currentRole === 'super_admin') {
+      if (saChatMode === 'direct' && saDirectContact) {
+        const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === saDirectContact.id);
+        if (unread.length > 0) {
+          supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
+        }
+      }
+      return;
+    }
+    if (currentRole === 'admin' || currentRole === 'firm_admin') {
       if (adminChatMode === 'direct' && adminDirectContact) {
         const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === adminDirectContact.id);
         if (unread.length > 0) {
@@ -321,7 +414,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       }
       return;
     }
-    // Coach: mark messages from admin or selected student as read
     if (currentRole === 'koc') {
       const partnerId = coachChatMode === 'admin' && adminContact ? adminContact.id : selectedStudent;
       if (!partnerId) return;
@@ -338,31 +430,47 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     if (unread.length > 0) {
       supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
     }
-  }, [messages, currentProfileId, coachProfileId, selectedStudent, currentRole, adminChatMode, adminDirectContact, coachChatMode, adminContact]);
+  }, [messages, currentProfileId, coachProfileId, selectedStudent, currentRole, adminChatMode, adminDirectContact, coachChatMode, adminContact, saChatMode, saDirectContact]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, selectedStudent, selectedPair, adminDirectContact, coachChatMode]);
+  }, [messages, selectedStudent, selectedPair, adminDirectContact, coachChatMode, saDirectContact, saChatMode]);
 
-  // Determine chat partner for sending
+  // ─── CHAT PARTNER ───
   const chatPartnerId = useMemo(() => {
     if (currentRole === 'student') return coachProfileId;
-    if (currentRole === 'admin' && adminChatMode === 'direct' && adminDirectContact) return adminDirectContact.id;
+    if (currentRole === 'super_admin' && saChatMode === 'direct' && saDirectContact) return saDirectContact.id;
+    if ((currentRole === 'admin' || currentRole === 'firm_admin') && adminChatMode === 'direct' && adminDirectContact) return adminDirectContact.id;
     if (currentRole === 'koc' && coachChatMode === 'admin' && adminContact) return adminContact.id;
     if (currentRole === 'koc' && coachChatMode === 'students') return selectedStudent;
     return null;
-  }, [currentRole, coachProfileId, adminChatMode, adminDirectContact, coachChatMode, adminContact, selectedStudent]);
+  }, [currentRole, coachProfileId, adminChatMode, adminDirectContact, coachChatMode, adminContact, selectedStudent, saChatMode, saDirectContact]);
 
+  // ─── FILTERED MESSAGES ───
   const filteredMessages = useMemo(() => {
+    // Super Admin spectator
+    if (currentRole === 'super_admin' && saChatMode === 'spectator' && selectedPair) {
+      return messages.filter(m =>
+        (m.sender_id === selectedPair.coachId && m.receiver_id === selectedPair.studentId) ||
+        (m.sender_id === selectedPair.studentId && m.receiver_id === selectedPair.coachId)
+      );
+    }
+    // Super Admin direct
+    if (currentRole === 'super_admin' && saChatMode === 'direct' && saDirectContact) {
+      return messages.filter(m =>
+        (m.sender_id === currentProfileId && m.receiver_id === saDirectContact.id) ||
+        (m.sender_id === saDirectContact.id && m.receiver_id === currentProfileId)
+      );
+    }
     // Admin spectator
-    if (currentRole === 'admin' && adminChatMode === 'spectator' && selectedPair) {
+    if ((currentRole === 'admin' || currentRole === 'firm_admin') && adminChatMode === 'spectator' && selectedPair) {
       return messages.filter(m =>
         (m.sender_id === selectedPair.coachId && m.receiver_id === selectedPair.studentId) ||
         (m.sender_id === selectedPair.studentId && m.receiver_id === selectedPair.coachId)
       );
     }
     // Admin direct
-    if (currentRole === 'admin' && adminChatMode === 'direct' && adminDirectContact) {
+    if ((currentRole === 'admin' || currentRole === 'firm_admin') && adminChatMode === 'direct' && adminDirectContact) {
       return messages.filter(m =>
         (m.sender_id === currentProfileId && m.receiver_id === adminDirectContact.id) ||
         (m.sender_id === adminDirectContact.id && m.receiver_id === currentProfileId)
@@ -380,7 +488,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       (m.sender_id === currentProfileId && m.receiver_id === chatPartnerId) ||
       (m.sender_id === chatPartnerId && m.receiver_id === currentProfileId)
     );
-  }, [messages, currentRole, selectedPair, chatPartnerId, currentProfileId, adminChatMode, adminDirectContact, coachChatMode, adminContact]);
+  }, [messages, currentRole, selectedPair, chatPartnerId, currentProfileId, adminChatMode, adminDirectContact, coachChatMode, adminContact, saChatMode, saDirectContact]);
 
   const getLastMessage = (partnerId: string) => {
     const msgs = messages.filter(m =>
@@ -582,6 +690,14 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     </div>
   );
 
+  const renderReadOnlyBar = () => (
+    <div className="p-3 border-t border-border bg-card/50 text-center">
+      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+        <Eye className="h-3.5 w-3.5" /> İzleyici modundasınız — mesaj gönderemezsiniz
+      </p>
+    </div>
+  );
+
   const getDateLabel = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -643,6 +759,110 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     );
   };
 
+  // Helper: render a contact row
+  const renderContactRow = (contact: ChatContact, onClick: () => void) => {
+    const lastMsg = getLastMessage(contact.id);
+    const unread = getUnreadCount(contact.id);
+    return (
+      <button key={contact.id} onClick={onClick} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
+        <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange shrink-0 overflow-hidden">
+          {contact.avatar_url ? <img src={contact.avatar_url} alt={contact.name} className="h-full w-full object-cover" /> : contact.name.charAt(0)}
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-medium truncate">{contact.name}</p>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {contact.subtitle && <span className="text-primary/60">{contact.subtitle} · </span>}
+            {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+          {unread > 0 && <span className="h-5 min-w-[20px] rounded-full bg-[#FF5A01] text-white text-[10px] flex items-center justify-center font-bold px-1.5 shadow-lg">{unread}</span>}
+        </div>
+      </button>
+    );
+  };
+
+  // Helper: render a conversation pair row
+  const renderPairRow = (pair: ConversationPair, onClick: () => void) => {
+    const lastMsg = getLastMessageForPair(pair);
+    const msgCount = getMessageCountForPair(pair);
+    return (
+      <button key={pair.key} onClick={onClick} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
+        <div className="flex -space-x-3 shrink-0">
+          <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
+            {pair.coachName.charAt(0)}
+          </div>
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
+            {pair.studentName.charAt(0)}
+          </div>
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-medium truncate">{pair.coachName} ↔ {pair.studentName}</p>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
+            {msgCount > 0 && <span className="ml-1 text-primary/60">({msgCount} mesaj)</span>}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
+        </div>
+      </button>
+    );
+  };
+
+  // Helper: render direct chat view (back button + header + bubbles + input)
+  const renderDirectChatView = (contact: ChatContact, onBack: () => void, subtitleText: string) => (
+    <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+      <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shadow-orange overflow-hidden shrink-0">
+            {contact.avatar_url ? <img src={contact.avatar_url} alt={contact.name} className="h-full w-full object-cover" /> : contact.name.charAt(0)}
+          </div>
+          <div>
+            <p className="font-display font-semibold text-sm">{contact.name}</p>
+            <p className="text-xs text-muted-foreground">{subtitleText}</p>
+          </div>
+        </div>
+      </div>
+      {renderChatBubbles()}
+      {renderMessageInput()}
+    </div>
+  );
+
+  // Helper: render spectator chat view
+  const renderSpectatorChatView = (pair: ConversationPair, onBack: () => void) => (
+    <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+      <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="flex -space-x-2">
+            <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
+              {pair.coachName.charAt(0)}
+            </div>
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
+              {pair.studentName.charAt(0)}
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="font-display font-semibold text-sm">{pair.coachName} ↔ {pair.studentName}</p>
+            <p className="text-xs text-muted-foreground">Koç — Öğrenci Sohbeti</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-medium shrink-0">
+            <Eye className="h-3 w-3" /> Salt Okunur
+          </span>
+        </div>
+      </div>
+      {renderChatBubbles(true, pair)}
+      {renderReadOnlyBar()}
+    </div>
+  );
+
   // ─── STUDENT VIEW ───
   if (currentRole === 'student') {
     return (
@@ -671,9 +891,106 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
     );
   }
 
-  // ─── ADMIN VIEW ───
-  if (currentRole === 'admin') {
-    // Admin: contact list (tabs: spectator + direct)
+  // ─── SUPER ADMIN VIEW ───
+  if (currentRole === 'super_admin') {
+    // Active direct chat
+    if (saChatMode === 'direct' && saDirectContact) {
+      const subtitleMap: Record<string, string> = { firm_admin: 'Firma Yöneticisi — Doğrudan Mesaj', coach: 'Koç — Doğrudan Mesaj', student: 'Öğrenci — Doğrudan Mesaj' };
+      return renderDirectChatView(saDirectContact, () => setSaDirectContact(null), subtitleMap[saDirectContact.type] || 'Doğrudan Mesaj');
+    }
+
+    // Active spectator pair
+    if (saChatMode === 'spectator' && selectedPair) {
+      return renderSpectatorChatView(selectedPair, () => setSelectedPair(null));
+    }
+
+    // Contact list with categories
+    const totalDirectUnread = [...saFirmAdminContacts, ...saCoachContacts, ...saStudentContacts].reduce((sum, c) => sum + getUnreadCount(c.id), 0);
+
+    return (
+      <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
+        <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSaChatMode('direct')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${saChatMode === 'direct' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <Shield className="h-3.5 w-3.5" /> Mesajlaş
+                {totalDirectUnread > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#FF5A01] text-white text-[9px] font-bold flex items-center justify-center">{totalDirectUnread > 9 ? '9+' : totalDirectUnread}</span>
+                )}
+              </span>
+            </button>
+            <button
+              onClick={() => setSaChatMode('spectator')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${saChatMode === 'spectator' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <Eye className="h-3.5 w-3.5" /> Sohbet İzle
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {saChatMode === 'direct' ? (
+            <div>
+              {/* Firma Yöneticileri */}
+              {saFirmAdminContacts.length > 0 && (
+                <>
+                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <Building2 className="h-3.5 w-3.5" /> Firma Yöneticileri
+                    </p>
+                  </div>
+                  {saFirmAdminContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
+                </>
+              )}
+
+              {/* Ekibimdeki Koçlar */}
+              {saCoachContacts.length > 0 && (
+                <>
+                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" /> Ekibimdeki Koçlar
+                    </p>
+                  </div>
+                  {saCoachContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
+                </>
+              )}
+
+              {/* Ekibimdeki Öğrenciler */}
+              {saStudentContacts.length > 0 && (
+                <>
+                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" /> Ekibimdeki Öğrenciler
+                    </p>
+                  </div>
+                  {saStudentContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
+                </>
+              )}
+
+              {saFirmAdminContacts.length === 0 && saCoachContacts.length === 0 && saStudentContacts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Henüz kişi yok.</p>
+              )}
+            </div>
+          ) : (
+            <>
+              {conversationPairs.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Ekibinizde koç-öğrenci eşleşmesi yok.</p>
+              )}
+              {conversationPairs.map(pair => renderPairRow(pair, () => setSelectedPair(pair)))}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── ADMIN / FIRM_ADMIN VIEW ───
+  if (currentRole === 'admin' || currentRole === 'firm_admin') {
     if (!selectedPair && !adminDirectContact) {
       const adminUnreadFromCoaches = adminCoachContacts.reduce((sum, c) => sum + getUnreadCount(c.id), 0);
       return (
@@ -708,57 +1025,14 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
                 {adminCoachContacts.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-12">Henüz koç yok.</p>
                 )}
-                {adminCoachContacts.map(contact => {
-                  const lastMsg = getLastMessage(contact.id);
-                  const unread = getUnreadCount(contact.id);
-                  return (
-                    <button key={contact.id} onClick={() => setAdminDirectContact(contact)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
-                      <div className="h-11 w-11 rounded-full bg-gradient-orange flex items-center justify-center text-base font-bold text-primary-foreground shadow-orange shrink-0 overflow-hidden">
-                        {contact.avatar_url ? <img src={contact.avatar_url} alt={contact.name} className="h-full w-full object-cover" /> : contact.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="text-sm font-medium truncate">{contact.name}</p>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">{lastMsg ? lastMsg.content : 'Henüz mesaj yok'}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
-                        {unread > 0 && <span className="h-5 min-w-[20px] rounded-full bg-[#FF5A01] text-white text-[10px] flex items-center justify-center font-bold px-1.5 shadow-lg">{unread}</span>}
-                      </div>
-                    </button>
-                  );
-                })}
+                {adminCoachContacts.map(contact => renderContactRow(contact, () => setAdminDirectContact(contact)))}
               </>
             ) : (
               <>
                 {conversationPairs.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-12">Henüz koç-öğrenci eşleşmesi yok.</p>
                 )}
-                {conversationPairs.map(pair => {
-                  const lastMsg = getLastMessageForPair(pair);
-                  const msgCount = getMessageCountForPair(pair);
-                  return (
-                    <button key={pair.key} onClick={() => setSelectedPair(pair)} className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors border-b border-border/50">
-                      <div className="flex -space-x-3 shrink-0">
-                        <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
-                          {pair.coachName.charAt(0)}
-                        </div>
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
-                          {pair.studentName.charAt(0)}
-                        </div>
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="text-sm font-medium truncate">{pair.coachName} ↔ {pair.studentName}</p>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {lastMsg ? lastMsg.content : 'Henüz mesaj yok'}
-                          {msgCount > 0 && <span className="ml-1 text-primary/60">({msgCount} mesaj)</span>}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        {lastMsg && <span className="text-[10px] text-muted-foreground">{new Date(lastMsg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>}
-                      </div>
-                    </button>
-                  );
-                })}
+                {conversationPairs.map(pair => renderPairRow(pair, () => setSelectedPair(pair)))}
               </>
             )}
           </div>
@@ -768,62 +1042,12 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
     // Admin: direct chat with a coach
     if (adminDirectContact) {
-      return (
-        <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setAdminDirectContact(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-sm shadow-orange overflow-hidden shrink-0">
-                {adminDirectContact.avatar_url ? <img src={adminDirectContact.avatar_url} alt={adminDirectContact.name} className="h-full w-full object-cover" /> : adminDirectContact.name.charAt(0)}
-              </div>
-              <div>
-                <p className="font-display font-semibold text-sm">{adminDirectContact.name}</p>
-                <p className="text-xs text-muted-foreground">Koç — Doğrudan Mesaj</p>
-              </div>
-            </div>
-          </div>
-          {renderChatBubbles()}
-          {renderMessageInput()}
-        </div>
-      );
+      return renderDirectChatView(adminDirectContact, () => setAdminDirectContact(null), 'Koç — Doğrudan Mesaj');
     }
 
     // Admin: spectator pair view
     if (selectedPair) {
-      return (
-        <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSelectedPair(null)} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <div className="flex -space-x-2">
-                <div className="h-9 w-9 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-card z-10">
-                  {selectedPair.coachName.charAt(0)}
-                </div>
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs ring-2 ring-card">
-                  {selectedPair.studentName.charAt(0)}
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-display font-semibold text-sm">{selectedPair.coachName} ↔ {selectedPair.studentName}</p>
-                <p className="text-xs text-muted-foreground">Koç — Öğrenci Sohbeti</p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-medium shrink-0">
-                <Eye className="h-3 w-3" /> Salt Okunur
-              </span>
-            </div>
-          </div>
-          {renderChatBubbles(true, selectedPair)}
-          <div className="p-3 border-t border-border bg-card/50 text-center">
-            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-              <Eye className="h-3.5 w-3.5" /> İzleyici modundasınız — mesaj gönderemezsiniz
-            </p>
-          </div>
-        </div>
-      );
+      return renderSpectatorChatView(selectedPair, () => setSelectedPair(null));
     }
   }
 
@@ -836,7 +1060,6 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
           <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl space-y-3">
             <p className="font-display font-semibold text-sm uppercase tracking-wider text-muted-foreground">Mesajlar</p>
-            {/* Admin contact - special card */}
             {adminContact && (
               <button
                 onClick={() => setCoachChatMode('admin')}
@@ -893,26 +1116,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
     // Coach: chat with admin
     if (coachChatMode === 'admin' && adminContact) {
-      return (
-        <div className="glass-card rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
-          <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <button onClick={() => { setCoachChatMode('students'); }} className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <div className="h-10 w-10 rounded-full bg-gradient-orange flex items-center justify-center text-primary-foreground shadow-orange shrink-0 overflow-hidden">
-                {adminContact.avatar_url ? <img src={adminContact.avatar_url} alt={adminContact.name} className="h-full w-full object-cover" /> : <Shield className="h-5 w-5" />}
-              </div>
-              <div>
-                <p className="font-display font-semibold text-sm">{adminContact.name}</p>
-                <p className="text-xs text-muted-foreground">Süper Yönetici</p>
-              </div>
-            </div>
-          </div>
-          {renderChatBubbles()}
-          {renderMessageInput()}
-        </div>
-      );
+      return renderDirectChatView(adminContact, () => setCoachChatMode('students'), 'Süper Yönetici');
     }
 
     // Coach: chat with selected student
