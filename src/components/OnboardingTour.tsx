@@ -94,7 +94,7 @@ export default function OnboardingTour({ role }: OnboardingTourProps) {
     checkOnboarding();
   }, [user]);
 
-  const handleCallback = async (data: CallBackProps) => {
+  const handleCallback = async (data: any) => {
     const { status } = data;
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRun(false);

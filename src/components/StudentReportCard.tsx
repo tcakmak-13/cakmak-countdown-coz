@@ -43,7 +43,7 @@ export default function StudentReportCard({ student }: StudentReportCardProps) {
   const [showReport, setShowReport] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
   const reportRef = useRef<HTMLDivElement>(null);
-  const { brandName, logoUrl } = useCompanyBrand();
+  const { name: brandName, logoUrl } = useCompanyBrand();
 
   const generateReport = async () => {
     setGenerating(true);
