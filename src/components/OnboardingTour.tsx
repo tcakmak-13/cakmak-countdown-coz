@@ -116,11 +116,8 @@ export default function OnboardingTour({ role }: OnboardingTourProps) {
       steps={steps}
       run={run}
       continuous
-      showSkipButton
-      showProgress
       scrollToFirstStep
-      disableOverlayClose
-      callback={handleCallback}
+      onEvent={(_type: string, data: any) => handleCallback(data)}
       locale={{
         back: 'Geri',
         close: 'Kapat',
@@ -128,19 +125,16 @@ export default function OnboardingTour({ role }: OnboardingTourProps) {
         next: 'İleri',
         skip: 'Turu Atla',
       }}
+      options={{
+        showSkipButton: true,
+        showProgress: true,
+        disableOverlayClose: true,
+      }}
       styles={{
         tooltip: {
           borderRadius: '16px',
           padding: '20px',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-        },
-        tooltipTitle: {
-          fontSize: '16px',
-          fontWeight: 700,
-        },
-        tooltipContent: {
-          fontSize: '14px',
-          lineHeight: '1.6',
         },
         spotlight: {
           borderRadius: '12px',
