@@ -903,6 +903,9 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                 <UserIcon className="h-4 w-4" /> Profil
               </button>
             </div>
+            <div className="mb-4">
+              <StudentReportCard student={selectedStudent} />
+            </div>
             <div className="glass-card rounded-2xl p-6">
               <h2 className="font-display text-lg font-semibold mb-4">
                 {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
