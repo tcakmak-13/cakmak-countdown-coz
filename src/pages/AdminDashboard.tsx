@@ -825,7 +825,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                 </h2>
                 <Dialog open={showCreateCoach} onOpenChange={setShowCreateCoach}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
+                    <Button data-tour="add-coach-btn" size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
                       <Plus className="h-4 w-4" /> Koç Ekle
                     </Button>
                   </DialogTrigger>
