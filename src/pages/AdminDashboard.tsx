@@ -536,20 +536,10 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
         {tab === 'overview' ? (
           <div className="space-y-6">
             <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{approvedCoachCount}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Koç</p>
-              </div>
-              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{approvedStudentCount}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
-              </div>
-              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center col-span-2 sm:col-span-1">
-                <p className="text-2xl sm:text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
-              </div>
-            </div>
+            <DashboardStatsCards
+              students={students.filter(s => s.is_approved)}
+              coachCount={approvedCoachCount}
+            />
             <div className="glass-card rounded-2xl p-6">
               <h3 className="font-display text-lg font-semibold mb-4">Koç Bazlı Dağılım</h3>
               {coaches.length === 0 ? (
