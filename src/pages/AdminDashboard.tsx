@@ -934,8 +934,8 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
           ] : [
             { key: 'analytics', icon: BarChart3, label: 'Analiz', tour: 'analytics-tab' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
-            { key: 'management', icon: Users, label: 'Yönetim' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
+            { key: 'management', icon: Users, label: 'Yönetim', tour: 'management-tab' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj', tour: 'messages-tab' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
             { key: 'company', icon: Building2, label: 'Firma' },
           ]).map(item => {
