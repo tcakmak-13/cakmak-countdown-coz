@@ -9,7 +9,6 @@ const FIRM_ADMIN_STEPS: Step[] = [
     target: '[data-tour="management-tab"]',
     content: 'Buradan koçlarınızı ve öğrencilerinizi yönetebilirsiniz. İlk adım olarak bir koç ekleyin!',
     title: '👥 Kullanıcı Yönetimi',
-    disableBeacon: true,
     placement: 'bottom',
   },
   {
