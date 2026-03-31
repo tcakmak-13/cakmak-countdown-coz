@@ -59,11 +59,13 @@ export default function StudentReportCard({ student }: StudentReportCardProps) {
     // Fetch study hours (last 4 weeks)
     const fourWeeksAgo = new Date();
     fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-    const { data: timerLogs } = await supabase
+    const dateStr = fourWeeksAgo.toISOString().split('T')[0];
+    const { data: timerLogs, error: timerErr } = await supabase
       .from('study_timer_logs')
       .select('elapsed_seconds, log_date')
       .eq('student_id', student.id)
-      .gte('log_date', fourWeeksAgo.toISOString().split('T')[0]);
+      .gte('log_date', dateStr);
+    if (timerErr) console.error('Timer logs fetch error:', timerErr);
 
     // Fetch task completion
     const { data: tasks } = await supabase
@@ -110,17 +112,21 @@ export default function StudentReportCard({ student }: StudentReportCardProps) {
     const tytStats = calcAvg(tytExams, TYT_SUBJECTS);
     const aytStats = calcAvg(aytExams, aytSubs);
 
-    // Study hours
-    const totalStudyMinutes = Math.round((timerLogs || []).reduce((s, l) => s + l.elapsed_seconds, 0) / 60);
+    // Study hours - safe number conversion
+    const safeSeconds = (val: unknown): number => {
+      const n = typeof val === 'string' ? Number(val.replace(',', '.')) : Number(val ?? 0);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const totalStudyMinutes = Math.round((timerLogs || []).reduce((s, l) => s + safeSeconds(l.elapsed_seconds), 0) / 60);
 
     // Weekly breakdown
     const weeklyStudy: number[] = [0, 0, 0, 0];
     const now = new Date();
     for (const log of timerLogs || []) {
-      const logDate = new Date(log.log_date);
+      const logDate = new Date(log.log_date + 'T00:00:00');
       const diffDays = Math.floor((now.getTime() - logDate.getTime()) / 86400000);
       const weekIdx = Math.min(3, Math.floor(diffDays / 7));
-      weeklyStudy[3 - weekIdx] += Math.round(log.elapsed_seconds / 60);
+      weeklyStudy[3 - weekIdx] += Math.round(safeSeconds(log.elapsed_seconds) / 60);
     }
 
     // Task completion
