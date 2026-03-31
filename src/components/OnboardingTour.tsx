@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import { Joyride, STATUS } from 'react-joyride';
+import type { Step } from 'react-joyride';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
