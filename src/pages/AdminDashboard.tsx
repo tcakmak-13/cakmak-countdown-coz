@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImageLightbox from '@/components/ImageLightbox';
 import { LogOut, Users, Calendar, User as UserIcon, Plus, MessageCircle, BarChart3, Megaphone, CalendarCheck, Trash2, Shield, UserPlus, Ban, CheckCircle, Building2, Pencil, Eye, GraduationCap, UserCheck } from 'lucide-react';
+import OnboardingTour from '@/components/OnboardingTour';
+import DashboardStatsCards from '@/components/DashboardStatsCards';
+import StudentReportCard from '@/components/StudentReportCard';
+import StudentExamAnalysis from '@/components/StudentExamAnalysis';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -495,7 +499,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
 
   return (
     <><div className="min-h-screen bg-background pb-20">
-      {/* Header */}
+      {isFirmPanel && <OnboardingTour role="firm_admin" />}
       <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <button onClick={() => { setSelectedStudent(null); setTab('overview'); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -532,20 +536,10 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
         {tab === 'overview' ? (
           <div className="space-y-6">
             <h2 className="font-display text-2xl font-bold">Sistem Genel Bakış</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{approvedCoachCount}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Koç</p>
-              </div>
-              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{approvedStudentCount}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Aktif Öğrenci</p>
-              </div>
-              <div className="glass-card rounded-2xl p-4 sm:p-6 text-center col-span-2 sm:col-span-1">
-                <p className="text-2xl sm:text-3xl font-bold text-amber-400">{students.filter(s => !s.coach_id).length}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">Koç Atanmamış</p>
-              </div>
-            </div>
+            <DashboardStatsCards
+              students={students.filter(s => s.is_approved)}
+              coachCount={approvedCoachCount}
+            />
             <div className="glass-card rounded-2xl p-6">
               <h3 className="font-display text-lg font-semibold mb-4">Koç Bazlı Dağılım</h3>
               {coaches.length === 0 ? (
@@ -758,7 +752,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                 </h2>
                 <Dialog open={showCreateStudent} onOpenChange={setShowCreateStudent}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
+                    <Button data-tour="add-student-btn" size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
                       <Plus className="h-4 w-4" /> Öğrenci Ekle
                     </Button>
                   </DialogTrigger>
@@ -831,7 +825,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                 </h2>
                 <Dialog open={showCreateCoach} onOpenChange={setShowCreateCoach}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
+                    <Button data-tour="add-coach-btn" size="sm" className="bg-gradient-orange text-primary-foreground border-0 hover:opacity-90 gap-1">
                       <Plus className="h-4 w-4" /> Koç Ekle
                     </Button>
                   </DialogTrigger>
@@ -909,6 +903,9 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
                 <UserIcon className="h-4 w-4" /> Profil
               </button>
             </div>
+            <div className="mb-4">
+              <StudentReportCard student={selectedStudent} />
+            </div>
             <div className="glass-card rounded-2xl p-6">
               <h2 className="font-display text-lg font-semibold mb-4">
                 {selectedStudent.full_name || selectedStudent.username} — {tab === 'schedule' ? 'Haftalık Program' : 'Profil'}
@@ -935,10 +932,10 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
           ] : [
-            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
+            { key: 'analytics', icon: BarChart3, label: 'Analiz', tour: 'analytics-tab' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
-            { key: 'management', icon: Users, label: 'Yönetim' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
+            { key: 'management', icon: Users, label: 'Yönetim', tour: 'management-tab' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj', tour: 'messages-tab' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
             { key: 'company', icon: Building2, label: 'Firma' },
           ]).map(item => {
@@ -946,6 +943,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
             return (
               <button
                 key={item.key}
+                data-tour={(item as any).tour}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
                 className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 min-w-[56px] flex-1 min-h-[48px] transition-colors relative px-1"
               >

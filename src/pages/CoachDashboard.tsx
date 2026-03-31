@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import OnboardingTour from '@/components/OnboardingTour';
+import StudentReportCard from '@/components/StudentReportCard';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen, BookOpen } from 'lucide-react';
 import ImageLightbox from '@/components/ImageLightbox';
@@ -152,6 +154,7 @@ export default function CoachDashboard() {
 
   return (
     <><div className="min-h-screen bg-background pb-20">
+      <OnboardingTour role="koc" />
       {/* Header */}
       <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -292,6 +295,7 @@ export default function CoachDashboard() {
               <span className="font-medium text-sm">{selectedStudent.full_name || selectedStudent.username}</span>
             </div>
             <div className="flex gap-1 mb-4">
+              <StudentReportCard student={selectedStudent} />
               <button
                 onClick={() => setTab('schedule')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -359,18 +363,19 @@ export default function CoachDashboard() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
         <div className="max-w-7xl mx-auto flex items-center overflow-x-auto scrollbar-hide h-14 sm:h-16">
           {[
-            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
-            { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+            { key: 'analytics', icon: BarChart3, label: 'Analiz', tour: 'analytics-tab' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevu', tour: 'schedule-tab' },
             { key: 'resources', icon: FolderOpen, label: 'Kaynak' },
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
-            { key: 'list', icon: Users, label: 'Öğrenci' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },
+            { key: 'list', icon: Users, label: 'Öğrenci', tour: 'student-list-tab' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount, tour: 'messages-tab' },
             { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
             return (
               <button
                 key={item.key}
+                data-tour={(item as any).tour}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
                 className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 min-w-[56px] flex-1 min-h-[48px] transition-colors relative px-1"
               >
