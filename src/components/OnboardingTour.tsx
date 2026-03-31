@@ -142,25 +142,10 @@ export default function OnboardingTour({ role }: OnboardingTourProps) {
           fontSize: '14px',
           lineHeight: '1.6',
         },
-        buttonNext: {
-          borderRadius: '10px',
-          padding: '8px 18px',
-          fontSize: '14px',
-          fontWeight: 600,
-          backgroundColor: 'hsl(25, 95%, 53%)',
-        },
-        buttonBack: {
-          color: '#888',
-          fontSize: '14px',
-        },
-        buttonSkip: {
-          color: '#888',
-          fontSize: '13px',
-        },
         spotlight: {
           borderRadius: '12px',
         },
-      }}
+      } as any}
     />
   );
 }
