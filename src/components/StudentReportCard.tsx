@@ -59,11 +59,13 @@ export default function StudentReportCard({ student }: StudentReportCardProps) {
     // Fetch study hours (last 4 weeks)
     const fourWeeksAgo = new Date();
     fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-    const { data: timerLogs } = await supabase
+    const dateStr = fourWeeksAgo.toISOString().split('T')[0];
+    const { data: timerLogs, error: timerErr } = await supabase
       .from('study_timer_logs')
       .select('elapsed_seconds, log_date')
       .eq('student_id', student.id)
-      .gte('log_date', fourWeeksAgo.toISOString().split('T')[0]);
+      .gte('log_date', dateStr);
+    if (timerErr) console.error('Timer logs fetch error:', timerErr);
 
     // Fetch task completion
     const { data: tasks } = await supabase
