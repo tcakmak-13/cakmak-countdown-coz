@@ -932,7 +932,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
             { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
           ] : [
-            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
+            { key: 'analytics', icon: BarChart3, label: 'Analiz', tour: 'analytics-tab' },
             { key: 'overview', icon: Shield, label: 'Bakış' },
             { key: 'management', icon: Users, label: 'Yönetim' },
             { key: 'messages', icon: MessageCircle, label: 'Mesaj' },
