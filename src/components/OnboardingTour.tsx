@@ -42,7 +42,6 @@ const COACH_STEPS: Step[] = [
     target: '[data-tour="analytics-tab"]',
     content: 'Öğrencilerinizin haftalık çalışma performanslarını ve deneme sonuçlarını buradan takip edebilirsiniz.',
     title: '📊 Analiz Paneli',
-    disableBeacon: true,
     placement: 'bottom',
   },
   {
