@@ -154,6 +154,7 @@ export default function CoachDashboard() {
 
   return (
     <><div className="min-h-screen bg-background pb-20">
+      <OnboardingTour role="koc" />
       {/* Header */}
       <header className="border-b border-border bg-card/50 fixed top-0 inset-x-0 z-40 backdrop-blur-md pt-safe">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
