@@ -375,6 +375,7 @@ export default function CoachDashboard() {
             return (
               <button
                 key={item.key}
+                data-tour={(item as any).tour}
                 onClick={() => { setSelectedStudent(null); setTab(item.key as any); }}
                 className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 min-w-[56px] flex-1 min-h-[48px] transition-colors relative px-1"
               >
