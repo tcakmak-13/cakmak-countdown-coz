@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import OnboardingTour from '@/components/OnboardingTour';
+import StudentReportCard from '@/components/StudentReportCard';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, Calendar, User as UserIcon, MessageCircle, BarChart3, CalendarCheck, Megaphone, MessageCircleQuestion, FolderOpen, BookOpen } from 'lucide-react';
 import ImageLightbox from '@/components/ImageLightbox';
