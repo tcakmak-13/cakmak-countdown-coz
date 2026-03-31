@@ -129,13 +129,6 @@ export default function OnboardingTour({ role }: OnboardingTourProps) {
         skip: 'Turu Atla',
       }}
       styles={{
-        options: {
-          zIndex: 10000,
-          primaryColor: 'hsl(25, 95%, 53%)',
-          backgroundColor: 'hsl(var(--card))',
-          textColor: 'hsl(var(--foreground))',
-          arrowColor: 'hsl(var(--card))',
-        },
         tooltip: {
           borderRadius: '16px',
           padding: '20px',
@@ -154,13 +147,14 @@ export default function OnboardingTour({ role }: OnboardingTourProps) {
           padding: '8px 18px',
           fontSize: '14px',
           fontWeight: 600,
+          backgroundColor: 'hsl(25, 95%, 53%)',
         },
         buttonBack: {
-          color: 'hsl(var(--muted-foreground))',
+          color: '#888',
           fontSize: '14px',
         },
         buttonSkip: {
-          color: 'hsl(var(--muted-foreground))',
+          color: '#888',
           fontSize: '13px',
         },
         spotlight: {
