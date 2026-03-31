@@ -295,6 +295,7 @@ export default function CoachDashboard() {
               <span className="font-medium text-sm">{selectedStudent.full_name || selectedStudent.username}</span>
             </div>
             <div className="flex gap-1 mb-4">
+              <StudentReportCard student={selectedStudent} />
               <button
                 onClick={() => setTab('schedule')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
