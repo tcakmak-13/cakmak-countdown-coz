@@ -363,12 +363,12 @@ export default function CoachDashboard() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border pb-safe">
         <div className="max-w-7xl mx-auto flex items-center overflow-x-auto scrollbar-hide h-14 sm:h-16">
           {[
-            { key: 'analytics', icon: BarChart3, label: 'Analiz' },
-            { key: 'appointments', icon: CalendarCheck, label: 'Randevu' },
+            { key: 'analytics', icon: BarChart3, label: 'Analiz', tour: 'analytics-tab' },
+            { key: 'appointments', icon: CalendarCheck, label: 'Randevu', tour: 'schedule-tab' },
             { key: 'resources', icon: FolderOpen, label: 'Kaynak' },
             { key: 'soru-akisi', icon: MessageCircleQuestion, label: 'Sorular' },
-            { key: 'list', icon: Users, label: 'Öğrenci' },
-            { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount },
+            { key: 'list', icon: Users, label: 'Öğrenci', tour: 'student-list-tab' },
+            { key: 'messages', icon: MessageCircle, label: 'Mesaj', badge: unreadCount, tour: 'messages-tab' },
             { key: 'coach-edit', icon: UserIcon, label: 'Profilim' },
           ].map(item => {
             const isActive = activeNav === item.key;
