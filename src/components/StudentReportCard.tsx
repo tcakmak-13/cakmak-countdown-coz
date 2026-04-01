@@ -56,16 +56,48 @@ export default function StudentReportCard({ student }: StudentReportCardProps) {
       .eq('student_id', student.id)
       .order('created_at', { ascending: true });
 
-    // Fetch study hours (last 4 weeks)
-    const fourWeeksAgo = new Date();
-    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-    const dateStr = fourWeeksAgo.toISOString().split('T')[0];
-    const { data: timerLogs, error: timerErr } = await supabase
-      .from('study_timer_logs')
-      .select('elapsed_seconds, log_date')
+    // Fetch study hours (last 4 weeks) from the correct source table
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    const getWeekStart = (date: Date) => {
+      const d = new Date(date);
+      const day = d.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + mondayOffset);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+    const safeStudyMinutes = (val: unknown): number => {
+      const n = typeof val === 'string' ? Number(val.replace(',', '.')) : Number(val ?? 0);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const currentWeekStart = getWeekStart(new Date());
+    const firstWeekStart = new Date(currentWeekStart);
+    firstWeekStart.setDate(currentWeekStart.getDate() - 21);
+
+    const weekKeys = Array.from({ length: 4 }, (_, index) => {
+      const weekStart = new Date(firstWeekStart);
+      weekStart.setDate(firstWeekStart.getDate() + index * 7);
+      return formatLocalDate(weekStart);
+    });
+    const weekIndexByKey = new Map(weekKeys.map((key, index) => [key, index]));
+
+    const { data: studyRowsRaw, error: studyErr } = await supabase
+      .from('study_tasks')
+      .select('week_start_date, actual_minutes, estimated_minutes')
       .eq('student_id', student.id)
-      .gte('log_date', dateStr);
-    if (timerErr) console.error('Timer logs fetch error:', timerErr);
+      .eq('completed', true)
+      .gte('week_start_date', weekKeys[0])
+      .lte('week_start_date', weekKeys[3]);
+
+    if (studyErr) console.error('Study data fetch error:', studyErr);
+
+    const studyRows = Array.isArray(studyRowsRaw) ? studyRowsRaw : [];
 
     // Fetch task completion
     const { data: tasks } = await supabase
@@ -112,21 +144,17 @@ export default function StudentReportCard({ student }: StudentReportCardProps) {
     const tytStats = calcAvg(tytExams, TYT_SUBJECTS);
     const aytStats = calcAvg(aytExams, aytSubs);
 
-    // Study hours - safe number conversion
-    const safeSeconds = (val: unknown): number => {
-      const n = typeof val === 'string' ? Number(val.replace(',', '.')) : Number(val ?? 0);
-      return Number.isFinite(n) ? n : 0;
-    };
-    const totalStudyMinutes = Math.round((timerLogs || []).reduce((s, l) => s + safeSeconds(l.elapsed_seconds), 0) / 60);
+    // Study hours - RLS/null-safe aggregation
+    const totalStudyMinutes = Math.round(
+      studyRows.reduce((sum, row) => sum + safeStudyMinutes(row.actual_minutes ?? row.estimated_minutes), 0)
+    );
 
     // Weekly breakdown
     const weeklyStudy: number[] = [0, 0, 0, 0];
-    const now = new Date();
-    for (const log of timerLogs || []) {
-      const logDate = new Date(log.log_date + 'T00:00:00');
-      const diffDays = Math.floor((now.getTime() - logDate.getTime()) / 86400000);
-      const weekIdx = Math.min(3, Math.floor(diffDays / 7));
-      weeklyStudy[3 - weekIdx] += Math.round(safeSeconds(log.elapsed_seconds) / 60);
+    for (const row of studyRows) {
+      const weekIndex = weekIndexByKey.get(row.week_start_date);
+      if (weekIndex === undefined) continue;
+      weeklyStudy[weekIndex] += Math.round(safeStudyMinutes(row.actual_minutes ?? row.estimated_minutes));
     }
 
     // Task completion
