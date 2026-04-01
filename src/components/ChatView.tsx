@@ -1031,7 +1031,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
                 className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${adminChatMode === 'direct' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
               >
                 <span className="flex items-center justify-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5" /> Koçlarla Mesajlaş
+                  <Shield className="h-3.5 w-3.5" /> {currentRole === 'firm_admin' ? 'Mesajlaş' : 'Koçlarla Mesajlaş'}
                   {adminUnreadFromCoaches > 0 && (
                     <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#FF5A01] text-white text-[9px] font-bold flex items-center justify-center">{adminUnreadFromCoaches > 9 ? '9+' : adminUnreadFromCoaches}</span>
                   )}
