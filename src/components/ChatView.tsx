@@ -893,8 +893,8 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   // ─── SUPER ADMIN VIEW ───
   if (currentRole === 'super_admin') {
-    // Active direct chat
-    if (saChatMode === 'direct' && saDirectContact) {
+    // Active direct chat (from firms or team tab)
+    if (saChatMode !== 'spectator' && saDirectContact) {
       const subtitleMap: Record<string, string> = { firm_admin: 'Firma Yöneticisi — Doğrudan Mesaj', coach: 'Koç — Doğrudan Mesaj', student: 'Öğrenci — Doğrudan Mesaj' };
       return renderDirectChatView(saDirectContact, () => setSaDirectContact(null), subtitleMap[saDirectContact.type] || 'Doğrudan Mesaj');
     }
@@ -904,79 +904,76 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       return renderSpectatorChatView(selectedPair, () => setSelectedPair(null));
     }
 
-    // Contact list with categories
-    const totalDirectUnread = [...saFirmAdminContacts, ...saCoachContacts, ...saStudentContacts].reduce((sum, c) => sum + getUnreadCount(c.id), 0);
+    // Contact list with 3 tabs
+    const firmUnread = saFirmAdminContacts.reduce((sum, c) => sum + getUnreadCount(c.id), 0);
+    const teamUnread = saCoachContacts.reduce((sum, c) => sum + getUnreadCount(c.id), 0);
 
     return (
       <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <button
-              onClick={() => setSaChatMode('direct')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${saChatMode === 'direct' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSaChatMode('firms')}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${saChatMode === 'firms' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" /> Mesajlaş
-                {totalDirectUnread > 0 && (
-                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#FF5A01] text-white text-[9px] font-bold flex items-center justify-center">{totalDirectUnread > 9 ? '9+' : totalDirectUnread}</span>
+              <span className="flex items-center justify-center gap-1">
+                <Building2 className="h-3.5 w-3.5" /> Firmalar
+                {firmUnread > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{firmUnread > 9 ? '9+' : firmUnread}</span>
+                )}
+              </span>
+            </button>
+            <button
+              onClick={() => setSaChatMode('team')}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${saChatMode === 'team' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            >
+              <span className="flex items-center justify-center gap-1">
+                <Shield className="h-3.5 w-3.5" /> Ekibim
+                {teamUnread > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{teamUnread > 9 ? '9+' : teamUnread}</span>
                 )}
               </span>
             </button>
             <button
               onClick={() => setSaChatMode('spectator')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${saChatMode === 'spectator' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${saChatMode === 'spectator' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Eye className="h-3.5 w-3.5" /> Sohbet İzle
+              <span className="flex items-center justify-center gap-1">
+                <Eye className="h-3.5 w-3.5" /> Gözlem
               </span>
             </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {saChatMode === 'direct' ? (
-            <div>
-              {/* Firma Yöneticileri */}
-              {saFirmAdminContacts.length > 0 && (
-                <>
-                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5" /> Firma Yöneticileri
-                    </p>
-                  </div>
-                  {saFirmAdminContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
-                </>
+          {saChatMode === 'firms' && (
+            <>
+              {saFirmAdminContacts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Henüz firma yöneticisi yok.</p>
               )}
+              {saFirmAdminContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
+            </>
+          )}
 
-              {/* Ekibimdeki Koçlar */}
+          {saChatMode === 'team' && (
+            <div>
               {saCoachContacts.length > 0 && (
                 <>
                   <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
                     <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Shield className="h-3.5 w-3.5" /> Ekibimdeki Koçlar
+                      <Shield className="h-3.5 w-3.5" /> Koçlarım
                     </p>
                   </div>
                   {saCoachContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
                 </>
               )}
-
-              {/* Ekibimdeki Öğrenciler */}
-              {saStudentContacts.length > 0 && (
-                <>
-                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5" /> Ekibimdeki Öğrenciler
-                    </p>
-                  </div>
-                  {saStudentContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
-                </>
-              )}
-
-              {saFirmAdminContacts.length === 0 && saCoachContacts.length === 0 && saStudentContacts.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-12">Henüz kişi yok.</p>
+              {saCoachContacts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Ekibinizde koç yok.</p>
               )}
             </div>
-          ) : (
+          )}
+
+          {saChatMode === 'spectator' && (
             <>
               {conversationPairs.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-12">Ekibinizde koç-öğrenci eşleşmesi yok.</p>
