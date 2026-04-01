@@ -397,13 +397,13 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // ─── MARK AS READ ───
   useEffect(() => {
     if (currentRole === 'super_admin') {
-      if (saChatMode === 'direct' && saDirectContact) {
-        const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === saDirectContact.id);
-        if (unread.length > 0) {
-          supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
-        }
+    if (saChatMode !== 'spectator' && saDirectContact) {
+      const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === saDirectContact.id);
+      if (unread.length > 0) {
+        supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
       }
-      return;
+    }
+    return;
     }
     if (currentRole === 'admin' || currentRole === 'firm_admin') {
       if (adminChatMode === 'direct' && adminDirectContact) {
