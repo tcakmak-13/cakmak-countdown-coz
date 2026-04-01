@@ -1069,9 +1069,10 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       );
     }
 
-    // Admin: direct chat with a coach
+    // Admin: direct chat with a coach or super_admin
     if (adminDirectContact) {
-      return renderDirectChatView(adminDirectContact, () => setAdminDirectContact(null), 'Koç — Doğrudan Mesaj');
+      const subtitle = adminDirectContact.type === 'admin' ? 'Süper Yönetici — Doğrudan Mesaj' : 'Koç — Doğrudan Mesaj';
+      return renderDirectChatView(adminDirectContact, () => setAdminDirectContact(null), subtitle);
     }
 
     // Admin: spectator pair view
