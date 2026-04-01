@@ -194,7 +194,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [saFirmAdminContacts, setSaFirmAdminContacts] = useState<ChatContact[]>([]);
   const [saCoachContacts, setSaCoachContacts] = useState<ChatContact[]>([]);
   const [saStudentContacts, setSaStudentContacts] = useState<ChatContact[]>([]);
-  const [saChatMode, setSaChatMode] = useState<'direct' | 'spectator'>('direct');
+  const [saChatMode, setSaChatMode] = useState<'firms' | 'team' | 'spectator'>('firms');
   const [saDirectContact, setSaDirectContact] = useState<ChatContact | null>(null);
 
   const getSignedUrl = async (fileName: string) => {
@@ -300,40 +300,72 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         }
       };
       loadSuperAdminContacts();
-    } else if (currentRole === 'admin' || currentRole === 'firm_admin') {
-      const loadPairs = async () => {
-        const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
-        if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); setAdminCoachContacts([]); return; }
-        const coachUserIds = coachRoles.map(r => r.user_id);
-        const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, user_id, avatar_url').in('user_id', coachUserIds);
-        if (!coachProfiles) { setConversationPairs([]); setAdminCoachContacts([]); return; }
+  } else if (currentRole === 'admin' || currentRole === 'firm_admin') {
+    const loadPairs = async () => {
+      // Get my company_id
+      const { data: myProfile } = await supabase.from('profiles').select('company_id').eq('id', currentProfileId).single();
+      const myCompanyId = myProfile?.company_id;
+      
+      // Load coaches from same company only
+      const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
+      if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); setAdminCoachContacts([]); return; }
+      const coachUserIds = coachRoles.map(r => r.user_id);
+      
+      let coachQuery = supabase.from('profiles').select('id, full_name, user_id, avatar_url, company_id').in('user_id', coachUserIds);
+      if (myCompanyId) coachQuery = coachQuery.eq('company_id', myCompanyId);
+      const { data: coachProfiles } = await coachQuery;
+      if (!coachProfiles) { setConversationPairs([]); setAdminCoachContacts([]); return; }
 
-        setAdminCoachContacts(coachProfiles.map(c => ({
-          id: c.id,
-          name: c.full_name || 'Koç',
-          type: 'coach' as const,
-          avatar_url: c.avatar_url,
-          subtitle: 'Koç',
-        })));
+      const contacts: ChatContact[] = coachProfiles.map(c => ({
+        id: c.id,
+        name: c.full_name || 'Koç',
+        type: 'coach' as const,
+        avatar_url: c.avatar_url,
+        subtitle: 'Koç',
+      }));
 
-        const { data: allStudents } = await supabase.from('profiles').select('id, full_name, coach_id').not('coach_id', 'is', null);
-        if (!allStudents) { setConversationPairs([]); return; }
-        const pairs: ConversationPair[] = [];
-        for (const student of allStudents) {
-          const coach = coachProfiles.find(c => c.id === student.coach_id);
-          if (coach) {
-            pairs.push({
-              coachId: coach.id,
-              coachName: coach.full_name || 'Koç',
-              studentId: student.id,
-              studentName: student.full_name || 'Öğrenci',
-              key: `${coach.id}-${student.id}`,
+      // firm_admin: also add super_admin as a direct contact
+      if (currentRole === 'firm_admin') {
+        const { data: saRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'super_admin');
+        if (saRoles && saRoles.length > 0) {
+          const { data: saProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('user_id', saRoles.map(r => r.user_id));
+          if (saProfiles) {
+            saProfiles.forEach(sa => {
+              contacts.unshift({
+                id: sa.id,
+                name: sa.full_name || 'Süper Yönetici',
+                type: 'admin' as const,
+                avatar_url: sa.avatar_url,
+                subtitle: 'Süper Yönetici',
+              });
             });
           }
         }
-        setConversationPairs(pairs);
-      };
-      loadPairs();
+      }
+
+      setAdminCoachContacts(contacts);
+
+      // Spectator: only show coach-student pairs from same company
+      let studentQuery = supabase.from('profiles').select('id, full_name, coach_id').not('coach_id', 'is', null);
+      if (myCompanyId) studentQuery = studentQuery.eq('company_id', myCompanyId);
+      const { data: allStudents } = await studentQuery;
+      if (!allStudents) { setConversationPairs([]); return; }
+      const pairs: ConversationPair[] = [];
+      for (const student of allStudents) {
+        const coach = coachProfiles.find(c => c.id === student.coach_id);
+        if (coach) {
+          pairs.push({
+            coachId: coach.id,
+            coachName: coach.full_name || 'Koç',
+            studentId: student.id,
+            studentName: student.full_name || 'Öğrenci',
+            key: `${coach.id}-${student.id}`,
+          });
+        }
+      }
+      setConversationPairs(pairs);
+    };
+    loadPairs();
     } else if (currentRole === 'koc') {
       supabase.from('profiles').select('id, full_name, area, grade')
         .eq('coach_id', currentProfileId)
@@ -359,7 +391,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   useEffect(() => {
     const fetchMessages = async () => {
       let query = supabase.from('chat_messages').select('*');
-      if (currentRole !== 'admin' && currentRole !== 'super_admin') {
+      if (currentRole !== 'admin' && currentRole !== 'super_admin' && currentRole !== 'firm_admin') {
         query = query.or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`);
       }
       const { data } = await query.order('created_at').limit(1000);
@@ -397,13 +429,13 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // ─── MARK AS READ ───
   useEffect(() => {
     if (currentRole === 'super_admin') {
-      if (saChatMode === 'direct' && saDirectContact) {
-        const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === saDirectContact.id);
-        if (unread.length > 0) {
-          supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
-        }
+    if (saChatMode !== 'spectator' && saDirectContact) {
+      const unread = messages.filter(m => !m.read && m.receiver_id === currentProfileId && m.sender_id === saDirectContact.id);
+      if (unread.length > 0) {
+        supabase.from('chat_messages').update({ read: true }).in('id', unread.map(m => m.id)).then(() => {});
       }
-      return;
+    }
+    return;
     }
     if (currentRole === 'admin' || currentRole === 'firm_admin') {
       if (adminChatMode === 'direct' && adminDirectContact) {
@@ -439,7 +471,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // ─── CHAT PARTNER ───
   const chatPartnerId = useMemo(() => {
     if (currentRole === 'student') return coachProfileId;
-    if (currentRole === 'super_admin' && saChatMode === 'direct' && saDirectContact) return saDirectContact.id;
+    if (currentRole === 'super_admin' && saChatMode !== 'spectator' && saDirectContact) return saDirectContact.id;
     if ((currentRole === 'admin' || currentRole === 'firm_admin') && adminChatMode === 'direct' && adminDirectContact) return adminDirectContact.id;
     if (currentRole === 'koc' && coachChatMode === 'admin' && adminContact) return adminContact.id;
     if (currentRole === 'koc' && coachChatMode === 'students') return selectedStudent;
@@ -455,8 +487,8 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         (m.sender_id === selectedPair.studentId && m.receiver_id === selectedPair.coachId)
       );
     }
-    // Super Admin direct
-    if (currentRole === 'super_admin' && saChatMode === 'direct' && saDirectContact) {
+    // Super Admin direct (firms or team tab)
+    if (currentRole === 'super_admin' && saChatMode !== 'spectator' && saDirectContact) {
       return messages.filter(m =>
         (m.sender_id === currentProfileId && m.receiver_id === saDirectContact.id) ||
         (m.sender_id === saDirectContact.id && m.receiver_id === currentProfileId)
@@ -893,8 +925,8 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
   // ─── SUPER ADMIN VIEW ───
   if (currentRole === 'super_admin') {
-    // Active direct chat
-    if (saChatMode === 'direct' && saDirectContact) {
+    // Active direct chat (from firms or team tab)
+    if (saChatMode !== 'spectator' && saDirectContact) {
       const subtitleMap: Record<string, string> = { firm_admin: 'Firma Yöneticisi — Doğrudan Mesaj', coach: 'Koç — Doğrudan Mesaj', student: 'Öğrenci — Doğrudan Mesaj' };
       return renderDirectChatView(saDirectContact, () => setSaDirectContact(null), subtitleMap[saDirectContact.type] || 'Doğrudan Mesaj');
     }
@@ -904,79 +936,76 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       return renderSpectatorChatView(selectedPair, () => setSelectedPair(null));
     }
 
-    // Contact list with categories
-    const totalDirectUnread = [...saFirmAdminContacts, ...saCoachContacts, ...saStudentContacts].reduce((sum, c) => sum + getUnreadCount(c.id), 0);
+    // Contact list with 3 tabs
+    const firmUnread = saFirmAdminContacts.reduce((sum, c) => sum + getUnreadCount(c.id), 0);
+    const teamUnread = saCoachContacts.reduce((sum, c) => sum + getUnreadCount(c.id), 0);
 
     return (
       <div className="overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
         <div className="p-4 border-b border-border bg-card/80 backdrop-blur-xl">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <button
-              onClick={() => setSaChatMode('direct')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${saChatMode === 'direct' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setSaChatMode('firms')}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${saChatMode === 'firms' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" /> Mesajlaş
-                {totalDirectUnread > 0 && (
-                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#FF5A01] text-white text-[9px] font-bold flex items-center justify-center">{totalDirectUnread > 9 ? '9+' : totalDirectUnread}</span>
+              <span className="flex items-center justify-center gap-1">
+                <Building2 className="h-3.5 w-3.5" /> Firmalar
+                {firmUnread > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{firmUnread > 9 ? '9+' : firmUnread}</span>
+                )}
+              </span>
+            </button>
+            <button
+              onClick={() => setSaChatMode('team')}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${saChatMode === 'team' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+            >
+              <span className="flex items-center justify-center gap-1">
+                <Shield className="h-3.5 w-3.5" /> Ekibim
+                {teamUnread > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">{teamUnread > 9 ? '9+' : teamUnread}</span>
                 )}
               </span>
             </button>
             <button
               onClick={() => setSaChatMode('spectator')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${saChatMode === 'spectator' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${saChatMode === 'spectator' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Eye className="h-3.5 w-3.5" /> Sohbet İzle
+              <span className="flex items-center justify-center gap-1">
+                <Eye className="h-3.5 w-3.5" /> Gözlem
               </span>
             </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {saChatMode === 'direct' ? (
-            <div>
-              {/* Firma Yöneticileri */}
-              {saFirmAdminContacts.length > 0 && (
-                <>
-                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5" /> Firma Yöneticileri
-                    </p>
-                  </div>
-                  {saFirmAdminContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
-                </>
+          {saChatMode === 'firms' && (
+            <>
+              {saFirmAdminContacts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Henüz firma yöneticisi yok.</p>
               )}
+              {saFirmAdminContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
+            </>
+          )}
 
-              {/* Ekibimdeki Koçlar */}
+          {saChatMode === 'team' && (
+            <div>
               {saCoachContacts.length > 0 && (
                 <>
                   <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
                     <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Shield className="h-3.5 w-3.5" /> Ekibimdeki Koçlar
+                      <Shield className="h-3.5 w-3.5" /> Koçlarım
                     </p>
                   </div>
                   {saCoachContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
                 </>
               )}
-
-              {/* Ekibimdeki Öğrenciler */}
-              {saStudentContacts.length > 0 && (
-                <>
-                  <div className="px-4 py-2.5 bg-secondary/30 border-b border-border/50">
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5" /> Ekibimdeki Öğrenciler
-                    </p>
-                  </div>
-                  {saStudentContacts.map(contact => renderContactRow(contact, () => setSaDirectContact(contact)))}
-                </>
-              )}
-
-              {saFirmAdminContacts.length === 0 && saCoachContacts.length === 0 && saStudentContacts.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-12">Henüz kişi yok.</p>
+              {saCoachContacts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-12">Ekibinizde koç yok.</p>
               )}
             </div>
-          ) : (
+          )}
+
+          {saChatMode === 'spectator' && (
             <>
               {conversationPairs.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-12">Ekibinizde koç-öğrenci eşleşmesi yok.</p>
@@ -1002,7 +1031,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
                 className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${adminChatMode === 'direct' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}
               >
                 <span className="flex items-center justify-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5" /> Koçlarla Mesajlaş
+                  <Shield className="h-3.5 w-3.5" /> {currentRole === 'firm_admin' ? 'Mesajlaş' : 'Koçlarla Mesajlaş'}
                   {adminUnreadFromCoaches > 0 && (
                     <span className="h-4 min-w-[16px] px-1 rounded-full bg-[#FF5A01] text-white text-[9px] font-bold flex items-center justify-center">{adminUnreadFromCoaches > 9 ? '9+' : adminUnreadFromCoaches}</span>
                   )}
@@ -1040,9 +1069,10 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
       );
     }
 
-    // Admin: direct chat with a coach
+    // Admin: direct chat with a coach or super_admin
     if (adminDirectContact) {
-      return renderDirectChatView(adminDirectContact, () => setAdminDirectContact(null), 'Koç — Doğrudan Mesaj');
+      const subtitle = adminDirectContact.type === 'admin' ? 'Süper Yönetici — Doğrudan Mesaj' : 'Koç — Doğrudan Mesaj';
+      return renderDirectChatView(adminDirectContact, () => setAdminDirectContact(null), subtitle);
     }
 
     // Admin: spectator pair view
