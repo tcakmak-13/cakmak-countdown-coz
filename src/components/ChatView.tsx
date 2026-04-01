@@ -1166,7 +1166,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
 
     // Coach: chat with admin
     if (coachChatMode === 'admin' && adminContact) {
-      return renderDirectChatView(adminContact, () => setCoachChatMode('students'), 'Süper Yönetici');
+      return renderDirectChatView(adminContact, () => setCoachChatMode('students'), adminContact.subtitle || 'Firma Yöneticisi');
     }
 
     // Coach: chat with selected student
