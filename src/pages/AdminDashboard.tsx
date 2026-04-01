@@ -740,7 +740,7 @@ export default function AdminDashboard({ panelType = 'admin' }: { panelType?: 'a
         ) : tab === 'coach-detail' && selectedCoach ? (
           <CoachDetailView coachId={selectedCoach.id} coachName={selectedCoach.full_name || selectedCoach.username || 'Koç'} coachAvatar={selectedCoach.avatar_url} onBack={() => { setSelectedCoach(null); setTab('management'); }} />
         ) : tab === 'messages' && profileId ? (
-          <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={isFirmPanel ? 'admin' : role} currentUserId={session?.user?.id} />
+          <ChatView currentProfileId={profileId} currentName={profile.full_name} currentRole={role} currentUserId={session?.user?.id} />
         ) : tab === 'management' && !selectedStudent ? (
           /* Management: Students + Coaches as full-width content */
           <div className="space-y-6">
