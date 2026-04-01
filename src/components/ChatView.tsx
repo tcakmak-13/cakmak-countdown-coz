@@ -455,8 +455,8 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         (m.sender_id === selectedPair.studentId && m.receiver_id === selectedPair.coachId)
       );
     }
-    // Super Admin direct
-    if (currentRole === 'super_admin' && saChatMode === 'direct' && saDirectContact) {
+    // Super Admin direct (firms or team tab)
+    if (currentRole === 'super_admin' && saChatMode !== 'spectator' && saDirectContact) {
       return messages.filter(m =>
         (m.sender_id === currentProfileId && m.receiver_id === saDirectContact.id) ||
         (m.sender_id === saDirectContact.id && m.receiver_id === currentProfileId)
