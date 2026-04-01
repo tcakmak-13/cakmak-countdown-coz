@@ -391,7 +391,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   useEffect(() => {
     const fetchMessages = async () => {
       let query = supabase.from('chat_messages').select('*');
-      if (currentRole !== 'admin' && currentRole !== 'super_admin') {
+      if (currentRole !== 'admin' && currentRole !== 'super_admin' && currentRole !== 'firm_admin') {
         query = query.or(`sender_id.eq.${currentProfileId},receiver_id.eq.${currentProfileId}`);
       }
       const { data } = await query.order('created_at').limit(1000);
