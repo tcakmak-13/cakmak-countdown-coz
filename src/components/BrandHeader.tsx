@@ -8,7 +8,7 @@ interface BrandHeaderProps {
 }
 
 export default function BrandHeader({ fallbackLabel = 'ÇakmakKoçluk', size = 'sm' }: BrandHeaderProps) {
-  const { name, logoUrl, loading } = useCompanyBrand();
+  const { name, logoUrl, loading, isMainBrand } = useCompanyBrand();
 
   if (loading) {
     return (
@@ -19,8 +19,8 @@ export default function BrandHeader({ fallbackLabel = 'ÇakmakKoçluk', size = '
     );
   }
 
-  // White-label: show company brand
-  if (name) {
+  // White-label: show company brand (but NOT for main brand ÇakmakKoçluk)
+  if (name && !isMainBrand) {
     return (
       <div className="flex items-center gap-2">
         {logoUrl ? (
@@ -39,7 +39,6 @@ export default function BrandHeader({ fallbackLabel = 'ÇakmakKoçluk', size = '
             <Building2 className={`${size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} text-primary`} />
           </div>
         )}
-        {/* Fallback icon when image fails */}
         {logoUrl && (
           <div className={`${size === 'sm' ? 'h-7 w-7' : 'h-9 w-9'} rounded-full bg-primary/10 items-center justify-center hidden`}>
             <Building2 className={`${size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} text-primary`} />
@@ -52,7 +51,7 @@ export default function BrandHeader({ fallbackLabel = 'ÇakmakKoçluk', size = '
     );
   }
 
-  // Default: show app branding
+  // Default (or main brand ÇakmakKoçluk): show app branding
   return (
     <div className="flex items-center gap-2">
       <AppLogo size={size} />
