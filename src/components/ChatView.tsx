@@ -372,18 +372,38 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         .then(({ data }) => {
           if (data) setStudents(data);
         });
-      supabase.rpc('get_admin_profile_info').then(({ data }) => {
-        if (data && data.length > 0) {
-          const admin = data[0];
-          setAdminContact({
-            id: admin.id,
-            name: admin.full_name || 'Yönetici',
-            type: 'admin',
-            avatar_url: admin.avatar_url,
-            subtitle: 'Süper Yönetici',
-          });
+
+      // Load firm_admin from same company as the coach's contact
+      const loadCoachAdminContact = async () => {
+        const { data: myProfile } = await supabase.from('profiles').select('company_id').eq('id', currentProfileId).single();
+        const myCompanyId = myProfile?.company_id;
+        const contacts: ChatContact[] = [];
+
+        // 1) Find firm_admin(s) from same company
+        if (myCompanyId) {
+          const { data: faRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'firm_admin');
+          if (faRoles && faRoles.length > 0) {
+            const { data: faProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, company_id').in('user_id', faRoles.map(r => r.user_id)).eq('company_id', myCompanyId);
+            if (faProfiles && faProfiles.length > 0) {
+              faProfiles.forEach(fa => {
+                contacts.push({
+                  id: fa.id,
+                  name: fa.full_name || 'Firma Yöneticisi',
+                  type: 'firm_admin',
+                  avatar_url: fa.avatar_url,
+                  subtitle: 'Firma Yöneticisi',
+                });
+              });
+            }
+          }
         }
-      });
+
+        // Set the first firm_admin as primary admin contact (for backward compat)
+        if (contacts.length > 0) {
+          setAdminContact(contacts[0]);
+        }
+      };
+      loadCoachAdminContact();
     }
   }, [currentRole, currentProfileId]);
 
