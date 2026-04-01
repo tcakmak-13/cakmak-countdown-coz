@@ -300,40 +300,72 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
         }
       };
       loadSuperAdminContacts();
-    } else if (currentRole === 'admin' || currentRole === 'firm_admin') {
-      const loadPairs = async () => {
-        const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
-        if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); setAdminCoachContacts([]); return; }
-        const coachUserIds = coachRoles.map(r => r.user_id);
-        const { data: coachProfiles } = await supabase.from('profiles').select('id, full_name, user_id, avatar_url').in('user_id', coachUserIds);
-        if (!coachProfiles) { setConversationPairs([]); setAdminCoachContacts([]); return; }
+  } else if (currentRole === 'admin' || currentRole === 'firm_admin') {
+    const loadPairs = async () => {
+      // Get my company_id
+      const { data: myProfile } = await supabase.from('profiles').select('company_id').eq('id', currentProfileId).single();
+      const myCompanyId = myProfile?.company_id;
+      
+      // Load coaches from same company only
+      const { data: coachRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'koc');
+      if (!coachRoles || coachRoles.length === 0) { setConversationPairs([]); setAdminCoachContacts([]); return; }
+      const coachUserIds = coachRoles.map(r => r.user_id);
+      
+      let coachQuery = supabase.from('profiles').select('id, full_name, user_id, avatar_url, company_id').in('user_id', coachUserIds);
+      if (myCompanyId) coachQuery = coachQuery.eq('company_id', myCompanyId);
+      const { data: coachProfiles } = await coachQuery;
+      if (!coachProfiles) { setConversationPairs([]); setAdminCoachContacts([]); return; }
 
-        setAdminCoachContacts(coachProfiles.map(c => ({
-          id: c.id,
-          name: c.full_name || 'Koç',
-          type: 'coach' as const,
-          avatar_url: c.avatar_url,
-          subtitle: 'Koç',
-        })));
+      const contacts: ChatContact[] = coachProfiles.map(c => ({
+        id: c.id,
+        name: c.full_name || 'Koç',
+        type: 'coach' as const,
+        avatar_url: c.avatar_url,
+        subtitle: 'Koç',
+      }));
 
-        const { data: allStudents } = await supabase.from('profiles').select('id, full_name, coach_id').not('coach_id', 'is', null);
-        if (!allStudents) { setConversationPairs([]); return; }
-        const pairs: ConversationPair[] = [];
-        for (const student of allStudents) {
-          const coach = coachProfiles.find(c => c.id === student.coach_id);
-          if (coach) {
-            pairs.push({
-              coachId: coach.id,
-              coachName: coach.full_name || 'Koç',
-              studentId: student.id,
-              studentName: student.full_name || 'Öğrenci',
-              key: `${coach.id}-${student.id}`,
+      // firm_admin: also add super_admin as a direct contact
+      if (currentRole === 'firm_admin') {
+        const { data: saRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'super_admin');
+        if (saRoles && saRoles.length > 0) {
+          const { data: saProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('user_id', saRoles.map(r => r.user_id));
+          if (saProfiles) {
+            saProfiles.forEach(sa => {
+              contacts.unshift({
+                id: sa.id,
+                name: sa.full_name || 'Süper Yönetici',
+                type: 'admin' as const,
+                avatar_url: sa.avatar_url,
+                subtitle: 'Süper Yönetici',
+              });
             });
           }
         }
-        setConversationPairs(pairs);
-      };
-      loadPairs();
+      }
+
+      setAdminCoachContacts(contacts);
+
+      // Spectator: only show coach-student pairs from same company
+      let studentQuery = supabase.from('profiles').select('id, full_name, coach_id').not('coach_id', 'is', null);
+      if (myCompanyId) studentQuery = studentQuery.eq('company_id', myCompanyId);
+      const { data: allStudents } = await studentQuery;
+      if (!allStudents) { setConversationPairs([]); return; }
+      const pairs: ConversationPair[] = [];
+      for (const student of allStudents) {
+        const coach = coachProfiles.find(c => c.id === student.coach_id);
+        if (coach) {
+          pairs.push({
+            coachId: coach.id,
+            coachName: coach.full_name || 'Koç',
+            studentId: student.id,
+            studentName: student.full_name || 'Öğrenci',
+            key: `${coach.id}-${student.id}`,
+          });
+        }
+      }
+      setConversationPairs(pairs);
+    };
+    loadPairs();
     } else if (currentRole === 'koc') {
       supabase.from('profiles').select('id, full_name, area, grade')
         .eq('coach_id', currentProfileId)
