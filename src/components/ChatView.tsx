@@ -194,7 +194,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   const [saFirmAdminContacts, setSaFirmAdminContacts] = useState<ChatContact[]>([]);
   const [saCoachContacts, setSaCoachContacts] = useState<ChatContact[]>([]);
   const [saStudentContacts, setSaStudentContacts] = useState<ChatContact[]>([]);
-  const [saChatMode, setSaChatMode] = useState<'direct' | 'spectator'>('direct');
+  const [saChatMode, setSaChatMode] = useState<'firms' | 'team' | 'spectator'>('firms');
   const [saDirectContact, setSaDirectContact] = useState<ChatContact | null>(null);
 
   const getSignedUrl = async (fileName: string) => {
