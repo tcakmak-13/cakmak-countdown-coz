@@ -439,7 +439,7 @@ export default function ChatView({ currentProfileId, currentName, currentRole, c
   // ─── CHAT PARTNER ───
   const chatPartnerId = useMemo(() => {
     if (currentRole === 'student') return coachProfileId;
-    if (currentRole === 'super_admin' && saChatMode === 'direct' && saDirectContact) return saDirectContact.id;
+    if (currentRole === 'super_admin' && saChatMode !== 'spectator' && saDirectContact) return saDirectContact.id;
     if ((currentRole === 'admin' || currentRole === 'firm_admin') && adminChatMode === 'direct' && adminDirectContact) return adminDirectContact.id;
     if (currentRole === 'koc' && coachChatMode === 'admin' && adminContact) return adminContact.id;
     if (currentRole === 'koc' && coachChatMode === 'students') return selectedStudent;
